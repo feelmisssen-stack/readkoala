@@ -1,0 +1,49 @@
+@import "../../design.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    color-scheme: light dark;
+  }
+
+  body {
+    @apply bg-koala-bg text-koala-text font-reading antialiased;
+  }
+}
+
+@layer components {
+  .koala-card {
+    @apply rounded-koala-lg bg-koala-card shadow-sm;
+    border: 1px solid rgb(var(--color-koala-secondary-rgb) / 0.3);
+  }
+  .koala-btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-pill px-5 py-2.5 font-medium transition-all;
+  }
+  .koala-btn-primary {
+    @apply koala-btn bg-koala-primary text-white hover:opacity-90;
+  }
+  .koala-btn-secondary {
+    @apply koala-btn text-koala-text;
+    background-color: rgb(var(--color-koala-secondary-rgb) / 0.4);
+  }
+  .koala-btn-secondary:hover {
+    background-color: rgb(var(--color-koala-secondary-rgb) / 0.6);
+  }
+  .koala-btn-accent {
+    @apply koala-btn bg-koala-accent text-white hover:opacity-90;
+  }
+  .koala-input {
+    @apply w-full rounded-koala bg-koala-card px-4 py-3 text-koala-text placeholder:text-koala-muted focus:outline-none;
+    border: 1px solid rgb(var(--color-koala-secondary-rgb) / 0.5);
+  }
+  .koala-input:focus {
+    border-color: rgb(var(--color-koala-primary-rgb) / 1);
+    box-shadow: 0 0 0 2px rgb(var(--color-koala-primary-rgb) / 0.2);
+  }
+  .koala-label {
+    @apply mb-1.5 block text-sm font-medium text-koala-muted;
+  }
+}

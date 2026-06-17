@@ -1,0 +1,38 @@
+:root {
+  --color-koala-bg: #F7F6F2;
+  --color-koala-card: #FFFFFF;
+  --color-koala-text: #2C3327;
+  --color-koala-muted: #717D6A;
+  --color-koala-primary: #4E6A53;
+  --color-koala-secondary: #A3B899;
+  --color-koala-accent: #E6A15C;
+
+  /* Tailwind opacity (/30 등) 지원용 RGB 채널 */
+  --color-koala-bg-rgb: 247 246 242;
+  --color-koala-card-rgb: 255 255 255;
+  --color-koala-text-rgb: 44 51 39;
+  --color-koala-muted-rgb: 113 125 106;
+  --color-koala-primary-rgb: 78 106 83;
+  --color-koala-secondary-rgb: 163 184 153;
+  --color-koala-accent-rgb: 230 161 92;
+
+  --radius-koala: 16px;
+  --radius-koala-lg: 24px;
+  --radius-koala-pill: 9999px;
+
+  --font-reading: "Noto Serif KR", ui-serif, Georgia, serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-koala-bg: #1A2319;
+    --color-koala-card: #242F23;
+    --color-koala-text: #E3E8E2;
+    --color-koala-muted: #8AA085;
+
+    --color-koala-bg-rgb: 26 35 25;
+    --color-koala-card-rgb: 36 47 35;
+    --color-koala-text-rgb: 227 232 226;
+    --color-koala-muted-rgb: 138 160 133;
+  }
+}
