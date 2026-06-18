@@ -1,3 +1,6 @@
+import { Thermometer } from "lucide-react";
+import { iconSm } from "@/lib/icon-styles";
+
 export function ReadingThermometer({ progress }: { progress: number }) {
   const clamped = Math.max(0, Math.min(100, progress));
   const label =
@@ -14,7 +17,10 @@ export function ReadingThermometer({ progress }: { progress: number }) {
   return (
     <div className="w-full">
       <div className="mb-1 flex justify-between text-xs text-koala-muted">
-        <span>독서 온도계 🌡️</span>
+        <span className="inline-flex items-center gap-1">
+          <Thermometer className={iconSm} aria-hidden />
+          독서 온도계
+        </span>
         <span>{label}</span>
       </div>
       <div className="relative h-6 overflow-hidden rounded-pill bg-koala-secondary/30">

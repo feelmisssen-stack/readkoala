@@ -37,8 +37,7 @@ export default function LoginPage() {
     <div className="mx-auto max-w-md">
       <div className="koala-card p-8">
         <div className="mb-6 text-center">
-          <div className="text-5xl">🐨</div>
-          <h1 className="mt-3 text-2xl font-bold text-koala-primary">ReadKoala 로그인</h1>
+          <h1 className="text-2xl font-bold text-koala-primary">도란서재 로그인</h1>
           <p className="mt-1 text-sm text-koala-muted">아이디와 비밀번호로 들어가요</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">

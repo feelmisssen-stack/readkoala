@@ -3,9 +3,21 @@
 import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { BookOpen, Lightbulb, PenLine, Quote, Sprout } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { ReadingThermometer } from "@/components/ReadingThermometer";
+import { BookCoverPlaceholder } from "@/components/BookCoverPlaceholder";
+import { iconMd } from "@/lib/icon-styles";
 import { SECTION_LABELS, SECTION_ORDER, type ReflectionSection } from "@/lib/reflection-templates";
 import type { Book } from "@/lib/types";
+
+const SECTION_ICONS: Record<ReflectionSection, LucideIcon> = {
+  before_reading: Sprout,
+  during_reading: BookOpen,
+  association: Lightbulb,
+  quote: Quote,
+  review: PenLine,
+};
 
 export default function BookDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -56,7 +68,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
           {book.coverUrl ? (
             <Image src={book.coverUrl} alt={book.title} fill className="object-cover" unoptimized />
           ) : (
-            <div className="flex h-full items-center justify-center text-5xl">📖</div>
+            <BookCoverPlaceholder size="lg" />
           )}
         </div>
         <div className="flex-1">
@@ -81,23 +93,20 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
       <div>
         <h2 className="mb-3 text-lg font-bold text-koala-primary">감상 기록하기</h2>
         <div className="grid gap-3 sm:grid-cols-2">
-          {SECTION_ORDER.map((section: ReflectionSection) => (
-            <Link
-              key={section}
-              href={`/books/${id}/write/${section}`}
-              className="koala-card block p-4 transition hover:bg-koala-secondary/10"
-            >
-              <span className="text-xl">
-                {section === "before_reading" && "🌱"}
-                {section === "during_reading" && "📖"}
-                {section === "association" && "💭"}
-                {section === "quote" && "💬"}
-                {section === "review" && "✍️"}
-              </span>
-              <h3 className="mt-1 font-medium text-koala-primary">{SECTION_LABELS[section]}</h3>
-              <p className="text-xs text-koala-muted">선택해서 작성할 수 있어요</p>
-            </Link>
-          ))}
+          {SECTION_ORDER.map((section: ReflectionSection) => {
+            const Icon = SECTION_ICONS[section];
+            return (
+              <Link
+                key={section}
+                href={`/books/${id}/write/${section}`}
+                className="koala-card block p-4 transition hover:bg-koala-secondary/10"
+              >
+                <Icon className={`${iconMd} text-koala-primary`} strokeWidth={1.75} aria-hidden />
+                <h3 className="mt-2 font-medium text-koala-primary">{SECTION_LABELS[section]}</h3>
+                <p className="text-xs text-koala-muted">선택해서 작성할 수 있어요</p>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </div>

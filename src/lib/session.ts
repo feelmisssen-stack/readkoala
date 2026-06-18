@@ -5,6 +5,8 @@ export interface SessionData {
   userId?: string;
   username?: string;
   isAdmin?: boolean;
+  googleAdminEmail?: string;
+  googleAdminName?: string;
 }
 
 export const sessionOptions: SessionOptions = {

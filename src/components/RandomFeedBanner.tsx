@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { BookOpen, PenLine } from "lucide-react";
+import { iconSm } from "@/lib/icon-styles";
 
 interface FeedItem {
   type: string;
@@ -52,10 +54,20 @@ export function RandomFeedBanner() {
           {TYPE_LABELS[item.type] || "오늘의 한마디"}
         </span>
         <p className="mt-3 text-lg leading-relaxed">&ldquo;{item.text}&rdquo;</p>
-        <p className="mt-2 text-sm text-koala-muted">
-          {item.bookTitle && <span>📖 {item.bookTitle} · </span>}
-          {item.word && <span>📝 {item.word} · </span>}
-          {item.username}
+        <p className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-koala-muted">
+          {item.bookTitle && (
+            <span className="inline-flex items-center gap-1">
+              <BookOpen className={iconSm} aria-hidden />
+              {item.bookTitle}
+            </span>
+          )}
+          {item.word && (
+            <span className="inline-flex items-center gap-1">
+              <PenLine className={iconSm} aria-hidden />
+              {item.word}
+            </span>
+          )}
+          <span>{item.username}</span>
         </p>
         <div className="mt-4 flex gap-2">
           <Link href="/reflections/new" className="koala-btn-primary text-sm">

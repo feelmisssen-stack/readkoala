@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { BookOpen, Plus, Users } from "lucide-react";
+import { iconSm } from "@/lib/icon-styles";
 import type { Book } from "@/lib/types";
 
 interface ChatRoom {
@@ -75,9 +77,10 @@ export default function ChatPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-koala-primary">책 이야기방</h1>
-        <button type="button" onClick={() => setShowCreate(!showCreate)} className="koala-btn-primary text-sm">
-          + 방 만들기
+        <h1 className="text-2xl font-bold text-koala-primary">도란뜰</h1>
+        <button type="button" onClick={() => setShowCreate(!showCreate)} className="koala-btn-primary inline-flex items-center gap-1.5 text-sm">
+          <Plus className={iconSm} aria-hidden />
+          방 만들기
         </button>
       </div>
 
@@ -114,7 +117,10 @@ export default function ChatPage() {
             <div key={room.id} className="koala-card flex items-center justify-between p-4">
               <div>
                 <p className="font-bold">{room.name}</p>
-                <p className="text-sm text-koala-muted">📖 {room.bookTitle}</p>
+                <p className="inline-flex items-center gap-1 text-sm text-koala-muted">
+                  <BookOpen className={iconSm} aria-hidden />
+                  {room.bookTitle}
+                </p>
               </div>
               <div className="flex gap-2">
                 <button
@@ -150,9 +156,16 @@ export default function ChatPage() {
               className="koala-card block p-4 transition hover:shadow-md"
             >
               <h2 className="font-bold text-koala-primary">{room.name}</h2>
-              <p className="text-sm text-koala-muted">
-                📖 {room.bookTitle} · 👥 {room.memberCount}명
-                {room.membership?.status === "pending" && " · 승인 대기 중"}
+              <p className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-koala-muted">
+                <span className="inline-flex items-center gap-1">
+                  <BookOpen className={iconSm} aria-hidden />
+                  {room.bookTitle}
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <Users className={iconSm} aria-hidden />
+                  {room.memberCount}명
+                </span>
+                {room.membership?.status === "pending" && <span>승인 대기 중</span>}
               </p>
             </Link>
           ))}

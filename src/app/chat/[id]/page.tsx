@@ -2,6 +2,7 @@
 
 import { useEffect, useState, use, useRef } from "react";
 import Link from "next/link";
+import { BackLink } from "@/components/BackLink";
 
 interface Message {
   id: string;
@@ -90,9 +91,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
 
   return (
     <div className="flex h-[calc(100vh-8rem)] flex-col">
-      <Link href="/chat" className="mb-3 text-sm text-koala-muted hover:text-koala-primary">
-        ← 이야기방 목록
-      </Link>
+      <BackLink href="/chat">이야기방 목록</BackLink>
 
       {error && (
         <div className="mb-3 rounded-koala bg-koala-accent/20 p-3 text-sm">

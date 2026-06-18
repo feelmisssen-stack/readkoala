@@ -54,7 +54,7 @@ export async function getWritingHelp(
           messages: [
             {
               role: "system",
-              content: `당신은 초등학생 독서 도우미 코알라입니다. 친근하고 쉬운 말로 감상문 작성을 도와주세요. 현재 작성 단계: ${context}. 욕설이나 부적절한 표현은 사용하지 마세요.`,
+              content: `당신은 초등학생 독서 도우미입니다. 친근하고 쉬운 말로 감상문 작성을 도와주세요. 현재 작성 단계: ${context}. 욕설이나 부적절한 표현은 사용하지 마세요.`,
             },
             { role: "user", content: userMessage },
           ],
@@ -73,7 +73,7 @@ export async function getWritingHelp(
   const tip = tips[Math.floor(Math.random() * tips.length)];
 
   if (!userMessage?.trim()) {
-    return `안녕! 나는 독서 도우미 코알라야 🐨\n\n${tip}\n\n궁금한 게 있으면 편하게 물어봐!`;
+    return `안녕! 나는 독서 도우미야.\n\n${tip}\n\n궁금한 게 있으면 편하게 물어봐!`;
   }
 
   const lower = userMessage.toLowerCase();

@@ -1,3 +1,5 @@
+const STDICT_SEARCH_URL = "https://stdict.korean.go.kr/api/search.do";
+
 const FALLBACK_DICT: Record<string, string> = {
   감상: "사물이나 현상을 보고 느끼거나 생각함.",
   독서: "책을 읽음.",
@@ -12,7 +14,7 @@ const FALLBACK_DICT: Record<string, string> = {
   주인공: "이야기의 가장 중심이 되는 사람이나 동물.",
   배경: "이야기가 일어나는 시간이나 장소.",
   교훈: "배워야 할 가르침.",
-  용기: "어려운 일을내려는 마음.",
+  용기: "어려운 일을 내려는 마음.",
   우정: "친구 사이의 정.",
   꿈: "잠잘 때 보는 것이나 이루고 싶은 것.",
   모험: "새롭고 신나는 일을 겪음.",
@@ -25,31 +27,172 @@ export interface DictResult {
   word: string;
   definition: string;
   source: "api" | "fallback";
+  error?: "missing_api_key" | "api_error" | "not_found";
+}
+
+interface StdictSense {
+  definition?: string;
+  pos?: string;
+}
+
+interface StdictItem {
+  word?: string;
+  sup_no?: number | string;
+  pos?: string;
+  sense?: StdictSense | StdictSense[];
+}
+
+interface StdictResponse {
+  channel?: {
+    total?: number;
+    item?: StdictItem | StdictItem[];
+  };
+  error?: {
+    error_code?: string | number;
+    message?: string;
+  };
+}
+
+import { getStdictApiKey, isDictionaryApiConfigured } from "./dictionary-config";
+
+export { isDictionaryApiConfigured };
+
+function getApiKey(): string | undefined {
+  return getStdictApiKey();
+}
+
+function cleanDefinition(text?: string): string {
+  if (!text) return "";
+  return text.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+}
+
+function extractDefinitions(item: StdictItem): string[] {
+  if (!item.sense) return [];
+  const senses = Array.isArray(item.sense) ? item.sense : [item.sense];
+  return senses.map((s) => cleanDefinition(s.definition)).filter(Boolean);
+}
+
+function pickMatchingItems(items: StdictItem[], query: string): StdictItem[] {
+  const exact = items.filter((item) => item.word === query);
+  if (exact.length > 0) return exact;
+
+  const firstMatch = items.find((item) => item.word?.startsWith(query));
+  if (firstMatch?.word) {
+    return items.filter((item) => item.word === firstMatch.word);
+  }
+
+  return items.length > 0 ? [items[0]] : [];
+}
+
+function formatItemDefinitions(item: StdictItem): string[] {
+  const definitions = extractDefinitions(item);
+  const pos = item.pos ? `(${item.pos}) ` : "";
+  return definitions.map((d) => `${pos}${d}`);
+}
+
+function toDictResult(items: StdictItem[], query: string): DictResult | null {
+  const sorted = [...items].sort((a, b) => {
+    const na = Number(a.sup_no) || 0;
+    const nb = Number(b.sup_no) || 0;
+    return na - nb;
+  });
+
+  const lines = sorted.flatMap((item) => formatItemDefinitions(item)).filter(Boolean);
+  if (lines.length === 0) return null;
+
+  const definition =
+    lines.length === 1
+      ? lines[0]
+      : lines.map((line, i) => `${i + 1}. ${line}`).join("\n");
+
+  return {
+    word: sorted[0]?.word || query,
+    definition,
+    source: "api",
+  };
+}
+
+async function searchStdict(
+  query: string,
+  method: "exact" | "include" = "exact"
+): Promise<StdictItem[]> {
+  const apiKey = getApiKey();
+  if (!apiKey) return [];
+
+  const params = new URLSearchParams({
+    key: apiKey,
+    q: query,
+    req_type: "json",
+    start: "1",
+    num: "20",
+  });
+
+  if (method === "include") {
+    params.set("advanced", "y");
+    params.set("method", "include");
+    params.set("target", "1");
+  }
+
+  const res = await fetch(`${STDICT_SEARCH_URL}?${params}`, {
+    cache: "no-store",
+  });
+
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status}`);
+  }
+
+  const text = await res.text();
+  if (!text.trim()) return [];
+
+  const data = JSON.parse(text) as StdictResponse;
+  if (data.error) {
+    throw new Error(data.error.message || `API error ${data.error.error_code}`);
+  }
+
+  const items = data.channel?.item;
+  if (!items) return [];
+  return Array.isArray(items) ? items : [items];
+}
+
+async function lookupFromStdict(query: string): Promise<DictResult | null> {
+  let items = await searchStdict(query, "exact");
+  let matches = pickMatchingItems(items, query);
+
+  if (matches.length === 0 || matches.every((item) => extractDefinitions(item).length === 0)) {
+    items = await searchStdict(query, "include");
+    matches = pickMatchingItems(items, query);
+  }
+
+  matches = matches.filter((item) => extractDefinitions(item).length > 0);
+  if (matches.length === 0) return null;
+  return toDictResult(matches, query);
 }
 
 export async function lookupWord(word: string): Promise<DictResult | null> {
   const trimmed = word.trim();
   if (!trimmed) return null;
 
-  const apiKey = process.env.KOREAN_DICT_API_KEY;
-  if (apiKey) {
-    try {
-      const res = await fetch(
-        `https://opendict.korean.go.kr/api/search?key=${apiKey}&q=${encodeURIComponent(trimmed)}&req_type=json&part=word&sort=dict&start=1&num=1`,
-        { next: { revalidate: 86400 } }
-      );
-      const data = await res.json();
-      const item = data.channel?.item?.[0];
-      if (item?.sense?.definition) {
-        return {
-          word: trimmed,
-          definition: item.sense.definition.replace(/<[^>]+>/g, ""),
-          source: "api",
-        };
-      }
-    } catch {
-      /* fallback */
-    }
+  if (!isDictionaryApiConfigured()) {
+    return {
+      word: trimmed,
+      definition:
+        "표준국어대사전 API 키가 없어요. 국어사전 페이지 위쪽에서 API 키를 입력하고 저장해 주세요.",
+      source: "fallback",
+      error: "missing_api_key",
+    };
+  }
+
+  try {
+    const result = await lookupFromStdict(trimmed);
+    if (result) return result;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "API 오류";
+    return {
+      word: trimmed,
+      definition: `사전 API 호출에 실패했어요. (${message}) STDICT_API_KEY가 올바른지 확인해 주세요.`,
+      source: "fallback",
+      error: "api_error",
+    };
   }
 
   if (FALLBACK_DICT[trimmed]) {
@@ -64,8 +207,9 @@ export async function lookupWord(word: string): Promise<DictResult | null> {
 
   return {
     word: trimmed,
-    definition: `"${trimmed}"의 뜻을 사전에서 찾지 못했어요. 선생님께 물어보거나 우리말샘 API 키를 설정해 보세요.`,
+    definition: `"${trimmed}"의 뜻을 표준국어대사전에서 찾지 못했어요. 다른 표현으로 검색해 보세요.`,
     source: "fallback",
+    error: "not_found",
   };
 }
 

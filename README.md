@@ -1,6 +1,6 @@
-# ReadKoala
+# 도란서재
 
-초등학생을 위한 독서 감상 공유 웹앱입니다.
+작은 호기심이 자라나, 우리의 깊은 감상이 되는 곳 — 초등학생을 위한 독서 감상 공유 웹앱입니다.
 
 ## 기능
 
@@ -11,7 +11,7 @@
 - 단계별 감상문 작성 (읽기 전/중, 연상 문장, 책속 한마디, 감상문)
 - AI 독서 도우미 (OpenAI 키 없으면 정적 힌트)
 - 메인 화면 랜덤 노출 + 오늘 하루 보지 않기
-- 코알라 캐릭터 성장
+- 독서 기록 모아 보기
 - 책 이야기방 (관리자 승인)
 - 국어사전, 낱말집, 초성 퀴즈, 문장 공유 보드
 
@@ -40,8 +40,13 @@ npm run dev
 | 변수 | 설명 |
 |------|------|
 | `SESSION_SECRET` | 세션 암호화 키 (32자 이상 권장) |
+| `ADMIN_EMAILS` | Google 관리자 로그인 허용 이메일 (쉼표 구분) |
+| `GOOGLE_CLIENT_ID` | Google OAuth 클라이언트 ID (관리자용) |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth 시크릿 (관리자용) |
+| `NEXT_PUBLIC_APP_URL` | 앱 URL (기본 `http://localhost:3000`) |
+| `ALADIN_TTB_KEY` | [알라딘 Open API](https://blog.aladin.co.kr/openapi/popup/6695306) TTBKey (도서 검색, 선택) |
 | `DATA4LIBRARY_API_KEY` | [도서관 정보나루](https://www.data4library.kr) API 키 (선택) |
-| `KOREAN_DICT_API_KEY` | [우리말샘](https://opendict.korean.go.kr) API 키 (선택) |
+| `STDICT_API_KEY` | [표준국어대사전](https://stdict.korean.go.kr/openapi/openApiRegister.do) API 키 (국어사전) |
 | `OPENAI_API_KEY` | AI 도우미용 (선택) |
 
 API 키 없이도 Google Books / Open Library / 내장 사전으로 동작합니다.
@@ -58,7 +63,7 @@ API 키 없이도 Google Books / Open Library / 내장 사전으로 동작합니
 
 | 경로 | 설명 |
 |------|------|
-| `/` | 메인 (랜덤 피드, 코알라) |
+| `/` | 메인 (친구 감상 캐러셀, 나의 기록) |
 | `/books` | 내 책장 |
 | `/books/new` | 책 검색/등록 |
 | `/books/[id]/write/[section]` | 감상문 작성 |

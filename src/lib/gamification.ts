@@ -8,47 +8,38 @@ export function calculateLevel(stats: UserStats): number {
   return Math.min(10, Math.floor(score / 100) + 1);
 }
 
-export function getKoalaStage(level: number): {
-  emoji: string;
+export function getReadingStage(level: number): {
   title: string;
   description: string;
-  decorations: string[];
 } {
   if (level >= 10)
     return {
-      emoji: "🐨✨",
-      title: "독서 마스터 코알라",
+      title: "독서 마스터",
       description: "책과 함께 자란 멋진 독서가!",
-      decorations: ["📚", "🌟", "🌳", "🎓", "🏆"],
     };
   if (level >= 7)
     return {
-      emoji: "🐨📖",
-      title: "책벌레 코알라",
-      description: "많은 책을 읽고 글도 잘 쓰는 코알라!",
-      decorations: ["📚", "🌟", "🌳", "✏️"],
+      title: "책벌레",
+      description: "많은 책을 읽고 글도 잘 쓰고 있어요!",
     };
   if (level >= 4)
     return {
-      emoji: "🐨🌿",
-      title: "성장하는 코알라",
-      description: "독서 기록이 쌓이면서 자라고 있어요!",
-      decorations: ["📖", "🍃", "⭐"],
+      title: "성장하는 독서가",
+      description: "독서 기록이 쌓이면서 깊어지고 있어요!",
     };
   if (level >= 2)
     return {
-      emoji: "🐨",
       title: "꼬마 독서가",
-      description: "첫 책을 읽기 시작한 용감한 코알라!",
-      decorations: ["📕", "🌱"],
+      description: "첫 책을 읽기 시작했어요!",
     };
   return {
-    emoji: "🐨💤",
-    title: "잠꼬대 코알라",
-    description: "책을 읽으면 코알라가 깨어나요!",
-    decorations: ["💤"],
+    title: "첫 발자국",
+    description: "책을 읽고 기록을 남겨 보세요.",
   };
 }
+
+/** @deprecated Use getReadingStage */
+export const getKoalaStage = getReadingStage;
 
 export function countReflectionChars(reflection: {
   beforeReading: { question: string; answer: string }[];

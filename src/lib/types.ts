@@ -111,6 +111,20 @@ export type RandomFeedItem =
   | { type: "quote"; text: string; bookTitle: string; username: string }
   | { type: "shared_sentence"; text: string; word: string; username: string };
 
+export interface CarouselMoment {
+  label: string;
+  text: string;
+}
+
+export interface CarouselFeedItem {
+  id: string;
+  username: string;
+  bookTitle: string;
+  bookAuthor?: string;
+  coverUrl?: string;
+  moments: CarouselMoment[];
+}
+
 export interface BookSearchResult {
   isbn?: string;
   title: string;

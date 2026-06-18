@@ -1,5 +1,109 @@
 import type { BookSearchResult } from "./types";
 
+const ALADIN_API_VERSION = "20131101";
+
+interface AladinItem {
+  title?: string;
+  author?: string;
+  publisher?: string;
+  cover?: string;
+  isbn13?: string;
+  isbn?: string;
+}
+
+interface AladinResponse {
+  item?: AladinItem | AladinItem[];
+}
+
+function getAladinTtbKey(): string | undefined {
+  return process.env.ALADIN_TTB_KEY?.trim();
+}
+
+function parseAladinJson(text: string): AladinResponse {
+  const trimmed = text.trim();
+  if (trimmed.startsWith("{")) {
+    return JSON.parse(trimmed) as AladinResponse;
+  }
+  const match = trimmed.match(/^[^(]+\(([\s\S]*)\);?\s*$/);
+  if (match) {
+    return JSON.parse(match[1]) as AladinResponse;
+  }
+  return JSON.parse(trimmed) as AladinResponse;
+}
+
+function mapAladinItem(item: AladinItem): BookSearchResult | null {
+  if (!item.title) return null;
+  const isbn = (item.isbn13 || item.isbn || "").replace(/[-\s]/g, "") || undefined;
+  return {
+    isbn,
+    title: item.title,
+    author: item.author,
+    publisher: item.publisher,
+    coverUrl: item.cover,
+  };
+}
+
+function getAladinItems(data: AladinResponse): AladinItem[] {
+  if (!data.item) return [];
+  return Array.isArray(data.item) ? data.item : [data.item];
+}
+
+async function searchAladinByIsbn(clean: string): Promise<BookSearchResult | null> {
+  const ttbKey = getAladinTtbKey();
+  if (!ttbKey) return null;
+
+  try {
+    const params = new URLSearchParams({
+      ttbkey: ttbKey,
+      itemIdType: clean.length === 13 ? "ISBN13" : "ISBN",
+      ItemId: clean,
+      output: "js",
+      Version: ALADIN_API_VERSION,
+      Cover: "Big",
+    });
+    const res = await fetch(
+      `http://www.aladin.co.kr/ttb/api/ItemLookUp.aspx?${params}`,
+      { next: { revalidate: 3600 } }
+    );
+    if (!res.ok) return null;
+
+    const item = getAladinItems(parseAladinJson(await res.text()))[0];
+    return item ? mapAladinItem(item) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function searchAladinByQuery(query: string): Promise<BookSearchResult[]> {
+  const ttbKey = getAladinTtbKey();
+  if (!ttbKey) return [];
+
+  try {
+    const params = new URLSearchParams({
+      ttbkey: ttbKey,
+      Query: query,
+      QueryType: "Keyword",
+      MaxResults: "10",
+      start: "1",
+      SearchTarget: "Book",
+      output: "js",
+      Version: ALADIN_API_VERSION,
+      Cover: "Big",
+    });
+    const res = await fetch(
+      `http://www.aladin.co.kr/ttb/api/ItemSearch.aspx?${params}`,
+      { next: { revalidate: 3600 } }
+    );
+    if (!res.ok) return [];
+
+    return getAladinItems(parseAladinJson(await res.text()))
+      .map(mapAladinItem)
+      .filter((book): book is BookSearchResult => book !== null);
+  } catch {
+    return [];
+  }
+}
+
 async function searchData4LibraryByIsbn(clean: string): Promise<BookSearchResult | null> {
   const apiKey = process.env.DATA4LIBRARY_API_KEY;
   if (!apiKey) return null;
@@ -91,6 +195,9 @@ async function searchData4LibraryByQuery(query: string): Promise<BookSearchResul
 export async function searchBooksByIsbn(isbn: string): Promise<BookSearchResult | null> {
   const clean = isbn.replace(/[-\s]/g, "");
 
+  const aladin = await searchAladinByIsbn(clean);
+  if (aladin) return aladin;
+
   const d4l = await searchData4LibraryByIsbn(clean);
   if (d4l) return d4l;
 
@@ -140,6 +247,9 @@ export async function searchBooksByIsbn(isbn: string): Promise<BookSearchResult 
 }
 
 export async function searchBooksByQuery(query: string): Promise<BookSearchResult[]> {
+  const aladinResults = await searchAladinByQuery(query);
+  if (aladinResults.length > 0) return aladinResults;
+
   const d4lResults = await searchData4LibraryByQuery(query);
   if (d4lResults.length > 0) return d4lResults;
 

@@ -4,6 +4,7 @@ import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AiHelperChat } from "@/components/AiHelperChat";
+import { BackLink } from "@/components/BackLink";
 import {
   BEFORE_READING_QUESTIONS,
   DURING_READING_QUESTIONS,
@@ -164,9 +165,7 @@ export default function WriteSectionPage({
   return (
     <div className="mx-auto max-w-2xl space-y-6 pb-24">
       <div>
-        <Link href={`/books/${bookId}`} className="text-sm text-koala-muted hover:text-koala-primary">
-          ← {book?.title || "책"}으로 돌아가기
-        </Link>
+        <BackLink href={`/books/${bookId}`}>{book?.title || "책"}으로 돌아가기</BackLink>
         <h1 className="mt-2 text-2xl font-bold text-koala-primary">{SECTION_LABELS[typedSection]}</h1>
         <p className="text-sm text-koala-muted">원하는 칸만 골라서 써도 괜찮아요</p>
       </div>

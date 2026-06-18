@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { ScanBarcode } from "lucide-react";
+import { iconSm } from "@/lib/icon-styles";
 
 interface IsbnScannerProps {
   onScan: (isbn: string) => void;
@@ -57,8 +59,13 @@ export function IsbnScanner({ onScan }: IsbnScannerProps) {
 
   if (!active) {
     return (
-      <button type="button" onClick={() => setActive(true)} className="koala-btn-secondary text-sm">
-        📷 바코드 스캔
+      <button
+        type="button"
+        onClick={() => setActive(true)}
+        className="koala-btn-secondary inline-flex items-center gap-2 text-sm"
+      >
+        <ScanBarcode className={iconSm} aria-hidden />
+        바코드 스캔
       </button>
     );
   }

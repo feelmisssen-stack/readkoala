@@ -4,12 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { IsbnScanner } from "@/components/IsbnScanner";
+import { BookCoverPlaceholder } from "@/components/BookCoverPlaceholder";
 import type { BookSearchResult } from "@/lib/types";
 
 export default function NewBookPage() {
   const router = useRouter();
   const [query, setQuery] = useState("");
-  const [isbn, setIsbn] = useState("");
   const [results, setResults] = useState<BookSearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -78,27 +78,10 @@ export default function NewBookPage() {
         </div>
 
         <div className="border-t border-koala-secondary/30 pt-4">
-          <label className="koala-label">ISBN으로 검색</label>
-          <div className="flex gap-2">
-            <input
-              className="koala-input"
-              value={isbn}
-              onChange={(e) => setIsbn(e.target.value)}
-              placeholder="978..."
-            />
-            <button
-              type="button"
-              onClick={() => search(undefined, isbn)}
-              disabled={loading || !isbn}
-              className="koala-btn-secondary shrink-0"
-            >
-              ISBN 검색
-            </button>
-          </div>
+          <label className="koala-label">바코드로 검색</label>
           <div className="mt-3">
             <IsbnScanner
               onScan={(code) => {
-                setIsbn(code);
                 search(undefined, code);
               }}
             />
@@ -117,7 +100,7 @@ export default function NewBookPage() {
                 {book.coverUrl ? (
                   <Image src={book.coverUrl} alt={book.title} fill className="object-cover" unoptimized />
                 ) : (
-                  <div className="flex h-full items-center justify-center text-2xl">📖</div>
+                  <BookCoverPlaceholder />
                 )}
               </div>
               <div className="min-w-0 flex-1">

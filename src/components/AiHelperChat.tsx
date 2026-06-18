@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { MessageCircle, Send, X } from "lucide-react";
+import { iconMd, iconSm } from "@/lib/icon-styles";
 
 type Context = "before_reading" | "during_reading" | "association" | "quote" | "review";
 
@@ -50,18 +52,26 @@ export function AiHelperChat({ context }: { context: Context }) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-koala-accent text-2xl shadow-lg hover:scale-105"
-        title="독서 도우미 코알라"
+        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-koala-accent text-white shadow-lg transition hover:scale-105"
+        title="독서 도우미"
       >
-        🐨
+        <MessageCircle className={iconMd} aria-hidden />
       </button>
 
       {open && (
         <div className="fixed bottom-24 right-6 z-50 flex h-96 w-80 flex-col overflow-hidden rounded-koala-lg border border-koala-secondary/50 bg-koala-card shadow-xl">
           <div className="flex items-center justify-between bg-koala-primary px-4 py-3 text-white">
-            <span className="font-medium">독서 도우미 코알라</span>
-            <button type="button" onClick={() => setOpen(false)} className="text-white/80 hover:text-white">
-              ✕
+            <span className="inline-flex items-center gap-2 font-medium">
+              <MessageCircle className={iconSm} aria-hidden />
+              독서 도우미
+            </span>
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="rounded-pill p-1 text-white/80 transition hover:bg-white/10 hover:text-white"
+              aria-label="닫기"
+            >
+              <X className={iconSm} />
             </button>
           </div>
           <div className="flex-1 space-y-2 overflow-y-auto p-3">
@@ -88,7 +98,13 @@ export function AiHelperChat({ context }: { context: Context }) {
               placeholder="무엇이 어려운가요?"
               className="koala-input flex-1 py-2 text-sm"
             />
-            <button type="button" onClick={send} disabled={loading} className="koala-btn-primary px-3 text-sm">
+            <button
+              type="button"
+              onClick={send}
+              disabled={loading}
+              className="koala-btn-primary inline-flex items-center gap-1 px-3 text-sm"
+            >
+              <Send className={iconSm} aria-hidden />
               전송
             </button>
           </div>
