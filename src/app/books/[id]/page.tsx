@@ -1,29 +1,66 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { BookOpen, Lightbulb, PenLine, Quote, Sprout } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
-import { ReadingThermometer } from "@/components/ReadingThermometer";
+import { ReadingProgress } from "@/components/ReadingProgress";
 import { BookCoverPlaceholder } from "@/components/BookCoverPlaceholder";
 import { iconMd } from "@/lib/icon-styles";
 import { SECTION_LABELS, SECTION_ORDER, type ReflectionSection } from "@/lib/reflection-templates";
+import { SECTION_ICONS } from "@/lib/section-icons";
 import type { Book } from "@/lib/types";
-
-const SECTION_ICONS: Record<ReflectionSection, LucideIcon> = {
-  before_reading: Sprout,
-  during_reading: BookOpen,
-  association: Lightbulb,
-  quote: Quote,
-  review: PenLine,
-};
 
 export default function BookDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [book, setBook] = useState<Book | null>(null);
-  const [progress, setProgress] = useState(0);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState<number | undefined>();
+  const [readingProgress, setReadingProgress] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [fetchingTotalPages, setFetchingTotalPages] = useState(false);
+
+  const patchBook = useCallback(
+    async (body: Record<string, number | undefined>) => {
+      setSaving(true);
+      try {
+        const res = await fetch(`/api/books/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        if (!res.ok) return false;
+
+        if (body.currentPage !== undefined) setCurrentPage(body.currentPage);
+        if (body.totalPages !== undefined) {
+          setTotalPages(body.totalPages > 0 ? body.totalPages : undefined);
+        }
+
+        setBook((prev) => {
+          if (!prev) return prev;
+          const next = { ...prev };
+          if (body.currentPage !== undefined) next.currentPage = body.currentPage;
+          if (body.totalPages !== undefined) {
+            next.totalPages = body.totalPages > 0 ? body.totalPages : undefined;
+          }
+          return next;
+        });
+
+        const page = body.currentPage ?? currentPage;
+        const total = body.totalPages !== undefined
+          ? (body.totalPages > 0 ? body.totalPages : undefined)
+          : totalPages;
+        if (total && total > 0 && page >= 0) {
+          const progress = Math.round((Math.min(page, total) / total) * 100);
+          setReadingProgress(progress);
+        }
+
+        return true;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [id, currentPage, totalPages]
+  );
 
   useEffect(() => {
     fetch("/api/books")
@@ -38,23 +75,43 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
         const found = (d?.books || []).find((b: Book) => b.id === id);
         if (found) {
           setBook(found);
-          setProgress(found.readingProgress);
+          setCurrentPage(found.currentPage ?? 0);
+          setTotalPages(found.totalPages);
+          setReadingProgress(found.readingProgress);
         }
       });
   }, [id]);
 
-  async function saveProgress(value: number) {
-    setProgress(value);
-    setSaving(true);
-    try {
-      await fetch(`/api/books/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ readingProgress: value }),
+  useEffect(() => {
+    if (!book?.isbn || book.totalPages) return;
+
+    let cancelled = false;
+    setFetchingTotalPages(true);
+
+    fetch(`/api/books/search?isbn=${encodeURIComponent(book.isbn)}`)
+      .then((r) => r.json())
+      .then(async (data) => {
+        if (cancelled) return;
+        const pages = data.results?.[0]?.totalPages;
+        if (pages && pages > 0) {
+          await patchBook({ totalPages: pages });
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setFetchingTotalPages(false);
       });
-    } finally {
-      setSaving(false);
-    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [book?.id, book?.isbn, book?.totalPages, patchBook]);
+
+  async function saveCurrentPage(page: number) {
+    await patchBook({ currentPage: page });
+  }
+
+  async function saveTotalPages(pages: number) {
+    await patchBook({ totalPages: pages, currentPage });
   }
 
   if (!book) {
@@ -76,22 +133,24 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
           {book.author && <p className="mt-1 text-koala-muted">{book.author}</p>}
           {book.publisher && <p className="text-sm text-koala-muted">{book.publisher}</p>}
           <div className="mt-4">
-            <ReadingThermometer progress={progress} />
-            <input
-              type="range"
-              min={0}
-              max={100}
-              value={progress}
-              onChange={(e) => saveProgress(Number(e.target.value))}
-              className="mt-2 w-full accent-koala-accent"
+            <ReadingProgress
+              readingProgress={readingProgress}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              fetchingTotalPages={fetchingTotalPages}
+              onCurrentPageCommit={saveCurrentPage}
+              onTotalPagesCommit={saveTotalPages}
+              saving={saving}
             />
-            {saving && <p className="text-xs text-koala-muted">저장 중...</p>}
           </div>
         </div>
       </div>
 
       <div>
-        <h2 className="mb-3 text-lg font-bold text-koala-primary">감상 기록하기</h2>
+        <div className="mb-3 flex flex-wrap items-baseline gap-2">
+          <h2 className="text-lg font-bold text-koala-primary">감상 기록하기</h2>
+          <span className="text-sm text-koala-muted">쓰고 싶은 칸만 쓰세요</span>
+        </div>
         <div className="grid gap-3 sm:grid-cols-2">
           {SECTION_ORDER.map((section: ReflectionSection) => {
             const Icon = SECTION_ICONS[section];
@@ -99,11 +158,15 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
               <Link
                 key={section}
                 href={`/books/${id}/write/${section}`}
-                className="koala-card block p-4 transition hover:bg-koala-secondary/10"
+                className="koala-card flex items-center gap-3 p-4 transition hover:bg-koala-secondary/10"
               >
-                <Icon className={`${iconMd} text-koala-primary`} strokeWidth={1.75} aria-hidden />
-                <h3 className="mt-2 font-medium text-koala-primary">{SECTION_LABELS[section]}</h3>
-                <p className="text-xs text-koala-muted">선택해서 작성할 수 있어요</p>
+                <Icon className={`${iconMd} shrink-0 text-koala-primary`} strokeWidth={1.75} aria-hidden />
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-medium text-koala-primary">{SECTION_LABELS[section]}</h3>
+                  {section === "review" && (
+                    <p className="mt-0.5 text-xs text-koala-muted">한 편의 멋진 감상문을 써 봅시다!</p>
+                  )}
+                </div>
               </Link>
             );
           })}

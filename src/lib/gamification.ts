@@ -43,7 +43,9 @@ export const getKoalaStage = getReadingStage;
 
 export function countReflectionChars(reflection: {
   beforeReading: { question: string; answer: string }[];
+  beforeReadingPairs?: { ask: string; guess: string }[];
   duringReading: { question: string; answer: string }[];
+  duringReadingPairs?: { ask: string; guess: string }[];
   association: string;
   favoriteQuote: string;
   reviewTitle: string;
@@ -52,9 +54,17 @@ export function countReflectionChars(reflection: {
   reviewImpressiveScene: string;
   reviewThoughts: string;
 }): number {
+  const beforePairs = reflection.beforeReadingPairs?.length
+    ? reflection.beforeReadingPairs
+    : reflection.beforeReading.map((q) => ({ ask: q.question, guess: q.answer }));
+
+  const duringPairs = reflection.duringReadingPairs?.length
+    ? reflection.duringReadingPairs
+    : reflection.duringReading.map((q) => ({ ask: q.question, guess: q.answer }));
+
   const all = [
-    ...reflection.beforeReading.flatMap((q) => [q.question, q.answer]),
-    ...reflection.duringReading.flatMap((q) => [q.question, q.answer]),
+    ...beforePairs.flatMap((p) => [p.ask, p.guess]),
+    ...duringPairs.flatMap((p) => [p.ask, p.guess]),
     reflection.association,
     reflection.favoriteQuote,
     reflection.reviewTitle,

@@ -16,7 +16,7 @@ interface FeedItem {
 const TYPE_LABELS: Record<string, string> = {
   before_question: "읽기 전 생각",
   during_question: "읽는 중 생각",
-  association: "연상하는 책",
+  association: "이 책은 이럴때",
   quote: "책속 한마디",
   shared_sentence: "낱말 문장",
 };

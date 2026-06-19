@@ -9,6 +9,17 @@ interface AladinItem {
   cover?: string;
   isbn13?: string;
   isbn?: string;
+  itemPage?: number;
+  subInfo?: { itemPage?: number };
+}
+
+function parsePageCount(value: unknown): number | undefined {
+  const n = typeof value === "number" ? value : parseInt(String(value), 10);
+  return n > 0 ? n : undefined;
+}
+
+function getAladinPageCount(item: AladinItem): number | undefined {
+  return parsePageCount(item.subInfo?.itemPage ?? item.itemPage);
 }
 
 interface AladinResponse {
@@ -40,6 +51,7 @@ function mapAladinItem(item: AladinItem): BookSearchResult | null {
     author: item.author,
     publisher: item.publisher,
     coverUrl: item.cover,
+    totalPages: getAladinPageCount(item),
   };
 }
 
@@ -237,6 +249,7 @@ export async function searchBooksByIsbn(isbn: string): Promise<BookSearchResult 
         author: info.authors?.[0],
         coverUrl: info.imageLinks?.thumbnail?.replace("http:", "https:"),
         publisher: info.publisher,
+        totalPages: parsePageCount(info.pageCount),
       };
     }
   } catch {
@@ -272,6 +285,7 @@ export async function searchBooksByQuery(query: string): Promise<BookSearchResul
         author: info.authors?.join(", "),
         coverUrl: info.imageLinks?.thumbnail?.replace("http:", "https:"),
         publisher: info.publisher,
+        totalPages: parsePageCount(info.pageCount),
       });
     }
   } catch {

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { calcProgressFromPages } from "@/lib/reading-progress";
 import { readDb, updateDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
 
@@ -32,11 +33,26 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   updateDb((d) => {
     const b = d.books.find((x) => x.id === id)!;
-    if (body.readingProgress !== undefined) b.readingProgress = body.readingProgress;
     if (body.title) b.title = body.title;
+    if (body.totalPages !== undefined) b.totalPages = body.totalPages > 0 ? body.totalPages : undefined;
+
+    if (body.currentPage !== undefined) {
+      b.currentPage = Math.max(0, body.currentPage);
+      if (b.totalPages && b.totalPages > 0) {
+        b.readingProgress = calcProgressFromPages(b.currentPage, b.totalPages);
+      }
+    } else if (body.readingProgress !== undefined) {
+      b.readingProgress = body.readingProgress;
+    }
+
+    if (body.totalPages !== undefined && body.currentPage === undefined && b.currentPage && b.totalPages) {
+      b.readingProgress = calcProgressFromPages(b.currentPage, b.totalPages);
+    }
+
     b.updatedAt = new Date().toISOString();
 
-    if (body.readingProgress >= 100) {
+    const progress = b.readingProgress;
+    if (progress >= 100) {
       const user = d.users.find((u) => u.id === session.userId);
       if (user) {
         const readCount = d.books.filter(

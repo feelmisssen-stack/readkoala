@@ -1,10 +1,43 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import type { CarouselMoment } from "@/lib/types";
 
 const ROTATE_MS = 4000;
+
+function PersonalMomentText({ moment }: { moment: CarouselMoment }) {
+  if (moment.kind === "memorable_scene" && moment.imageUrl) {
+    return (
+      <div className="relative mx-auto aspect-[4/3] max-h-32 w-full max-w-[200px] overflow-hidden rounded-lg">
+        <Image
+          src={moment.imageUrl}
+          alt="기억에 남는 장면"
+          fill
+          className="object-contain"
+          sizes="200px"
+          unoptimized
+        />
+      </div>
+    );
+  }
+
+  if (!moment.text) return null;
+
+  const isQuestion =
+    moment.kind === "before_question" || moment.kind === "during_question";
+
+  return (
+    <p
+      className={`text-sm leading-relaxed transition-opacity duration-500 ${
+        isQuestion ? "line-clamp-4 font-medium text-koala-primary" : "line-clamp-4 text-koala-text"
+      }`}
+    >
+      {moment.text}
+    </p>
+  );
+}
 
 export function MyReadingRecord() {
   const [moments, setMoments] = useState<CarouselMoment[]>([]);
@@ -50,10 +83,10 @@ export function MyReadingRecord() {
 
       {current ? (
         <div className="min-h-[4.5rem]">
-          <span className="text-xs text-koala-accent">{current.label}</span>
-          <p className="mt-1 text-sm leading-relaxed text-koala-text transition-opacity duration-500">
-            &ldquo;{current.text}&rdquo;
-          </p>
+          <PersonalMomentText moment={current} />
+          {current.bookTitle && (
+            <p className="mt-1 text-xs text-koala-muted">{current.bookTitle}</p>
+          )}
           {moments.length > 1 && (
             <div className="mt-2 flex gap-1">
               {moments.map((_, i) => (

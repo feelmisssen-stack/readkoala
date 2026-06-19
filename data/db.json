@@ -1,0 +1,344 @@
+{
+  "users": [
+    {
+      "id": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
+      "username": "demo",
+      "passwordHash": "$2b$10$v1w0/bQBlOthdbh1Y6eQT.FBqjWyotqeXnX8Ul.xmk.gj4SAcohBC",
+      "isAdmin": true,
+      "createdAt": "2026-06-17T07:20:49.539Z",
+      "stats": {
+        "booksRead": 0,
+        "totalChars": 606,
+        "chatParticipations": 0,
+        "level": 1
+      }
+    }
+  ],
+  "books": [
+    {
+      "id": "6232a894-e832-4ac7-8243-6c545c15c806",
+      "userId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
+      "isbn": "9788936442804",
+      "title": "푸른 사자 와니니",
+      "author": "이현 (지은이), 오윤화 (그림)",
+      "coverUrl": "https://image.aladin.co.kr/product/6232/31/cover200/8936442805_1.jpg",
+      "publisher": "창비",
+      "currentPage": 80,
+      "readingProgress": 80,
+      "createdAt": "2026-06-19T05:08:29.717Z",
+      "updatedAt": "2026-06-19T07:38:47.139Z",
+      "totalPages": 216
+    },
+    {
+      "id": "b56e18d7-e216-4402-aaee-a2313ceae628",
+      "userId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
+      "isbn": "9788934993711",
+      "title": "내 멋대로 아빠 뽑기",
+      "author": "최은옥 (지은이), 김무연 (그림)",
+      "coverUrl": "https://image.aladin.co.kr/product/11829/45/cover200/8934993715_1.jpg",
+      "publisher": "주니어김영사",
+      "currentPage": 64,
+      "readingProgress": 80,
+      "createdAt": "2026-06-19T05:18:27.077Z",
+      "updatedAt": "2026-06-19T07:53:54.752Z",
+      "totalPages": 96
+    },
+    {
+      "id": "29d039c8-351d-43fd-bb82-a912f8bd9ed2",
+      "userId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
+      "isbn": "9788954694391",
+      "title": "이상한 나라의 앨리스",
+      "author": "루이스 캐럴 (지은이), 존 테니얼 (그림), 김희진 (옮긴이)",
+      "coverUrl": "https://image.aladin.co.kr/product/32152/44/cover200/895469439x_1.jpg",
+      "publisher": "문학동네",
+      "currentPage": 0,
+      "readingProgress": 80,
+      "createdAt": "2026-06-19T07:55:35.403Z",
+      "updatedAt": "2026-06-19T07:55:42.297Z",
+      "totalPages": 192
+    }
+  ],
+  "reflections": [
+    {
+      "id": "bc8d26c7-513b-47fc-a4ae-851cb334dce8",
+      "userId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
+      "bookId": "b56e18d7-e216-4402-aaee-a2313ceae628",
+      "beforeReading": [
+        {
+          "question": "제목을 보고 어떤 생각이 들었나요?",
+          "answer": "질문: 아빠뽑기란 어떤 의미일까 / 짐작: 아빠를 내맘대로 뽑는다는 소리일까"
+        },
+        {
+          "question": "책속 그림을 훑어보며 떠오른 생각은?",
+          "answer": "질문: 놀이동산에서 무슨 일이 벌어지는 걸까 / 짐작: 친구랑 놀고 있다"
+        }
+      ],
+      "beforeReadingActivities": [
+        {
+          "key": "title",
+          "label": "제목을 보고 어떤 생각이 들었나요?",
+          "checked": true
+        },
+        {
+          "key": "toc",
+          "label": "차례를 훑어봤나요? 어떤 부분이 궁금했나요?",
+          "checked": false
+        },
+        {
+          "key": "pictures",
+          "label": "책속 그림을 훑어보며 떠오른 생각은?",
+          "checked": true
+        },
+        {
+          "key": "skim",
+          "label": "글을 가볍게 훑어보며 알 수 있었던 것은?",
+          "checked": false
+        }
+      ],
+      "beforeReadingPairs": [
+        {
+          "activityKey": "title",
+          "ask": "아빠뽑기란 어떤 의미일까",
+          "guess": "아빠를 내맘대로 뽑는다는 소리일까 "
+        },
+        {
+          "activityKey": "pictures",
+          "ask": "놀이동산에서 무슨 일이 벌어지는 걸까",
+          "guess": "친구랑 놀고 있다"
+        }
+      ],
+      "duringReading": [
+        {
+          "question": "책 내용에서 바로 답을 찾을 수 있는 질문과 답",
+          "answer": "질문: 주인공이 아빠뽑기를 알게 되는 장소는 어디인가요 / 짐작: 판타지랜드"
+        },
+        {
+          "question": "책 내용에서 답을 짐작하는 질문과 답",
+          "answer": "질문: 주인공은 왜 아빠를 뽑고 싶었을까요 / 짐작: 아빠가 싫어서"
+        }
+      ],
+      "association": "내 멋대로 아빠 뽑기는 아빠와 사이가 안좋을 때 생각나는 책이다",
+      "favoriteQuote": "원래 우리 아빠가 최고야!",
+      "reviewTitle": "",
+      "reviewReason": "",
+      "reviewContent": "",
+      "reviewImpressiveScene": "",
+      "reviewThoughts": "",
+      "createdAt": "2026-06-19T06:50:38.029Z",
+      "updatedAt": "2026-06-19T07:53:54.752Z",
+      "duringReadingActivities": [
+        {
+          "key": "fact",
+          "label": "책 내용에서 바로 답을 찾을 수 있는 질문과 답",
+          "checked": true
+        },
+        {
+          "key": "guess",
+          "label": "책 내용에서 답을 짐작하는 질문과 답",
+          "checked": true
+        },
+        {
+          "key": "feeling",
+          "label": "책을 읽고 떠오른 생각이나 느낌",
+          "checked": false
+        },
+        {
+          "key": "life",
+          "label": "자신의 삶과 관련지어 생각해 본 점",
+          "checked": false
+        }
+      ],
+      "duringReadingPairs": [
+        {
+          "activityKey": "fact",
+          "ask": "주인공이 아빠뽑기를 알게 되는 장소는 어디인가요",
+          "guess": "판타지랜드"
+        },
+        {
+          "activityKey": "guess",
+          "ask": "주인공은 왜 아빠를 뽑고 싶었을까요",
+          "guess": "아빠가 싫어서"
+        },
+        {
+          "activityKey": "feeling",
+          "ask": "",
+          "guess": ""
+        },
+        {
+          "activityKey": "life",
+          "ask": "",
+          "guess": ""
+        }
+      ]
+    },
+    {
+      "id": "f7604039-7158-4f48-bcb9-58ce60c26717",
+      "userId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
+      "bookId": "6232a894-e832-4ac7-8243-6c545c15c806",
+      "beforeReading": [],
+      "beforeReadingActivities": [
+        {
+          "key": "title",
+          "label": "제목을 보고 어떤 생각이 들었나요?",
+          "checked": false
+        },
+        {
+          "key": "toc",
+          "label": "차례를 훑어봤나요? 어떤 부분이 궁금했나요?",
+          "checked": false
+        },
+        {
+          "key": "pictures",
+          "label": "책속 그림을 훑어보며 떠오른 생각은?",
+          "checked": false
+        },
+        {
+          "key": "skim",
+          "label": "글을 가볍게 훑어보며 알 수 있었던 것은?",
+          "checked": false
+        }
+      ],
+      "beforeReadingPairs": [],
+      "duringReading": [],
+      "duringReadingActivities": [
+        {
+          "key": "fact",
+          "label": "책 내용에서 바로 답을 찾을 수 있는 질문과 답",
+          "checked": false
+        },
+        {
+          "key": "guess",
+          "label": "책 내용에서 답을 짐작하는 질문과 답",
+          "checked": false
+        },
+        {
+          "key": "feeling",
+          "label": "책을 읽고 떠오른 생각이나 느낌",
+          "checked": false
+        },
+        {
+          "key": "life",
+          "label": "자신의 삶과 관련지어 생각해 본 점",
+          "checked": false
+        }
+      ],
+      "duringReadingPairs": [],
+      "association": "",
+      "favoriteQuote": "",
+      "reviewTitle": "",
+      "reviewReason": "",
+      "reviewContent": "",
+      "reviewImpressiveScene": "",
+      "reviewThoughts": "",
+      "createdAt": "2026-06-19T07:38:47.139Z",
+      "updatedAt": "2026-06-19T07:38:47.139Z"
+    },
+    {
+      "id": "b5e6bc8c-36d7-447d-b112-8e1dee3e96dd",
+      "userId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
+      "bookId": "29d039c8-351d-43fd-bb82-a912f8bd9ed2",
+      "beforeReading": [],
+      "beforeReadingActivities": [
+        {
+          "key": "title",
+          "label": "제목을 보고 어떤 생각이 들었나요?",
+          "checked": false
+        },
+        {
+          "key": "toc",
+          "label": "차례를 훑어봤나요? 어떤 부분이 궁금했나요?",
+          "checked": false
+        },
+        {
+          "key": "pictures",
+          "label": "책속 그림을 훑어보며 떠오른 생각은?",
+          "checked": false
+        },
+        {
+          "key": "skim",
+          "label": "글을 가볍게 훑어보며 알 수 있었던 것은?",
+          "checked": false
+        }
+      ],
+      "beforeReadingPairs": [],
+      "duringReading": [],
+      "duringReadingActivities": [
+        {
+          "key": "fact",
+          "label": "책 내용에서 바로 답을 찾을 수 있는 질문과 답",
+          "checked": false
+        },
+        {
+          "key": "guess",
+          "label": "책 내용에서 답을 짐작하는 질문과 답",
+          "checked": false
+        },
+        {
+          "key": "feeling",
+          "label": "책을 읽고 떠오른 생각이나 느낌",
+          "checked": false
+        },
+        {
+          "key": "life",
+          "label": "자신의 삶과 관련지어 생각해 본 점",
+          "checked": false
+        }
+      ],
+      "duringReadingPairs": [],
+      "association": "",
+      "favoriteQuote": "앨리스!",
+      "reviewTitle": "",
+      "reviewReason": "",
+      "reviewContent": "",
+      "reviewImpressiveScene": "",
+      "reviewThoughts": "",
+      "createdAt": "2026-06-19T07:55:42.297Z",
+      "updatedAt": "2026-06-19T07:55:42.297Z"
+    }
+  ],
+  "chatRooms": [],
+  "chatMessages": [],
+  "chatMemberships": [],
+  "vocabulary": [
+    {
+      "id": "a53d662c-c3b8-4c64-8f26-b55d8dabbd66",
+      "userId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
+      "word": "우정",
+      "definition": "친구 사이의 정.",
+      "createdAt": "2026-06-17T07:25:14.233Z"
+    },
+    {
+      "id": "3933a075-cbe6-4b2a-8ccd-df5cad2d477c",
+      "userId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
+      "word": "밤",
+      "definition": "1. (명사) 해가 져서 어두워진 때부터 다음 날 해가 떠서 밝아지기 전까지의 동안.\n2. (명사) 밤나무의 열매. 가시가 많이 난 송이에 싸여 있고 갈색 겉껍질 안에 얇고 맛이 떫은 속껍질이 있으며, 날것으로 먹거나 굽거나 삶아서 먹는다.\n3. (명사) 놋쇠 물을 부어 놋그릇을 만들어 내는 틀.\n4. (명사) 송치가 어미 뱃속에서 섭취하고 자라는 영양물질.",
+      "createdAt": "2026-06-18T05:39:53.207Z"
+    }
+  ],
+  "sharedSentences": [
+    {
+      "id": "7cbcc7c0-9be3-4de6-adba-e324814d2fab",
+      "userId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
+      "username": "demo",
+      "word": "우정",
+      "sentence": "우정은 서로를 이해하는 마음이에요.",
+      "createdAt": "2026-06-17T07:20:49.539Z"
+    },
+    {
+      "id": "e0a2e66a-bf27-467d-bf37-b40c4fdd5ce7",
+      "userId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
+      "username": "demo",
+      "word": "우정",
+      "sentence": "우정이란",
+      "createdAt": "2026-06-17T07:25:30.265Z"
+    },
+    {
+      "id": "47a046bc-5e0d-405a-b9a6-bff3736bee89",
+      "userId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
+      "username": "demo",
+      "word": "",
+      "sentence": "",
+      "createdAt": "2026-06-17T07:25:34.312Z"
+    }
+  ]
+}

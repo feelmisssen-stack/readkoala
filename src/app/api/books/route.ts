@@ -34,7 +34,9 @@ export async function POST(request: Request) {
     author: body.author,
     coverUrl: body.coverUrl,
     publisher: body.publisher,
-    readingProgress: body.readingProgress ?? 0,
+    totalPages: body.totalPages > 0 ? body.totalPages : undefined,
+    currentPage: 0,
+    readingProgress: 0,
     createdAt: now,
     updatedAt: now,
   };

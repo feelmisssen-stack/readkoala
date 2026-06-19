@@ -32,8 +32,9 @@ yarn-error.log*
 .env*.local
 .env
 
-# data
-/data/*.json
+# user uploads
+/public/uploads/
+
 !data/.gitkeep
 
 # typescript

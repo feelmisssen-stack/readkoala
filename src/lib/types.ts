@@ -22,6 +22,8 @@ export interface Book {
   author?: string;
   coverUrl?: string;
   publisher?: string;
+  totalPages?: number;
+  currentPage?: number;
   readingProgress: number;
   createdAt: string;
   updatedAt: string;
@@ -32,12 +34,34 @@ export interface ReflectionQuestion {
   answer: string;
 }
 
+export interface BeforeReadingActivity {
+  key: string;
+  label: string;
+  checked: boolean;
+}
+
+export interface BeforeReadingPair {
+  activityKey?: string;
+  ask: string;
+  guess: string;
+}
+
+/** @deprecated Use ReflectionActivity */
+export type ReflectionActivity = BeforeReadingActivity;
+
+/** @deprecated Use ReflectionActivityPair */
+export type ReflectionActivityPair = BeforeReadingPair;
+
 export interface Reflection {
   id: string;
   userId: string;
   bookId: string;
   beforeReading: ReflectionQuestion[];
+  beforeReadingActivities?: BeforeReadingActivity[];
+  beforeReadingPairs?: BeforeReadingPair[];
   duringReading: ReflectionQuestion[];
+  duringReadingActivities?: BeforeReadingActivity[];
+  duringReadingPairs?: BeforeReadingPair[];
   association: string;
   favoriteQuote: string;
   reviewTitle: string;
@@ -45,6 +69,7 @@ export interface Reflection {
   reviewContent: string;
   reviewImpressiveScene: string;
   reviewThoughts: string;
+  memorableSceneImage?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -111,9 +136,18 @@ export type RandomFeedItem =
   | { type: "quote"; text: string; bookTitle: string; username: string }
   | { type: "shared_sentence"; text: string; word: string; username: string };
 
+export type CarouselMomentKind =
+  | "before_question"
+  | "during_question"
+  | "association"
+  | "quote"
+  | "memorable_scene";
+
 export interface CarouselMoment {
-  label: string;
-  text: string;
+  kind: CarouselMomentKind;
+  text?: string;
+  imageUrl?: string;
+  bookTitle?: string;
 }
 
 export interface CarouselFeedItem {
@@ -131,4 +165,5 @@ export interface BookSearchResult {
   author?: string;
   coverUrl?: string;
   publisher?: string;
+  totalPages?: number;
 }

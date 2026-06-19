@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { BookOpen, Plus, Trash2 } from "lucide-react";
-import { ReadingThermometer } from "@/components/ReadingThermometer";
+import { ReadingStatusBadge } from "@/components/ReadingStatusBadge";
 import { BookCoverPlaceholder } from "@/components/BookCoverPlaceholder";
 import { iconSm } from "@/lib/icon-styles";
 import type { Book } from "@/lib/types";
@@ -69,8 +69,7 @@ export default function BooksPage() {
       </div>
 
       <p className="rounded-koala bg-koala-secondary/15 px-4 py-3 text-sm text-koala-muted">
-        책을 누르면 독서 온도계를 조절하고, 읽기 전·중·후{" "}
-        <strong className="text-koala-primary">감상도 바로 쓸 수 있어요.</strong>
+        내가 읽은 책들을 기록하고 감상도 적어봅시다
       </p>
 
       {books.length === 0 ? (
@@ -107,7 +106,11 @@ export default function BooksPage() {
                   <h2 className="truncate font-bold text-koala-primary">{book.title}</h2>
                   {book.author && <p className="text-sm text-koala-muted">{book.author}</p>}
                   <div className="mt-2">
-                    <ReadingThermometer progress={book.readingProgress} />
+                    <ReadingStatusBadge
+                      readingProgress={book.readingProgress}
+                      currentPage={book.currentPage}
+                      totalPages={book.totalPages}
+                    />
                   </div>
                 </div>
               </Link>

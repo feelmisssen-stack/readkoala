@@ -1,4 +1,70 @@
 import type { CarouselFeedItem, CarouselMoment, Database, RandomFeedItem, Reflection } from "./types";
+import {
+  BEFORE_READING_QUESTIONS,
+  DURING_READING_QUESTIONS,
+  stripBookTitleFromAssociation,
+} from "./reflection-templates";
+
+const READING_PROMPT_LABELS = new Set([
+  ...BEFORE_READING_QUESTIONS.map((q) => q.question),
+  ...DURING_READING_QUESTIONS.map((q) => q.question),
+]);
+
+function extractUserAsk(answer: string): string | null {
+  const match = answer.match(/질문:\s*([^/]+)/);
+  return match?.[1]?.trim() || null;
+}
+
+/** 읽기 전/중 폼의 「질문하기」 칸(ask)에 적은 내용만 수집 */
+function collectUserAsks(
+  pairs: Reflection["beforeReadingPairs"],
+  activities: Reflection["beforeReadingActivities"],
+  legacy: Reflection["beforeReading"]
+): string[] {
+  const asks: string[] = [];
+
+  for (const pair of pairs ?? []) {
+    const ask = pair.ask?.trim();
+    if (!ask) continue;
+    if (pair.activityKey) {
+      const activity = activities?.find((a) => a.key === pair.activityKey);
+      if (activity && !activity.checked) continue;
+    }
+    asks.push(ask);
+  }
+  if (asks.length > 0) return asks;
+
+  for (const entry of legacy) {
+    const fromAnswer = entry.answer?.trim() ? extractUserAsk(entry.answer) : null;
+    if (fromAnswer) {
+      asks.push(fromAnswer);
+      continue;
+    }
+    const q = entry.question?.trim();
+    if (
+      q &&
+      entry.answer?.trim() &&
+      !READING_PROMPT_LABELS.has(q) &&
+      !entry.answer.includes("질문:")
+    ) {
+      asks.push(q);
+    }
+  }
+
+  return asks;
+}
+
+function addReadingMoments(
+  moments: CarouselMoment[],
+  kind: "before_question" | "during_question",
+  pairs: Reflection["beforeReadingPairs"],
+  activities: Reflection["beforeReadingActivities"],
+  legacy: Reflection["beforeReading"]
+) {
+  for (const ask of collectUserAsks(pairs, activities, legacy)) {
+    moments.push({ kind, text: ask });
+  }
+}
 
 export function buildRandomFeed(db: Database): RandomFeedItem[] {
   const items: RandomFeedItem[] = [];
@@ -10,28 +76,24 @@ export function buildRandomFeed(db: Database): RandomFeedItem[] {
     const username = userMap.get(r.userId) || "친구";
     const bookTitle = book?.title || "책";
 
-    for (const q of r.beforeReading) {
-      if (q.answer?.trim()) {
-        items.push({
-          type: "before_question",
-          text: q.question ? `${q.question} → ${q.answer}` : q.answer,
-          bookTitle,
-          username,
-        });
-      }
+    for (const ask of collectUserAsks(
+      r.beforeReadingPairs,
+      r.beforeReadingActivities,
+      r.beforeReading
+    )) {
+      items.push({ type: "before_question", text: ask, bookTitle, username });
     }
-    for (const q of r.duringReading) {
-      if (q.answer?.trim()) {
-        items.push({
-          type: "during_question",
-          text: q.question ? `${q.question} → ${q.answer}` : q.answer,
-          bookTitle,
-          username,
-        });
-      }
+    for (const ask of collectUserAsks(
+      r.duringReadingPairs,
+      r.duringReadingActivities,
+      r.duringReading
+    )) {
+      items.push({ type: "during_question", text: ask, bookTitle, username });
     }
     if (r.association?.trim()) {
-      items.push({ type: "association", text: r.association, bookTitle, username });
+      const suffix = stripBookTitleFromAssociation(bookTitle, r.association);
+      const text = suffix.trim() || r.association.trim();
+      items.push({ type: "association", text, bookTitle, username });
     }
     if (r.favoriteQuote?.trim()) {
       items.push({ type: "quote", text: r.favoriteQuote, bookTitle, username });
@@ -68,39 +130,36 @@ export function getReflectionSnippet(reflection: Reflection): string[] {
   return snippets;
 }
 
-function buildMomentsFromReflection(reflection: Reflection): CarouselMoment[] {
+function buildMomentsFromReflection(reflection: Reflection, bookTitle?: string): CarouselMoment[] {
   const moments: CarouselMoment[] = [];
 
-  for (const q of reflection.beforeReading) {
-    if (q.answer?.trim()) {
-      moments.push({
-        label: q.question?.trim() || "읽기 전 생각",
-        text: q.answer.trim(),
-      });
-    }
-  }
-  for (const q of reflection.duringReading) {
-    if (q.answer?.trim()) {
-      moments.push({
-        label: q.question?.trim() || "읽는 중 생각",
-        text: q.answer.trim(),
-      });
-    }
-  }
+  addReadingMoments(
+    moments,
+    "before_question",
+    reflection.beforeReadingPairs,
+    reflection.beforeReadingActivities,
+    reflection.beforeReading
+  );
+  addReadingMoments(
+    moments,
+    "during_question",
+    reflection.duringReadingPairs,
+    reflection.duringReadingActivities,
+    reflection.duringReading
+  );
+
   if (reflection.association?.trim()) {
-    moments.push({ label: "연상하는 책", text: reflection.association.trim() });
+    const suffix = bookTitle
+      ? stripBookTitleFromAssociation(bookTitle, reflection.association)
+      : reflection.association.trim();
+    const text = suffix.trim() || reflection.association.trim();
+    moments.push({ kind: "association", text });
   }
   if (reflection.favoriteQuote?.trim()) {
-    moments.push({ label: "책 속 한마디", text: reflection.favoriteQuote.trim() });
+    moments.push({ kind: "quote", text: reflection.favoriteQuote.trim() });
   }
-  if (reflection.reviewContent?.trim()) {
-    moments.push({ label: "감상", text: reflection.reviewContent.trim() });
-  }
-  if (reflection.reviewImpressiveScene?.trim()) {
-    moments.push({ label: "인상 깊은 장면", text: reflection.reviewImpressiveScene.trim() });
-  }
-  if (reflection.reviewThoughts?.trim()) {
-    moments.push({ label: "읽고 난 생각", text: reflection.reviewThoughts.trim() });
+  if (reflection.memorableSceneImage?.trim()) {
+    moments.push({ kind: "memorable_scene", imageUrl: reflection.memorableSceneImage.trim() });
   }
 
   return moments;
@@ -120,7 +179,7 @@ export function buildCarouselFeed(db: Database, excludeUserId?: string): Carouse
     if (excludeUserId && reflection.userId === excludeUserId) continue;
 
     const book = bookMap.get(reflection.bookId);
-    const moments = buildMomentsFromReflection(reflection);
+    const moments = buildMomentsFromReflection(reflection, book?.title);
     if (!book && moments.length === 0) continue;
 
     reflectedBookIds.add(reflection.bookId);
@@ -164,11 +223,8 @@ export function buildPersonalMoments(db: Database, userId: string): CarouselMome
   const moments: CarouselMoment[] = [];
   for (const reflection of reflections) {
     const bookTitle = bookMap.get(reflection.bookId)?.title;
-    for (const moment of buildMomentsFromReflection(reflection)) {
-      moments.push({
-        label: bookTitle ? `${bookTitle} · ${moment.label}` : moment.label,
-        text: moment.text,
-      });
+    for (const moment of buildMomentsFromReflection(reflection, bookTitle)) {
+      moments.push({ ...moment, bookTitle });
     }
   }
   return moments;

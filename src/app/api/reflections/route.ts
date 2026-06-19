@@ -63,7 +63,11 @@ export async function POST(request: Request) {
   const reflection = existing
     ? {
         ...existing,
+        beforeReadingActivities: body.beforeReadingActivities ?? existing.beforeReadingActivities,
+        beforeReadingPairs: body.beforeReadingPairs ?? existing.beforeReadingPairs,
         beforeReading: body.beforeReading ?? existing.beforeReading,
+        duringReadingActivities: body.duringReadingActivities ?? existing.duringReadingActivities,
+        duringReadingPairs: body.duringReadingPairs ?? existing.duringReadingPairs,
         duringReading: body.duringReading ?? existing.duringReading,
         association: body.association ?? existing.association,
         favoriteQuote: body.favoriteQuote ?? existing.favoriteQuote,
@@ -79,7 +83,11 @@ export async function POST(request: Request) {
         userId: session.userId,
         bookId: body.bookId,
         beforeReading: body.beforeReading || [],
+        beforeReadingActivities: body.beforeReadingActivities || [],
+        beforeReadingPairs: body.beforeReadingPairs || [],
         duringReading: body.duringReading || [],
+        duringReadingActivities: body.duringReadingActivities || [],
+        duringReadingPairs: body.duringReadingPairs || [],
         association: body.association || "",
         favoriteQuote: body.favoriteQuote || "",
         reviewTitle: body.reviewTitle || "",
