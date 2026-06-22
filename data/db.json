@@ -7,9 +7,22 @@
       "isAdmin": true,
       "createdAt": "2026-06-17T07:20:49.539Z",
       "stats": {
-        "booksRead": 0,
-        "totalChars": 606,
+        "booksRead": 2,
+        "totalChars": 2864,
         "chatParticipations": 0,
+        "level": 1
+      }
+    },
+    {
+      "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "username": "friend",
+      "passwordHash": "$2b$10$B/xUVSU9G9AU6hejte.ab.0ulBimnyy8yaMSlnFqdk6aNhViiWo9i",
+      "isAdmin": false,
+      "createdAt": "2026-06-22T08:00:00.000Z",
+      "stats": {
+        "booksRead": 0,
+        "totalChars": 0,
+        "chatParticipations": 1,
         "level": 1
       }
     }
@@ -37,11 +50,13 @@
       "author": "최은옥 (지은이), 김무연 (그림)",
       "coverUrl": "https://image.aladin.co.kr/product/11829/45/cover200/8934993715_1.jpg",
       "publisher": "주니어김영사",
-      "currentPage": 64,
-      "readingProgress": 80,
+      "currentPage": 96,
+      "readingProgress": 100,
       "createdAt": "2026-06-19T05:18:27.077Z",
-      "updatedAt": "2026-06-19T07:53:54.752Z",
-      "totalPages": 96
+      "updatedAt": "2026-06-22T07:18:03.934Z",
+      "totalPages": 96,
+      "readingStartedAt": "2026-06-22T07:18:03.897Z",
+      "finishedAt": "2026-06-22T07:18:03.897Z"
     },
     {
       "id": "29d039c8-351d-43fd-bb82-a912f8bd9ed2",
@@ -51,11 +66,55 @@
       "author": "루이스 캐럴 (지은이), 존 테니얼 (그림), 김희진 (옮긴이)",
       "coverUrl": "https://image.aladin.co.kr/product/32152/44/cover200/895469439x_1.jpg",
       "publisher": "문학동네",
+      "currentPage": 192,
+      "readingProgress": 100,
+      "createdAt": "2026-06-19T07:55:35.403Z",
+      "updatedAt": "2026-06-22T02:03:58.781Z",
+      "totalPages": 192
+    },
+    {
+      "id": "c4e01bc0-0003-4b00-8000-000000000003",
+      "userId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
+      "isbn": "9788915031999",
+      "title": "오즈의 마법사",
+      "author": "L. 프랭크 바움 (지은이), 김희진 (옮긴이)",
+      "coverUrl": "https://image.aladin.co.kr/product/42/79/cover200/8915031997_2.jpg",
+      "publisher": "삼성출판사",
+      "currentPage": 192,
+      "readingProgress": 80,
+      "createdAt": "2026-06-22T06:20:00.000Z",
+      "updatedAt": "2026-06-22T05:44:52.435Z",
+      "totalPages": 256
+    },
+    {
+      "id": "f419cdd9-d3ba-4e71-9022-6900c1f331db",
+      "userId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
+      "isbn": "9788949121598",
+      "title": "어느 날 구두에게 생긴 일",
+      "author": "황선미 (지은이), 신지수 (그림)",
+      "coverUrl": "https://image.aladin.co.kr/product/4646/76/cover200/894912159x_1.jpg",
+      "publisher": "비룡소",
+      "currentPage": 50,
+      "readingProgress": 80,
+      "createdAt": "2026-06-22T07:04:21.888Z",
+      "updatedAt": "2026-06-22T07:51:47.967Z",
+      "totalPages": 128,
+      "readingStartedAt": "2026-06-22T07:06:55.445Z"
+    },
+    {
+      "id": "10c8c7e6-d8b5-49bb-a4fc-40dff0a3d6ab",
+      "userId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "isbn": "9788949121840",
+      "title": "신통방통 홈쇼핑 - 2018년 제24회 황금도깨비상 수상작",
+      "author": "이분희 (지은이), 이명애 (그림)",
+      "coverUrl": "https://image.aladin.co.kr/product/18599/25/cover200/8949121840_1.jpg",
+      "publisher": "비룡소",
       "currentPage": 0,
       "readingProgress": 80,
-      "createdAt": "2026-06-19T07:55:35.403Z",
-      "updatedAt": "2026-06-19T07:55:42.297Z",
-      "totalPages": 192
+      "createdAt": "2026-06-22T07:47:29.854Z",
+      "updatedAt": "2026-06-22T07:48:10.693Z",
+      "totalPages": 232,
+      "readingStartedAt": "2026-06-22T07:47:40.401Z"
     }
   ],
   "reflections": [
@@ -125,7 +184,7 @@
       "reviewImpressiveScene": "",
       "reviewThoughts": "",
       "createdAt": "2026-06-19T06:50:38.029Z",
-      "updatedAt": "2026-06-19T07:53:54.752Z",
+      "updatedAt": "2026-06-22T06:47:08.432Z",
       "duringReadingActivities": [
         {
           "key": "fact",
@@ -169,7 +228,8 @@
           "ask": "",
           "guess": ""
         }
-      ]
+      ],
+      "memorableSceneImage": "/uploads/memorable-scenes/ff1a9f0a-02ff-45b1-9787-d892744ec309-b56e18d7-e216-4402-aaee-a2313ceae628.png"
     },
     {
       "id": "f7604039-7158-4f48-bcb9-58ce60c26717",
@@ -293,12 +353,320 @@
       "reviewImpressiveScene": "",
       "reviewThoughts": "",
       "createdAt": "2026-06-19T07:55:42.297Z",
-      "updatedAt": "2026-06-19T07:55:42.297Z"
+      "updatedAt": "2026-06-22T05:30:37.440Z"
+    },
+    {
+      "id": "ref01bc0-0003-4b00-8000-000000000003",
+      "userId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
+      "bookId": "c4e01bc0-0003-4b00-8000-000000000003",
+      "beforeReading": [],
+      "beforeReadingActivities": [
+        {
+          "key": "title",
+          "label": "제목을 보고 어떤 생각이 들었나요?",
+          "checked": false
+        },
+        {
+          "key": "toc",
+          "label": "차례를 훑어봤나요? 어떤 부분이 궁금했나요?",
+          "checked": false
+        },
+        {
+          "key": "pictures",
+          "label": "책속 그림을 훑어보며 떠오른 생각은?",
+          "checked": false
+        },
+        {
+          "key": "skim",
+          "label": "글을 가볍게 훑어보며 알 수 있었던 것은?",
+          "checked": false
+        }
+      ],
+      "beforeReadingPairs": [],
+      "duringReading": [
+        {
+          "question": "책 내용에서 바로 답을 찾을 수 있는 질문과 답",
+          "answer": "질문: 도로시가 오즈를 만나러 간 도시 이름은 / 짐작: 에메랄드 시티"
+        },
+        {
+          "question": "책 내용에서 답을 짐작하는 질문과 답",
+          "answer": "질문: 마법사는 진짜 마법을 쓸 수 있을까 / 짐작: 속임수일 것 같아"
+        },
+        {
+          "question": "책을 읽고 떠오른 생각이나 느낌",
+          "answer": "질문: 왜 친구들이 도로시를 도와줄까 / 짐작: 함께 가면 무서움이 줄어들 것 같아"
+        }
+      ],
+      "duringReadingActivities": [
+        {
+          "key": "fact",
+          "label": "책 내용에서 바로 답을 찾을 수 있는 질문과 답",
+          "checked": true
+        },
+        {
+          "key": "guess",
+          "label": "책 내용에서 답을 짐작하는 질문과 답",
+          "checked": true
+        },
+        {
+          "key": "feeling",
+          "label": "책을 읽고 떠오른 생각이나 느낌",
+          "checked": true
+        },
+        {
+          "key": "life",
+          "label": "자신의 삶과 관련지어 생각해 본 점",
+          "checked": false
+        }
+      ],
+      "duringReadingPairs": [
+        {
+          "activityKey": "fact",
+          "ask": "도로시가 오즈를 만나러 간 도시 이름은",
+          "guess": "에메랄드 시티"
+        },
+        {
+          "activityKey": "guess",
+          "ask": "마법사는 진짜 마법을 쓸 수 있을까",
+          "guess": "속임수일 것 같아"
+        },
+        {
+          "activityKey": "feeling",
+          "ask": "왜 친구들이 도로시를 도와줄까",
+          "guess": "함께 가면 무서움이 줄어들 것 같아"
+        },
+        {
+          "activityKey": "life",
+          "ask": "",
+          "guess": ""
+        }
+      ],
+      "association": "",
+      "favoriteQuote": "집에 가는 길은 항상 발밑에 있단다",
+      "reviewTitle": "무지개 너머로 간 도로시",
+      "reviewReason": "친구가 재미있다고 해서 빌려 읽었어요.",
+      "reviewContent": "",
+      "reviewImpressiveScene": "",
+      "reviewThoughts": "",
+      "createdAt": "2026-06-22T06:20:00.000Z",
+      "updatedAt": "2026-06-22T05:44:52.435Z"
+    },
+    {
+      "id": "dd4dda0b-faab-4880-8c63-966e59de9a2e",
+      "userId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
+      "bookId": "f419cdd9-d3ba-4e71-9022-6900c1f331db",
+      "beforeReading": [],
+      "beforeReadingActivities": [
+        {
+          "key": "title",
+          "label": "제목을 보고 어떤 생각이 들었나요?",
+          "checked": false
+        },
+        {
+          "key": "toc",
+          "label": "차례를 훑어봤나요? 어떤 부분이 궁금했나요?",
+          "checked": false
+        },
+        {
+          "key": "pictures",
+          "label": "책속 그림을 훑어보며 떠오른 생각은?",
+          "checked": false
+        },
+        {
+          "key": "skim",
+          "label": "글을 가볍게 훑어보며 알 수 있었던 것은?",
+          "checked": false
+        }
+      ],
+      "beforeReadingPairs": [],
+      "duringReading": [],
+      "duringReadingActivities": [
+        {
+          "key": "fact",
+          "label": "책 내용에서 바로 답을 찾을 수 있는 질문과 답",
+          "checked": false
+        },
+        {
+          "key": "guess",
+          "label": "책 내용에서 답을 짐작하는 질문과 답",
+          "checked": false
+        },
+        {
+          "key": "feeling",
+          "label": "책을 읽고 떠오른 생각이나 느낌",
+          "checked": false
+        },
+        {
+          "key": "life",
+          "label": "자신의 삶과 관련지어 생각해 본 점",
+          "checked": false
+        }
+      ],
+      "duringReadingPairs": [
+        {
+          "activityKey": "fact",
+          "ask": "",
+          "guess": ""
+        }
+      ],
+      "association": "어느 날 구두에게 생긴 일은 내가 친구에게 상처를 주었을 때 생각나는 책이다",
+      "favoriteQuote": "나는 누군가의 단 한 사람이 될 수 있을지.",
+      "reviewTitle": "",
+      "reviewReason": "",
+      "reviewContent": "",
+      "reviewImpressiveScene": "",
+      "reviewThoughts": "",
+      "createdAt": "2026-06-22T07:06:55.445Z",
+      "updatedAt": "2026-06-22T07:51:47.967Z"
+    },
+    {
+      "id": "b1576c19-e67b-4b73-9512-066e10335f96",
+      "userId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "bookId": "10c8c7e6-d8b5-49bb-a4fc-40dff0a3d6ab",
+      "beforeReading": [
+        {
+          "question": "책속 그림을 훑어보며 떠오른 생각은?",
+          "answer": "질문: 주인공은 홈쇼핑에서 어떤 물건을 사게 될까요 / 짐작: 마법의 물건"
+        }
+      ],
+      "beforeReadingActivities": [
+        {
+          "key": "title",
+          "label": "제목을 보고 어떤 생각이 들었나요?",
+          "checked": false
+        },
+        {
+          "key": "toc",
+          "label": "차례를 훑어봤나요? 어떤 부분이 궁금했나요?",
+          "checked": false
+        },
+        {
+          "key": "pictures",
+          "label": "책속 그림을 훑어보며 떠오른 생각은?",
+          "checked": true
+        },
+        {
+          "key": "skim",
+          "label": "글을 가볍게 훑어보며 알 수 있었던 것은?",
+          "checked": false
+        }
+      ],
+      "beforeReadingPairs": [
+        {
+          "activityKey": "title",
+          "ask": "",
+          "guess": ""
+        },
+        {
+          "activityKey": "pictures",
+          "ask": "주인공은 홈쇼핑에서 어떤 물건을 사게 될까요",
+          "guess": "마법의 물건"
+        }
+      ],
+      "duringReading": [],
+      "duringReadingActivities": [
+        {
+          "key": "fact",
+          "label": "책 내용에서 바로 답을 찾을 수 있는 질문과 답",
+          "checked": false
+        },
+        {
+          "key": "guess",
+          "label": "책 내용에서 답을 짐작하는 질문과 답",
+          "checked": false
+        },
+        {
+          "key": "feeling",
+          "label": "책을 읽고 떠오른 생각이나 느낌",
+          "checked": false
+        },
+        {
+          "key": "life",
+          "label": "자신의 삶과 관련지어 생각해 본 점",
+          "checked": false
+        }
+      ],
+      "duringReadingPairs": [],
+      "association": "",
+      "favoriteQuote": "",
+      "reviewTitle": "",
+      "reviewReason": "",
+      "reviewContent": "",
+      "reviewImpressiveScene": "",
+      "reviewThoughts": "",
+      "createdAt": "2026-06-22T07:47:40.401Z",
+      "updatedAt": "2026-06-22T07:48:10.693Z"
     }
   ],
-  "chatRooms": [],
-  "chatMessages": [],
-  "chatMemberships": [],
+  "chatRooms": [
+    {
+      "id": "92f1c46b-c429-45d4-9946-154f5bb91311",
+      "bookId": "c4e01bc0-0003-4b00-8000-000000000003",
+      "bookTitle": "오즈의 마법사",
+      "creatorId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
+      "name": "오즈에게 물어봐요",
+      "status": "approved",
+      "createdAt": "2026-06-22T05:50:20.421Z"
+    }
+  ],
+  "chatMessages": [
+    {
+      "id": "dbe8472a-4486-4303-b7d5-4b499ef9fb95",
+      "roomId": "92f1c46b-c429-45d4-9946-154f5bb91311",
+      "userId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
+      "username": "demo",
+      "content": "오즈에게 물어보고 싶은 말을 써 봅시다",
+      "createdAt": "2026-06-22T05:50:34.961Z"
+    },
+    {
+      "id": "80de4a0c-cddc-479f-8c62-94c7845eee85",
+      "roomId": "92f1c46b-c429-45d4-9946-154f5bb91311",
+      "userId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
+      "username": "demo",
+      "content": "오즈는 왜 거짓말을 했을까요",
+      "createdAt": "2026-06-22T05:50:44.245Z"
+    },
+    {
+      "id": "cec524cc-a131-4c7f-b831-c4369f74ebbe",
+      "roomId": "92f1c46b-c429-45d4-9946-154f5bb91311",
+      "userId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
+      "username": "demo",
+      "content": "오즈는 어느 생각이었을까요",
+      "createdAt": "2026-06-22T05:52:15.276Z"
+    },
+    {
+      "id": "43c30142-4af4-47a8-8bae-07fa8e2ac387",
+      "roomId": "92f1c46b-c429-45d4-9946-154f5bb91311",
+      "userId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
+      "username": "demo",
+      "content": "오즈에게 말하고 싶은 것이 있나요",
+      "createdAt": "2026-06-22T06:58:52.040Z"
+    },
+    {
+      "id": "9e87e1b5-8d75-4434-913b-1441d79e71e0",
+      "roomId": "92f1c46b-c429-45d4-9946-154f5bb91311",
+      "userId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "username": "friend",
+      "content": "오즈가 새로운 나라에서 적응하기 위해 그랬을 것 같아요",
+      "createdAt": "2026-06-22T07:47:14.648Z"
+    }
+  ],
+  "chatMemberships": [
+    {
+      "id": "e1743a0f-854f-46c2-b023-16426ed7e2ba",
+      "roomId": "92f1c46b-c429-45d4-9946-154f5bb91311",
+      "userId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
+      "status": "approved",
+      "createdAt": "2026-06-22T05:50:20.421Z"
+    },
+    {
+      "id": "b119e8cf-ff56-4d4d-ab39-e2bf99eaf6b3",
+      "roomId": "92f1c46b-c429-45d4-9946-154f5bb91311",
+      "userId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "status": "approved",
+      "createdAt": "2026-06-22T07:24:09.359Z"
+    }
+  ],
   "vocabulary": [
     {
       "id": "a53d662c-c3b8-4c64-8f26-b55d8dabbd66",
@@ -308,11 +676,32 @@
       "createdAt": "2026-06-17T07:25:14.233Z"
     },
     {
-      "id": "3933a075-cbe6-4b2a-8ccd-df5cad2d477c",
+      "id": "f5ba3955-65ec-48e9-b115-de1605f859a4",
       "userId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
-      "word": "밤",
-      "definition": "1. (명사) 해가 져서 어두워진 때부터 다음 날 해가 떠서 밝아지기 전까지의 동안.\n2. (명사) 밤나무의 열매. 가시가 많이 난 송이에 싸여 있고 갈색 겉껍질 안에 얇고 맛이 떫은 속껍질이 있으며, 날것으로 먹거나 굽거나 삶아서 먹는다.\n3. (명사) 놋쇠 물을 부어 놋그릇을 만들어 내는 틀.\n4. (명사) 송치가 어미 뱃속에서 섭취하고 자라는 영양물질.",
-      "createdAt": "2026-06-18T05:39:53.207Z"
+      "word": "시나브로",
+      "definition": "(부사) 모르는 사이에 조금씩 조금씩.",
+      "createdAt": "2026-06-22T06:14:14.180Z"
+    },
+    {
+      "id": "4323d0ef-4f12-4208-a708-0bfb725d3a77",
+      "userId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
+      "word": "알근달근-하다",
+      "definition": "(형용사) 맛이 조금 매우면서 달짝지근하다.",
+      "createdAt": "2026-06-22T06:30:17.985Z"
+    },
+    {
+      "id": "5ff7e725-192e-45ce-a7d2-075c45a75490",
+      "userId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
+      "word": "포유-류",
+      "definition": "(명사) 포유강의 동물을 일상적으로 통틀어 이르는 말.",
+      "createdAt": "2026-06-22T06:38:15.640Z"
+    },
+    {
+      "id": "bccb833c-a1b3-471c-88f3-bbafc37eebc9",
+      "userId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "word": "눈",
+      "definition": "1. (명사) 빛의 자극을 받아 물체를 볼 수 있는 감각 기관. 척추동물의 경우 안구·시각 신경 따위로 되어 있어, 외계에서 들어온 빛은 각막·눈동자·수정체를 지나 유리체를 거쳐 망막에 이르는데, 그 사이에 굴광체(屈光體)에 의하여 굴절되어 망막에 상을 맺는다.\n2. (명사) 자·저울·온도계 따위에 표시하여 길이·양(量)·도수(度數) 따위를 나타내는 금.\n3. (명사) 그물 따위에서 코와 코를 이어 이룬 구멍.\n4. (명사) 대기 중의 수증기가 찬 기운을 만나 얼어서 땅 위로 떨어지는 얼음의 결정체.\n5. (명사) 새로 막 터져 돋아나려는 초목의 싹. 꽃눈, 잎눈 따위이다.",
+      "createdAt": "2026-06-22T07:25:25.177Z"
     }
   ],
   "sharedSentences": [
@@ -325,20 +714,20 @@
       "createdAt": "2026-06-17T07:20:49.539Z"
     },
     {
-      "id": "e0a2e66a-bf27-467d-bf37-b40c4fdd5ce7",
+      "id": "da410c53-77fd-4f17-828f-940da87870b6",
       "userId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
       "username": "demo",
-      "word": "우정",
-      "sentence": "우정이란",
-      "createdAt": "2026-06-17T07:25:30.265Z"
+      "word": "시나브로",
+      "sentence": "발표 연습을 많이 했더니 시나브로 실력이 늘었다",
+      "createdAt": "2026-06-22T06:19:05.950Z"
     },
     {
-      "id": "47a046bc-5e0d-405a-b9a6-bff3736bee89",
+      "id": "201e307e-5ea9-4f0d-a9ba-7c8cfda78873",
       "userId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
       "username": "demo",
-      "word": "",
-      "sentence": "",
-      "createdAt": "2026-06-17T07:25:34.312Z"
+      "word": "알근달근하다",
+      "sentence": "떡볶이가 알근달근하다",
+      "createdAt": "2026-06-22T06:30:39.363Z"
     }
   ]
 }

@@ -10,7 +10,7 @@ interface ChatRoom {
   id: string;
   bookTitle: string;
   name: string;
-  memberCount: number;
+  participants: string[];
   membership?: { status: string };
 }
 
@@ -80,7 +80,7 @@ export default function ChatPage() {
         <h1 className="text-2xl font-bold text-koala-primary">도란뜰</h1>
         <button type="button" onClick={() => setShowCreate(!showCreate)} className="koala-btn-primary inline-flex items-center gap-1.5 text-sm">
           <Plus className={iconSm} aria-hidden />
-          방 만들기
+          이야기뜰 만들기
         </button>
       </div>
 
@@ -100,7 +100,7 @@ export default function ChatPage() {
           </select>
           <input
             className="koala-input"
-            placeholder="방 이름 (선택)"
+            placeholder="이야기 주제"
             value={newRoomName}
             onChange={(e) => setNewRoomName(e.target.value)}
           />
@@ -145,7 +145,7 @@ export default function ChatPage() {
 
       {rooms.length === 0 ? (
         <div className="koala-card p-8 text-center text-koala-muted">
-          아직 열린 이야기방이 없어요.
+          아직 열린 이야기뜰이 없어요.
         </div>
       ) : (
         <div className="space-y-3">
@@ -161,11 +161,12 @@ export default function ChatPage() {
                   <BookOpen className={iconSm} aria-hidden />
                   {room.bookTitle}
                 </span>
-                <span className="inline-flex items-center gap-1">
-                  <Users className={iconSm} aria-hidden />
-                  {room.memberCount}명
-                </span>
-                {room.membership?.status === "pending" && <span>승인 대기 중</span>}
+                {room.participants.length > 0 && (
+                  <span className="inline-flex items-center gap-1">
+                    <Users className={iconSm} aria-hidden />
+                    {room.participants.join(", ")} 참여
+                  </span>
+                )}
               </p>
             </Link>
           ))}

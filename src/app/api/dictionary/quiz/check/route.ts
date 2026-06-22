@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import { readDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
 
+function normalizeQuizWord(input: unknown): string {
+  return String(input ?? "")
+    .trim()
+    .replaceAll("-", "")
+    .replaceAll(" ", "");
+}
+
 export async function POST(request: Request) {
   const session = await getSession();
   if (!session.userId) {
@@ -15,5 +22,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ correct: false });
   }
 
-  return NextResponse.json({ correct: word.word === answer?.trim() });
+  const expected = normalizeQuizWord(word.word);
+  const given = normalizeQuizWord(answer);
+  return NextResponse.json({ correct: expected.length > 0 && expected === given });
 }

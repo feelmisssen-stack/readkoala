@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { readDb, updateDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { validateContent } from "@/lib/content-filter";
+import { CHAT_MESSAGE_LIMIT_PER_USER, countUserMessagesInRoom, ensureApprovedMembership } from "@/lib/chat";
 import { v4 as uuid } from "uuid";
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -11,25 +12,28 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }
 
   const { id } = await params;
-  const db = readDb();
-
-  const membership = db.chatMemberships.find(
-    (m) => m.roomId === id && m.userId === session.userId && m.status === "approved"
-  );
-  const isCreator = db.chatRooms.find((r) => r.id === id)?.creatorId === session.userId;
-  if (!membership && !session.isAdmin && !isCreator) {
-    return NextResponse.json({ error: "참여 승인 후 입장할 수 있어요." }, { status: 403 });
+  const room = readDb().chatRooms.find((r) => r.id === id && r.status === "approved");
+  if (!room) {
+    return NextResponse.json({ error: "방을 찾을 수 없어요." }, { status: 404 });
   }
 
-  const messages = db.chatMessages
+  updateDb((d) => {
+    ensureApprovedMembership(d, id, session.userId!);
+  });
+
+  const messages = readDb().chatMessages
     .filter((m) => m.roomId === id)
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
 
-  const pendingMembers = session.isAdmin
-    ? db.chatMemberships.filter((m) => m.roomId === id && m.status === "pending")
-    : [];
+  const myMessageCount = countUserMessagesInRoom(messages, id, session.userId);
 
-  return NextResponse.json({ messages, pendingMembers });
+  return NextResponse.json({
+    messages,
+    currentUserId: session.userId,
+    currentUsername: session.username ?? null,
+    myMessageCount,
+    messageLimit: CHAT_MESSAGE_LIMIT_PER_USER,
+  });
 }
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -46,11 +50,21 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   const db = readDb();
-  const membership = db.chatMemberships.find(
-    (m) => m.roomId === id && m.userId === session.userId && m.status === "approved"
-  );
-  if (!membership) {
-    return NextResponse.json({ error: "참여 승인 후 메시지를 보낼 수 있어요." }, { status: 403 });
+  const room = db.chatRooms.find((r) => r.id === id && r.status === "approved");
+  if (!room) {
+    return NextResponse.json({ error: "방을 찾을 수 없어요." }, { status: 404 });
+  }
+
+  updateDb((d) => {
+    ensureApprovedMembership(d, id, session.userId!);
+  });
+
+  const myMessageCount = countUserMessagesInRoom(readDb().chatMessages, id, session.userId);
+  if (myMessageCount >= CHAT_MESSAGE_LIMIT_PER_USER) {
+    return NextResponse.json(
+      { error: `이 이야기뜰에는 최대 ${CHAT_MESSAGE_LIMIT_PER_USER}번까지만 글을 남길 수 있어요.` },
+      { status: 400 }
+    );
   }
 
   const message = {

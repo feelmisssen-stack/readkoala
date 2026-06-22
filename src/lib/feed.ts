@@ -185,6 +185,7 @@ export function buildCarouselFeed(db: Database, excludeUserId?: string): Carouse
     reflectedBookIds.add(reflection.bookId);
     items.push({
       id: reflection.id,
+      bookId: reflection.bookId,
       username: userMap.get(reflection.userId) || "친구",
       bookTitle: book?.title || "책",
       bookAuthor: book?.author,
@@ -203,6 +204,7 @@ export function buildCarouselFeed(db: Database, excludeUserId?: string): Carouse
 
     items.push({
       id: `book-${book.id}`,
+      bookId: book.id,
       username: userMap.get(book.userId) || "친구",
       bookTitle: book.title,
       bookAuthor: book.author,

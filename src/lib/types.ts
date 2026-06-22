@@ -25,6 +25,8 @@ export interface Book {
   totalPages?: number;
   currentPage?: number;
   readingProgress: number;
+  readingStartedAt?: string;
+  finishedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -152,6 +154,7 @@ export interface CarouselMoment {
 
 export interface CarouselFeedItem {
   id: string;
+  bookId: string;
   username: string;
   bookTitle: string;
   bookAuthor?: string;

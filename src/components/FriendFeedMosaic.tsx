@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { BookOpen } from "lucide-react";
 import { iconLg } from "@/lib/icon-styles";
 import type { CarouselFeedItem, CarouselMoment } from "@/lib/types";
@@ -116,6 +117,7 @@ function MosaicMomentContent({
 }
 
 export function FriendFeedMosaic() {
+  const router = useRouter();
   const [items, setItems] = useState<CarouselFeedItem[]>([]);
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [slideIndices, setSlideIndices] = useState<Record<string, number>>({});
@@ -186,10 +188,6 @@ export function FriendFeedMosaic() {
 
   return (
     <section>
-      <div className="mb-3">
-        <h2 className="text-lg font-bold text-koala-primary">도란도란 책 이야기</h2>
-      </div>
-
       <div className="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2 px-3 sm:px-6">
         <div className="mx-auto max-w-6xl overflow-visible px-2 py-6 sm:px-4 sm:py-8">
           <div
@@ -216,7 +214,7 @@ export function FriendFeedMosaic() {
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => setFocusedId(item.id)}
+                  onClick={() => router.push(`/story/${item.id}`)}
                   className={`relative transition-all duration-500 ${pattern}`}
                   style={{
                     margin,

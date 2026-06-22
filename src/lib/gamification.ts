@@ -1,4 +1,5 @@
-import type { UserStats } from "./types";
+import type { ReflectionSection } from "./reflection-templates";
+import type { Reflection, UserStats } from "./types";
 
 export function calculateLevel(stats: UserStats): number {
   const score =
@@ -74,4 +75,63 @@ export function countReflectionChars(reflection: {
     reflection.reviewThoughts,
   ];
   return all.join("").length;
+}
+
+function hasReadingSectionContent(
+  pairs: { ask: string; guess: string }[] | undefined,
+  legacy: { question: string; answer: string }[]
+): boolean {
+  if (pairs?.some((p) => p.ask?.trim() || p.guess?.trim())) return true;
+  return legacy.some((q) => q.answer?.trim());
+}
+
+function hasReviewContent(reflection: Reflection): boolean {
+  return [
+    reflection.reviewTitle,
+    reflection.reviewReason,
+    reflection.reviewContent,
+    reflection.reviewImpressiveScene,
+    reflection.reviewThoughts,
+  ].some((v) => v?.trim());
+}
+
+export function hasReflectionSectionContent(
+  reflection: Reflection | null | undefined,
+  section: ReflectionSection
+): boolean {
+  if (!reflection) return false;
+
+  switch (section) {
+    case "before_reading":
+      return hasReadingSectionContent(reflection.beforeReadingPairs, reflection.beforeReading);
+    case "during_reading":
+      return hasReadingSectionContent(reflection.duringReadingPairs, reflection.duringReading);
+    case "association":
+      return !!reflection.association?.trim();
+    case "quote":
+      return !!reflection.favoriteQuote?.trim();
+    case "review":
+      return hasReviewContent(reflection);
+    case "memorable_scene":
+      return !!reflection.memorableSceneImage?.trim();
+    default:
+      return false;
+  }
+}
+
+/** 감상 기록량 0~5 (0이면 도장 숨김) */
+export function getReflectionRecordLevel(reflection: Reflection | null | undefined): number {
+  if (!reflection) return 0;
+
+  const filledSections = [
+    hasReadingSectionContent(reflection.beforeReadingPairs, reflection.beforeReading),
+    hasReadingSectionContent(reflection.duringReadingPairs, reflection.duringReading),
+    !!reflection.association?.trim(),
+    !!reflection.favoriteQuote?.trim(),
+    hasReviewContent(reflection),
+    !!reflection.memorableSceneImage?.trim(),
+  ].filter(Boolean).length;
+
+  if (filledSections === 0) return 0;
+  return Math.min(5, filledSections);
 }

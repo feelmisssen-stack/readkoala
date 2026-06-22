@@ -4,6 +4,7 @@ import { readDb, updateDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { validateContent } from "@/lib/content-filter";
 import { countReflectionChars, calculateLevel } from "@/lib/gamification";
+import { applyReadingMilestones } from "@/lib/reading-dates";
 
 export async function GET(request: Request) {
   const session = await getSession();
@@ -117,6 +118,7 @@ export async function POST(request: Request) {
     if (b && b.readingProgress < 100) {
       b.readingProgress = Math.max(b.readingProgress, 80);
       b.updatedAt = now;
+      applyReadingMilestones(b, now);
     }
   });
 

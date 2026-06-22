@@ -3,37 +3,66 @@
 import { useEffect, useRef, useState } from "react";
 import { MessageCircle, Send, X } from "lucide-react";
 import { iconMd, iconSm } from "@/lib/icon-styles";
+import type { ReviewDraft } from "@/lib/ai-helper";
 
-type Context = "before_reading" | "during_reading" | "association" | "quote" | "review";
+type UiMessage = { role: "user" | "bot"; text: string };
 
-export function AiHelperChat({ context }: { context: Context }) {
+interface AiHelperChatProps {
+  bookTitle?: string;
+  reviewDraft: Omit<ReviewDraft, "bookTitle">;
+}
+
+export function AiHelperChat({ bookTitle, reviewDraft }: AiHelperChatProps) {
   const [open, setOpen] = useState(false);
-  const [messages, setMessages] = useState<{ role: "user" | "bot"; text: string }[]>([]);
+  const [messages, setMessages] = useState<UiMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const greetedRef = useRef(false);
+
+  const draftPayload: ReviewDraft = {
+    bookTitle,
+    ...reviewDraft,
+  };
 
   useEffect(() => {
-    if (open && messages.length === 0) {
-      fetchHelp();
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }, [messages, loading]);
+
+  useEffect(() => {
+    if (open && !greetedRef.current) {
+      greetedRef.current = true;
+      void requestReply([], true);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  function toApiMessages(history: UiMessage[]) {
+    return history.map((m) => ({
+      role: m.role === "bot" ? ("assistant" as const) : ("user" as const),
+      content: m.text,
+    }));
+  }
 
-  async function fetchHelp(userMessage?: string) {
+  async function requestReply(history: UiMessage[], isGreeting = false) {
     setLoading(true);
     try {
       const res = await fetch("/api/ai/help", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ context, message: userMessage }),
+        body: JSON.stringify({
+          context: "review",
+          messages: toApiMessages(history),
+          reviewDraft: draftPayload,
+          isGreeting,
+        }),
       });
       const data = await res.json();
-      setMessages((prev) => [...prev, { role: "bot", text: data.reply }]);
+      if (data.reply) {
+        setMessages((prev) => [...prev, { role: "bot", text: data.reply }]);
+      }
     } finally {
       setLoading(false);
     }
@@ -43,8 +72,9 @@ export function AiHelperChat({ context }: { context: Context }) {
     if (!input.trim() || loading) return;
     const msg = input.trim();
     setInput("");
-    setMessages((prev) => [...prev, { role: "user", text: msg }]);
-    await fetchHelp(msg);
+    const nextHistory: UiMessage[] = [...messages, { role: "user", text: msg }];
+    setMessages(nextHistory);
+    await requestReply(nextHistory);
   }
 
   return (
@@ -53,7 +83,7 @@ export function AiHelperChat({ context }: { context: Context }) {
         type="button"
         onClick={() => setOpen(true)}
         className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-koala-accent text-white shadow-lg transition hover:scale-105"
-        title="독서 도우미"
+        title="감상문 도우미"
       >
         <MessageCircle className={iconMd} aria-hidden />
       </button>
@@ -63,7 +93,7 @@ export function AiHelperChat({ context }: { context: Context }) {
           <div className="flex items-center justify-between bg-koala-primary px-4 py-3 text-white">
             <span className="inline-flex items-center gap-2 font-medium">
               <MessageCircle className={iconSm} aria-hidden />
-              독서 도우미
+              감상문 도우미
             </span>
             <button
               type="button"
@@ -74,38 +104,54 @@ export function AiHelperChat({ context }: { context: Context }) {
               <X className={iconSm} />
             </button>
           </div>
-          <div className="flex-1 space-y-2 overflow-y-auto p-3">
-            {messages.map((m, i) => (
-              <div
-                key={i}
-                className={`rounded-koala px-3 py-2 text-sm whitespace-pre-wrap ${
-                  m.role === "user"
-                    ? "ml-8 bg-koala-primary/20 text-koala-text"
-                    : "mr-4 bg-koala-secondary/30 text-koala-text"
-                }`}
-              >
-                {m.text}
-              </div>
-            ))}
-            {loading && <div className="text-sm text-koala-muted">생각 중...</div>}
+          <div
+            ref={scrollRef}
+            className="flex min-h-0 flex-1 flex-col justify-end overflow-y-auto bg-koala-bg/50 p-3"
+          >
+            <div className="space-y-3">
+              {messages.map((m, i) =>
+                m.role === "user" ? (
+                  <div key={i} className="w-full">
+                    <div className="ml-auto max-w-[88%] w-fit rounded-koala rounded-br-sm bg-koala-primary px-3 py-2 text-sm text-white whitespace-pre-wrap shadow-sm">
+                      {m.text}
+                    </div>
+                  </div>
+                ) : (
+                  <div key={i} className="w-full">
+                    <p className="mb-1 px-1 text-xs font-medium text-koala-primary">감상문 도우미</p>
+                    <div className="max-w-[88%] w-fit rounded-koala rounded-bl-sm bg-koala-card px-3 py-2 text-sm text-koala-text whitespace-pre-wrap shadow-sm ring-1 ring-koala-secondary/30">
+                      {m.text}
+                    </div>
+                  </div>
+                )
+              )}
+              {loading && (
+                <div className="w-full">
+                  <p className="mb-1 px-1 text-xs font-medium text-koala-primary">감상문 도우미</p>
+                  <div className="max-w-[88%] w-fit rounded-koala rounded-bl-sm bg-koala-card px-3 py-2 text-sm text-koala-muted shadow-sm ring-1 ring-koala-secondary/30">
+                    생각 중...
+                  </div>
+                </div>
+              )}
+            </div>
             <div ref={bottomRef} />
           </div>
           <div className="flex gap-2 border-t border-koala-secondary/30 p-2">
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && send()}
-              placeholder="무엇이 어려운가요?"
+              onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && send()}
+              placeholder="생각나는 말을 적어 보세요"
               className="koala-input flex-1 py-2 text-sm"
             />
             <button
               type="button"
               onClick={send}
               disabled={loading}
-              className="koala-btn-primary inline-flex items-center gap-1 px-3 text-sm"
+              className="koala-btn-primary inline-flex items-center justify-center p-2.5"
+              aria-label="전송"
             >
               <Send className={iconSm} aria-hidden />
-              전송
             </button>
           </div>
         </div>

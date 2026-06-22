@@ -19,6 +19,13 @@
     @apply rounded-koala-lg bg-koala-card shadow-sm;
     border: 1px solid rgb(var(--color-koala-secondary-rgb) / 0.3);
   }
+  .koala-card-recorded {
+    background-color: rgb(var(--color-koala-secondary-rgb) / 0.24);
+    border-color: rgb(var(--color-koala-primary-rgb) / 0.22);
+  }
+  .koala-card-recorded:hover {
+    background-color: rgb(var(--color-koala-secondary-rgb) / 0.34);
+  }
   .koala-btn {
     @apply inline-flex items-center justify-center gap-2 rounded-pill px-5 py-2.5 font-medium transition-all;
   }

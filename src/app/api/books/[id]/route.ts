@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { calcProgressFromPages } from "@/lib/reading-progress";
+import { applyReadingMilestones } from "@/lib/reading-dates";
 import { readDb, updateDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
 
@@ -31,6 +32,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ error: "책을 찾을 수 없어요." }, { status: 404 });
   }
 
+  let snapshot = {
+    readingProgress: book.readingProgress,
+    currentPage: book.currentPage,
+    readingStartedAt: book.readingStartedAt,
+    finishedAt: book.finishedAt,
+  };
+
   updateDb((d) => {
     const b = d.books.find((x) => x.id === id)!;
     if (body.title) b.title = body.title;
@@ -49,7 +57,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       b.readingProgress = calcProgressFromPages(b.currentPage, b.totalPages);
     }
 
-    b.updatedAt = new Date().toISOString();
+    const now = new Date().toISOString();
+    b.updatedAt = now;
+    applyReadingMilestones(b, now);
 
     const progress = b.readingProgress;
     if (progress >= 100) {
@@ -61,9 +71,16 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         user.stats.booksRead = readCount;
       }
     }
+
+    snapshot = {
+      readingProgress: b.readingProgress,
+      currentPage: b.currentPage,
+      readingStartedAt: b.readingStartedAt,
+      finishedAt: b.finishedAt,
+    };
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, book: snapshot });
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {

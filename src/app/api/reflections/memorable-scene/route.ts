@@ -1,8 +1,9 @@
-import { mkdir, writeFile } from "fs/promises";
+import { mkdir, unlink, writeFile } from "fs/promises";
 import path from "path";
 import { NextResponse } from "next/server";
 import { v4 as uuid } from "uuid";
 import { readDb, updateDb } from "@/lib/db";
+import { applyReadingMilestones } from "@/lib/reading-dates";
 import { getSession } from "@/lib/session";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "memorable-scenes");
@@ -90,8 +91,54 @@ export async function POST(request: Request) {
     if (b && b.readingProgress < 100) {
       b.readingProgress = Math.max(b.readingProgress, 80);
       b.updatedAt = now;
+      applyReadingMilestones(b, now);
     }
   });
 
   return NextResponse.json({ imageUrl, reflection });
+}
+
+export async function DELETE(request: Request) {
+  const session = await getSession();
+  if (!session.userId) {
+    return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(request.url);
+  const bookId = searchParams.get("bookId");
+  if (!bookId) {
+    return NextResponse.json({ error: "책 정보가 없어요." }, { status: 400 });
+  }
+
+  const db = readDb();
+  const reflection = db.reflections.find(
+    (r) => r.userId === session.userId && r.bookId === bookId
+  );
+  if (!reflection?.memorableSceneImage) {
+    return NextResponse.json({ ok: true });
+  }
+
+  const imagePath = reflection.memorableSceneImage.replace(/^\//, "");
+  const filepath = path.join(process.cwd(), "public", imagePath);
+
+  updateDb((d) => {
+    const idx = d.reflections.findIndex(
+      (r) => r.userId === session.userId && r.bookId === bookId
+    );
+    if (idx >= 0) {
+      d.reflections[idx] = {
+        ...d.reflections[idx],
+        memorableSceneImage: undefined,
+        updatedAt: new Date().toISOString(),
+      };
+    }
+  });
+
+  try {
+    await unlink(filepath);
+  } catch {
+    // 파일이 없어도 DB에서 제거됨
+  }
+
+  return NextResponse.json({ ok: true });
 }

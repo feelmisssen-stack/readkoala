@@ -3,7 +3,7 @@ import { v4 as uuid } from "uuid";
 import { readDb, updateDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { validateContent } from "@/lib/content-filter";
-import { calculateLevel } from "@/lib/gamification";
+import { getRoomParticipantNames } from "@/lib/chat";
 
 export async function GET() {
   const session = await getSession();
@@ -18,10 +18,8 @@ export async function GET() {
       const membership = db.chatMemberships.find(
         (m) => m.roomId === room.id && m.userId === session.userId
       );
-      const memberCount = db.chatMemberships.filter(
-        (m) => m.roomId === room.id && m.status === "approved"
-      ).length;
-      return { ...room, membership, memberCount };
+      const participants = getRoomParticipantNames(db.chatMessages, room.id);
+      return { ...room, membership, participants };
     });
 
   const pendingRooms = session.isAdmin
@@ -54,7 +52,7 @@ export async function POST(request: Request) {
     bookId,
     bookTitle: book.title,
     creatorId: session.userId,
-    name: name || `${book.title} 이야기방`,
+    name: name || `${book.title} 이야기뜰`,
     status: "pending" as const,
     createdAt: new Date().toISOString(),
   };

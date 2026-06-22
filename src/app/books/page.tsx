@@ -1,16 +1,16 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import Image from "next/image";
-import { BookOpen, Plus, Trash2 } from "lucide-react";
-import { ReadingStatusBadge } from "@/components/ReadingStatusBadge";
-import { BookCoverPlaceholder } from "@/components/BookCoverPlaceholder";
+import { BookOpen, Plus } from "lucide-react";
+import { BookShelfCard } from "@/components/BookShelfCard";
 import { iconSm } from "@/lib/icon-styles";
 import type { Book } from "@/lib/types";
 
+type BookOnShelf = Book & { recordLevel?: number };
+
 export default function BooksPage() {
-  const [books, setBooks] = useState<Book[]>([]);
+  const [books, setBooks] = useState<BookOnShelf[]>([]);
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -30,6 +30,10 @@ export default function BooksPage() {
 
   useEffect(() => {
     loadBooks().finally(() => setLoading(false));
+  }, []);
+
+  const handleBookUpdate = useCallback((updated: BookOnShelf) => {
+    setBooks((prev) => prev.map((b) => (b.id === updated.id ? { ...b, ...updated } : b)));
   }, []);
 
   async function deleteBook(e: React.MouseEvent, book: Book) {
@@ -69,7 +73,7 @@ export default function BooksPage() {
       </div>
 
       <p className="rounded-koala bg-koala-secondary/15 px-4 py-3 text-sm text-koala-muted">
-        내가 읽은 책들을 기록하고 감상도 적어봅시다
+        내가 읽은 책들을 기록하고 감상도 적어봅시다. 감상 기록이 쌓이면 잎이 진해집니다.
       </p>
 
       {books.length === 0 ? (
@@ -84,37 +88,13 @@ export default function BooksPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           {books.map((book) => (
-            <div key={book.id} className="koala-card relative p-4 transition hover:shadow-md">
-              <button
-                type="button"
-                onClick={(e) => deleteBook(e, book)}
-                disabled={deletingId === book.id}
-                className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-pill bg-koala-card/90 px-2 py-0.5 text-xs text-red-500 shadow-sm hover:bg-red-50 disabled:opacity-50"
-              >
-                <Trash2 className="size-3" aria-hidden />
-                {deletingId === book.id ? "삭제 중..." : "삭제"}
-              </button>
-              <Link href={`/books/${book.id}`} className="flex gap-4">
-                <div className="relative h-28 w-20 shrink-0 overflow-hidden rounded-koala bg-koala-secondary/20">
-                  {book.coverUrl ? (
-                    <Image src={book.coverUrl} alt={book.title} fill className="object-cover" unoptimized />
-                  ) : (
-                    <BookCoverPlaceholder />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1 pr-10">
-                  <h2 className="truncate font-bold text-koala-primary">{book.title}</h2>
-                  {book.author && <p className="text-sm text-koala-muted">{book.author}</p>}
-                  <div className="mt-2">
-                    <ReadingStatusBadge
-                      readingProgress={book.readingProgress}
-                      currentPage={book.currentPage}
-                      totalPages={book.totalPages}
-                    />
-                  </div>
-                </div>
-              </Link>
-            </div>
+            <BookShelfCard
+              key={book.id}
+              book={book}
+              deleting={deletingId === book.id}
+              onDelete={(e) => void deleteBook(e, book)}
+              onBookUpdate={handleBookUpdate}
+            />
           ))}
         </div>
       )}

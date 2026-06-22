@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { v4 as uuid } from "uuid";
 import { readDb, updateDb } from "@/lib/db";
+import { getReflectionRecordLevel } from "@/lib/gamification";
 import { getSession } from "@/lib/session";
 
 export async function GET() {
@@ -12,7 +13,16 @@ export async function GET() {
   const db = readDb();
   const books = db.books
     .filter((b) => b.userId === session.userId)
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+    .map((book) => {
+      const reflection = db.reflections.find(
+        (r) => r.userId === session.userId && r.bookId === book.id
+      );
+      return {
+        ...book,
+        recordLevel: getReflectionRecordLevel(reflection),
+      };
+    });
 
   return NextResponse.json({ books });
 }

@@ -112,14 +112,15 @@ export default function WriteSectionPage({
         setNeedsAuth(!loggedIn);
       });
 
-    fetch(`/api/books/${bookId}`)
-      .then((r) => r.json())
-      .then((d) => setBook(d.book || null));
+    Promise.all([
+      fetch(`/api/books/${bookId}`).then((r) => r.json()),
+      fetch(`/api/reflections?bookId=${bookId}`).then((r) => r.json()),
+    ])
+      .then(([bookData, reflectionData]) => {
+        const loadedBook = bookData.book as Book | null;
+        if (loadedBook) setBook(loadedBook);
 
-    fetch(`/api/reflections?bookId=${bookId}`)
-      .then((r) => r.json())
-      .then((d) => {
-        const r0 = d.reflections?.[0];
+        const r0 = reflectionData.reflections?.[0] as Reflection | undefined;
         if (!r0) {
           const beforeActivities = loadBeforeReadingActivities();
           const duringActivities = loadDuringReadingActivities();
@@ -145,7 +146,9 @@ export default function WriteSectionPage({
             duringActivities
           )
         );
-        setAssociation(r0.association || "");
+        setAssociation(
+          stripBookTitleFromAssociation(loadedBook?.title || "", r0.association || "")
+        );
         setFavoriteQuote(r0.favoriteQuote || "");
         setReviewTitle(r0.reviewTitle || "");
         setReviewReason(r0.reviewReason || "");
@@ -158,11 +161,6 @@ export default function WriteSectionPage({
   }, [bookId, section]);
 
   bookTitleRef.current = book?.title || "";
-
-  useEffect(() => {
-    if (!book?.title || !loaded) return;
-    setAssociation((prev) => stripBookTitleFromAssociation(book.title, prev));
-  }, [book?.title, loaded]);
 
   const buildBody = useCallback(() => {
     const state = formStateRef.current;
@@ -489,7 +487,18 @@ export default function WriteSectionPage({
         )}
       </div>
 
-      {typedSection !== "memorable_scene" && <AiHelperChat context={typedSection} />}
+      {typedSection === "review" && (
+        <AiHelperChat
+          bookTitle={book?.title}
+          reviewDraft={{
+            reviewTitle,
+            reviewReason,
+            reviewContent,
+            reviewImpressiveScene,
+            reviewThoughts,
+          }}
+        />
+      )}
     </div>
   );
 }

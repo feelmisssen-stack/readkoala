@@ -1,103 +1,190 @@
-type WritingContext =
+export type WritingContext =
   | "before_reading"
   | "during_reading"
   | "association"
   | "quote"
   | "review";
 
-const TIPS: Record<WritingContext, string[]> = {
-  before_reading: [
-    "책 표지를 보고 어떤 이야기일지 상상해 보세요.",
-    "차례를 펼쳐 보며 가장 읽고 싶은 부분을 골라 보세요.",
-    "그림이 있다면 그림만 보고 떠오르는 생각을 적어 보세요.",
-    "제목만 보고 이 책이 무엇에 관한 책인지 짐작해 보세요.",
-  ],
-  during_reading: [
-    "방금 읽은 부분에서 가장 기억에 남는 장면을 적어 보세요.",
-    "주인공이 왜 그렇게 행동했을까요?",
-    "만약 내가 주인공이라면 어떻게 했을까요?",
-    "이 장면을 읽으며 어떤 기분이 들었나요?",
-  ],
-  association: [
-    "이 책이 떠오르는 상황을 하나 골라 보세요. 예: 비가 올 때, 친구와 싸울 때…",
-    "책 속 인물이 나와 비슷한 점이 있나요?",
-    "이 책을 한 단어로 표현한다면 어떤 말이 좋을까요?",
-  ],
-  quote: [
-    "마음에 남는 문장을 그대로 적어 보세요.",
-    "왜 그 문장이 좋았는지 한 줄 덧붙여 보세요.",
-    "책에서 가장 감동받은 말을 찾아 보세요.",
-  ],
-  review: [
-    "책을 읽게 된 이유부터 차근차근 적어 보세요.",
-    "가장 인상 깊었던 장면을 자세히 묘사해 보세요.",
-    "이 책을 친구에게 추천한다면 어떤 말을 해 줄까요?",
-    "책을 읽고 나서 달라진 생각이 있나요?",
-  ],
-};
-
-export async function getWritingHelp(
-  context: WritingContext,
-  userMessage?: string
-): Promise<string> {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (apiKey && userMessage?.trim()) {
-    try {
-      const res = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: [
-            {
-              role: "system",
-              content: `당신은 초등학생 독서 도우미입니다. 친근하고 쉬운 말로 감상문 작성을 도와주세요. 현재 작성 단계: ${context}. 욕설이나 부적절한 표현은 사용하지 마세요.`,
-            },
-            { role: "user", content: userMessage },
-          ],
-          max_tokens: 300,
-        }),
-      });
-      const data = await res.json();
-      const reply = data.choices?.[0]?.message?.content;
-      if (reply) return reply;
-    } catch {
-      /* fallback below */
-    }
-  }
-
-  const tips = TIPS[context];
-  const tip = tips[Math.floor(Math.random() * tips.length)];
-
-  if (!userMessage?.trim()) {
-    return `안녕! 나는 독서 도우미야.\n\n${tip}\n\n궁금한 게 있으면 편하게 물어봐!`;
-  }
-
-  const lower = userMessage.toLowerCase();
-  if (lower.includes("뭐") || lower.includes("어떻") || lower.includes("모르")) {
-    return `괜찮아! 처음엔 어려울 수 있어.\n\n💡 ${tip}\n\n짧게 한 문장만 적어도 좋아. 네 생각이 가장 중요해!`;
-  }
-  if (lower.includes("예시") || lower.includes("예")) {
-    return `예시를 들어 볼게!\n\n"${getExample(context)}"\n\n이건 참고만 하고, 네 말로 바꿔서 적어 봐!`;
-  }
-
-  return `좋은 질문이야!\n\n💡 ${tip}\n\n천천히 생각해 보고, 네 느낌을 솔직하게 적어 봐.`;
+export interface ChatMessage {
+  role: "user" | "assistant";
+  content: string;
 }
 
-function getExample(context: WritingContext): string {
-  switch (context) {
-    case "before_reading":
-      return "표지에 그려진 숲을 보니 모험 이야기일 것 같아요.";
-    case "during_reading":
-      return "주인공이 친구를 도와준 장면이 가장 기억에 남아요.";
-    case "association":
-      return "이 책은 용기가 필요할 때 생각나는 책이에요.";
-    case "quote":
-      return "『친구는 함께 있으면 든든해』";
-    case "review":
-      return "이 책을 읽고 나서 친구에게 더 잘 해주고 싶다는 생각이 들었어요.";
+export interface ReviewDraft {
+  bookTitle?: string;
+  reviewTitle?: string;
+  reviewReason?: string;
+  reviewContent?: string;
+  reviewImpressiveScene?: string;
+  reviewThoughts?: string;
+}
+
+export const REVIEW_HELPER_GREETING =
+  "안녕? 나는 감상문 기록 도우미야. 감상문 기록에서 어떤 점이 어렵니?";
+
+const REVIEW_FIELDS: { key: keyof ReviewDraft; label: string; hint: string }[] = [
+  { key: "reviewTitle", label: "감상문 제목", hint: "이 책을 한 줄로 표현하면 어떤 제목이 어울릴까요?" },
+  {
+    key: "reviewReason",
+    label: "책을 읽은 까닭",
+    hint: "이 책을 읽게 된 이유가 있나요? 친구 추천, 표지, 제목 중 뭐가 끌렸나요?",
+  },
+  {
+    key: "reviewContent",
+    label: "책의 내용",
+    hint: "이야기를 짧게 말해 볼까요? 누가, 어디서, 무슨 일이 있었는지요.",
+  },
+  {
+    key: "reviewImpressiveScene",
+    label: "인상 깊은 장면",
+    hint: "가장 기억에 남는 장면은 어떤 장면이었나요?",
+  },
+  {
+    key: "reviewThoughts",
+    label: "읽고 떠오른 생각이나 느낌",
+    hint: "책을 다 읽고 나서 어떤 생각이나 느낌이 들었나요?",
+  },
+];
+
+function getFirstEmptyReviewField(draft: ReviewDraft) {
+  return REVIEW_FIELDS.find((f) => !draft[f.key]?.trim()) ?? null;
+}
+
+function buildReviewDraftSummary(draft: ReviewDraft): string {
+  const lines: string[] = [];
+  if (draft.bookTitle?.trim()) lines.push(`책 제목: ${draft.bookTitle.trim()}`);
+  for (const field of REVIEW_FIELDS) {
+    const value = draft[field.key]?.trim();
+    lines.push(`${field.label}: ${value ? value : "(아직 비어 있음)"}`);
   }
+  return lines.join("\n");
+}
+
+function buildReviewSystemPrompt(draft: ReviewDraft): string {
+  const nextField = getFirstEmptyReviewField(draft);
+  return `당신은 초등학생을 돕는 따뜻한 독서 도우미입니다. 지금 학생은 「감상문」을 쓰는 중입니다.
+
+[지금까지 적은 내용]
+${buildReviewDraftSummary(draft)}
+
+[대화 방식 — 꼭 지켜 주세요]
+1. 학생이 한 말을 먼저 짧게 되짚어 주세요. (예: "○○ 장면이 제일 기억에 남는다고 했구나.")
+2. 질문은 한 번에 하나만 하세요.
+3. 답을 대신 길게 쓰지 말고, 학생이 스스로 쓰게 이끌어 주세요. 필요하면 문장 한 줄 예시만 제시하세요.
+4. 감상문 순서를 자연스럽게 안내하세요: 감상문 제목 → 읽은 까닭 → 책의 내용 → 인상 깊은 장면 → 읽고 떠오른 생각.
+5. 쉬운 말, 2~4문장 이내로 답하세요. 이모지는 0~1개만 써도 됩니다.
+6. 욕설이나 부적절한 표현은 사용하지 마세요.
+${nextField ? `\n[지금 우선 도와줄 칸]\n「${nextField.label}」 — ${nextField.hint}` : "\n[지금]\n대부분의 칸이 채워졌어요. 전체를 다듬거나 마음에 드는 부분을 칭찬해 주세요."}`;
+}
+
+function snippet(text: string, max = 28): string {
+  const t = text.trim();
+  if (t.length <= max) return t;
+  return `${t.slice(0, max)}…`;
+}
+
+function getReviewFallbackReply(
+  draft: ReviewDraft,
+  messages: ChatMessage[],
+  isGreeting?: boolean
+): string {
+  const lastUser = [...messages].reverse().find((m) => m.role === "user")?.content?.trim();
+  const nextField = getFirstEmptyReviewField(draft);
+  const book = draft.bookTitle?.trim() ? `「${draft.bookTitle.trim()}」` : "이 책";
+
+  if (isGreeting) {
+    return REVIEW_HELPER_GREETING;
+  }
+
+  if (!lastUser) {
+    if (nextField) {
+      return `안녕! ${book} 감상문을 같이 써 볼까?\n\n먼저 「${nextField.label}」부터 생각해 보자.\n${nextField.hint}`;
+    }
+    return `안녕! ${book} 감상문을 많이 써 두었네.\n\n가장 마음에 드는 부분이 어느 칸인지 말해 줄래?`;
+  }
+
+  const lower = lastUser.toLowerCase();
+
+  if (lower.includes("예시") || lower.includes("예를")) {
+    const examples: Record<string, string> = {
+      reviewTitle: "용기를 배운 하루",
+      reviewReason: "친구가 재미있다고 해서 빌려 읽었어요.",
+      reviewContent: "주인공이 어려운 일을 겪지만 친구들과 함께 해결해요.",
+      reviewImpressiveScene: "주인공이 친구를 도와준 장면이 가장 기억에 남아요.",
+      reviewThoughts: "나도 친구에게 먼저 다가가 봐야겠다고 생각했어요.",
+    };
+    const key = nextField?.key ?? "reviewThoughts";
+    return `예를 들면 이렇게 쓸 수 있어.\n\n"${examples[key]}"\n\n꼭 똑같이 쓰지 말고, 네 말로 바꿔 볼래?`;
+  }
+
+  if (
+    lower.includes("뭐") ||
+    lower.includes("어떻") ||
+    lower.includes("모르") ||
+    lower.includes("힘들") ||
+    lower.includes("어려")
+  ) {
+    if (nextField) {
+      return `괜찮아, 처음엔 다들 어려워.\n\n「${nextField.label}」은 ${nextField.hint}\n\n한 문장만 적어도 충분해!`;
+    }
+    return `괜찮아! 이미 많이 썼어.\n\n"${snippet(lastUser)}"라고 한 부분을 감상문 칸에 옮겨 적어 보면 돼.`;
+  }
+
+  if (nextField) {
+    return `"${snippet(lastUser)}" 이야기 고마워!\n\n그 생각을 「${nextField.label}」 칸에 쓰면 좋겠어.\n${nextField.hint}`;
+  }
+
+  return `"${snippet(lastUser)}" 정말 좋은 생각이야!\n\n이미 감상문이 잘 채워지고 있어. 마음에 드는 문장을 한 번 더 다듬어 볼까?`;
+}
+
+export async function getWritingHelp(options: {
+  context: WritingContext;
+  messages?: ChatMessage[];
+  reviewDraft?: ReviewDraft;
+  isGreeting?: boolean;
+}): Promise<string> {
+  const { context, messages = [], reviewDraft = {}, isGreeting } = options;
+
+  if (context === "review") {
+    if (isGreeting && messages.length === 0) {
+      return REVIEW_HELPER_GREETING;
+    }
+
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (apiKey) {
+      try {
+        const chatMessages: { role: "system" | "user" | "assistant"; content: string }[] = [
+          { role: "system", content: buildReviewSystemPrompt(reviewDraft) },
+        ];
+
+        for (const m of messages) {
+          chatMessages.push({ role: m.role, content: m.content });
+        }
+
+        const res = await fetch("https://api.openai.com/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "gpt-4o-mini",
+            messages: chatMessages,
+            max_tokens: 350,
+            temperature: 0.7,
+          }),
+        });
+        const data = await res.json();
+        const reply = data.choices?.[0]?.message?.content?.trim();
+        if (reply) return reply;
+      } catch {
+        /* fallback below */
+      }
+    }
+
+    return getReviewFallbackReply(reviewDraft, messages, isGreeting);
+  }
+
+  // 다른 단계는 도우미 미사용 — review 전용으로 유지
+  return getReviewFallbackReply(reviewDraft, messages, isGreeting);
 }
