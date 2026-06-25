@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { BookOpen } from "lucide-react";
+import { LoginForm } from "@/components/LoginForm";
 import { iconLg } from "@/lib/icon-styles";
 import type { CarouselFeedItem, CarouselMoment } from "@/lib/types";
 
@@ -118,13 +119,15 @@ function MosaicMomentContent({
 
 export function FriendFeedMosaic() {
   const router = useRouter();
+  const [user, setUser] = useState<{ id: string } | null | undefined>(undefined);
   const [items, setItems] = useState<CarouselFeedItem[]>([]);
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [slideIndices, setSlideIndices] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetch("/api/feed/carousel")
+  const loadFeed = useCallback(() => {
+    setLoading(true);
+    return fetch("/api/feed/carousel")
       .then((r) => r.json())
       .then((d) => {
         const list: CarouselFeedItem[] = d.items || [];
@@ -141,6 +144,31 @@ export function FriendFeedMosaic() {
       .catch(() => setItems([]))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => setUser(d.user || null))
+      .catch(() => setUser(null));
+  }, []);
+
+  useEffect(() => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    loadFeed();
+  }, [user, loadFeed]);
+
+  const handleLoginSuccess = useCallback(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => {
+        setUser(d.user || null);
+        window.dispatchEvent(new Event("auth-changed"));
+        router.refresh();
+      });
+  }, [router]);
 
   useEffect(() => {
     if (items.length === 0) return;
@@ -166,6 +194,22 @@ export function FriendFeedMosaic() {
     const moment = item.moments[itemSlideIndex - 1];
     return moment ? { mode: "moment" as const, moment } : { mode: "cover" as const };
   }, []);
+
+  if (user === undefined) {
+    return (
+      <div className="flex h-[520px] items-center justify-center">
+        <p className="text-sm text-koala-muted">불러오는 중...</p>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <section className="flex min-h-[420px] items-center justify-center py-8">
+        <LoginForm onSuccess={handleLoginSuccess} />
+      </section>
+    );
+  }
 
   if (loading) {
     return (

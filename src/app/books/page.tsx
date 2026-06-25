@@ -4,13 +4,17 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { BookOpen, Plus } from "lucide-react";
 import { BookShelfCard } from "@/components/BookShelfCard";
+import { KoalaGrowthCard } from "@/components/KoalaGrowthCard";
 import { iconSm } from "@/lib/icon-styles";
+import type { WritingGrowth } from "@/lib/writing-growth";
+import { getWritingGrowth } from "@/lib/writing-growth";
 import type { Book } from "@/lib/types";
 
 type BookOnShelf = Book & { recordLevel?: number };
 
 export default function BooksPage() {
   const [books, setBooks] = useState<BookOnShelf[]>([]);
+  const [writingGrowth, setWritingGrowth] = useState<WritingGrowth>(getWritingGrowth(0));
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -18,13 +22,21 @@ export default function BooksPage() {
     return fetch("/api/books")
       .then((r) => {
         if (r.status === 401) {
-          window.location.href = "/login";
+          window.location.href = "/";
           return null;
         }
         return r.json();
       })
       .then((d) => {
-        if (d) setBooks(d.books || []);
+        if (d) {
+          setBooks(d.books || []);
+          if (d.writingGrowth) {
+            setWritingGrowth(getWritingGrowth(d.writingGrowth.totalBytes ?? 0));
+          }
+        }
+      })
+      .catch(() => {
+        setBooks([]);
       });
   }
 
@@ -73,21 +85,23 @@ export default function BooksPage() {
       </div>
 
       <p className="rounded-koala bg-koala-secondary/15 px-4 py-3 text-sm text-koala-muted">
-        내가 읽은 책들을 기록하고 감상도 적어봅시다. 감상 기록이 쌓이면 잎이 진해집니다.
+        감상 기록과 낱말 문장을 쓸수록 코알라가 자라나요.
       </p>
 
-      {books.length === 0 ? (
-        <div className="koala-card p-8 text-center">
-          <BookOpen className="mx-auto size-10 text-koala-muted/50" strokeWidth={1.5} aria-hidden />
-          <p className="mt-3 text-koala-muted">아직 등록한 책이 없어요.</p>
-          <Link href="/books/new" className="koala-btn-accent mt-4 inline-flex items-center gap-1.5 text-sm">
-            <Plus className={iconSm} aria-hidden />
-            첫 책 등록하기
-          </Link>
-        </div>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {books.map((book) => (
+      <div className="grid gap-4 sm:grid-cols-2">
+        <KoalaGrowthCard growth={writingGrowth} />
+
+        {books.length === 0 ? (
+          <div className="koala-card flex flex-col items-center justify-center p-8 text-center">
+            <BookOpen className="size-10 text-koala-muted/50" strokeWidth={1.5} aria-hidden />
+            <p className="mt-3 text-koala-muted">아직 등록한 책이 없어요.</p>
+            <Link href="/books/new" className="koala-btn-accent mt-4 inline-flex items-center gap-1.5 text-sm">
+              <Plus className={iconSm} aria-hidden />
+              첫 책 등록하기
+            </Link>
+          </div>
+        ) : (
+          books.map((book) => (
             <BookShelfCard
               key={book.id}
               book={book}
@@ -95,9 +109,9 @@ export default function BooksPage() {
               onDelete={(e) => void deleteBook(e, book)}
               onBookUpdate={handleBookUpdate}
             />
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </div>
     </div>
   );
 }

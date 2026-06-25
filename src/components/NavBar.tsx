@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Library } from "lucide-react";
 
@@ -14,25 +14,31 @@ const links = [
 
 export function NavBar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [user, setUser] = useState<{ username: string } | null>(null);
   const [isGoogleAdmin, setIsGoogleAdmin] = useState(false);
 
   useEffect(() => {
-    fetch("/api/auth/me")
-      .then((r) => r.json())
-      .then((d) => setUser(d.user || null))
-      .catch(() => setUser(null));
+    function loadUser() {
+      fetch("/api/auth/me")
+        .then((r) => r.json())
+        .then((d) => setUser(d.user || null))
+        .catch(() => setUser(null));
+    }
 
+    loadUser();
+    window.addEventListener("auth-changed", loadUser);
+    return () => window.removeEventListener("auth-changed", loadUser);
+  }, [pathname]);
+
+  useEffect(() => {
     fetch("/api/admin/me")
       .then((r) => r.json())
       .then((d) => setIsGoogleAdmin(!!d.admin))
       .catch(() => setIsGoogleAdmin(false));
   }, [pathname]);
 
-  const hideOnAuth =
-    pathname === "/login" || pathname === "/register" || pathname === "/admin";
-
-  if (hideOnAuth) return null;
+  if (pathname === "/register" || pathname === "/admin") return null;
 
   return (
     <header className="sticky top-0 z-50 border-b border-koala-secondary/30 bg-koala-card/90 backdrop-blur">
@@ -41,15 +47,64 @@ export function NavBar() {
           <Library className="size-5 shrink-0" strokeWidth={1.75} aria-hidden />
           도란서재
         </Link>
-        <nav className="hidden items-center gap-1 sm:flex">
+
+        {user && (
+          <>
+            <nav className="hidden items-center gap-1 sm:flex">
+              {links.map((l) => (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  className={`rounded-pill px-3 py-1.5 text-sm transition-colors ${
+                    pathname === l.href || (l.href !== "/" && pathname.startsWith(l.href + "/"))
+                      ? "bg-koala-primary text-white"
+                      : "text-koala-muted hover:bg-koala-secondary/30"
+                  }`}
+                >
+                  {l.label}
+                </Link>
+              ))}
+              {isGoogleAdmin && (
+                <Link
+                  href="/admin"
+                  className={`rounded-pill px-3 py-1.5 text-sm transition-colors ${
+                    pathname === "/admin"
+                      ? "bg-koala-primary text-white"
+                      : "text-koala-muted hover:bg-koala-secondary/30"
+                  }`}
+                >
+                  관리자
+                </Link>
+              )}
+            </nav>
+            <div className="flex items-center gap-2">
+              <span className="hidden text-sm text-koala-muted sm:inline">{user.username}님</span>
+              <button
+                onClick={async () => {
+                  await fetch("/api/auth/logout", { method: "POST" });
+                  setUser(null);
+                  router.push("/");
+                  router.refresh();
+                }}
+                className="koala-btn-secondary text-sm"
+              >
+                로그아웃
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+
+      {user && (
+        <nav className="flex gap-1 overflow-x-auto px-4 pb-2 sm:hidden">
           {links.map((l) => (
             <Link
               key={l.href}
               href={l.href}
-              className={`rounded-pill px-3 py-1.5 text-sm transition-colors ${
-                pathname === l.href || pathname.startsWith(l.href + "/")
+              className={`shrink-0 rounded-pill px-3 py-1 text-xs ${
+                pathname === l.href || (l.href !== "/" && pathname.startsWith(l.href + "/"))
                   ? "bg-koala-primary text-white"
-                  : "text-koala-muted hover:bg-koala-secondary/30"
+                  : "bg-koala-secondary/30"
               }`}
             >
               {l.label}
@@ -58,60 +113,15 @@ export function NavBar() {
           {isGoogleAdmin && (
             <Link
               href="/admin"
-              className={`rounded-pill px-3 py-1.5 text-sm transition-colors ${
-                pathname === "/admin"
-                  ? "bg-koala-primary text-white"
-                  : "text-koala-muted hover:bg-koala-secondary/30"
+              className={`shrink-0 rounded-pill px-3 py-1 text-xs ${
+                pathname === "/admin" ? "bg-koala-primary text-white" : "bg-koala-secondary/30"
               }`}
             >
               관리자
             </Link>
           )}
         </nav>
-        <div className="flex items-center gap-2">
-          {user ? (
-            <>
-              <span className="hidden text-sm text-koala-muted sm:inline">{user.username}님</span>
-              <button
-                onClick={async () => {
-                  await fetch("/api/auth/logout", { method: "POST" });
-                  window.location.href = "/login";
-                }}
-                className="koala-btn-secondary text-sm"
-              >
-                로그아웃
-              </button>
-            </>
-          ) : (
-            <Link href="/login" className="koala-btn-primary text-sm">
-              로그인
-            </Link>
-          )}
-        </div>
-      </div>
-      <nav className="flex gap-1 overflow-x-auto px-4 pb-2 sm:hidden">
-        {links.map((l) => (
-          <Link
-            key={l.href}
-            href={l.href}
-            className={`shrink-0 rounded-pill px-3 py-1 text-xs ${
-              pathname === l.href ? "bg-koala-primary text-white" : "bg-koala-secondary/30"
-            }`}
-          >
-            {l.label}
-          </Link>
-        ))}
-        {isGoogleAdmin && (
-          <Link
-            href="/admin"
-            className={`shrink-0 rounded-pill px-3 py-1 text-xs ${
-              pathname === "/admin" ? "bg-koala-primary text-white" : "bg-koala-secondary/30"
-            }`}
-          >
-            관리자
-          </Link>
-        )}
-      </nav>
+      )}
     </header>
   );
 }

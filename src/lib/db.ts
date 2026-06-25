@@ -4,6 +4,7 @@ import type { Database } from "./types";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const DB_FILE = path.join(DATA_DIR, "db.json");
+const DB_TMP_FILE = path.join(DATA_DIR, "db.json.tmp");
 
 const emptyDb: Database = {
   users: [],
@@ -14,6 +15,7 @@ const emptyDb: Database = {
   chatMemberships: [],
   vocabulary: [],
   sharedSentences: [],
+  storyEmpathies: [],
 };
 
 function ensureDataDir() {
@@ -22,19 +24,44 @@ function ensureDataDir() {
   }
 }
 
+function normalizeDb(parsed: Partial<Database>): Database {
+  return {
+    ...emptyDb,
+    ...parsed,
+    storyEmpathies: parsed.storyEmpathies ?? [],
+  } as Database;
+}
+
 export function readDb(): Database {
   ensureDataDir();
   if (!fs.existsSync(DB_FILE)) {
     fs.writeFileSync(DB_FILE, JSON.stringify(emptyDb, null, 2), "utf-8");
     return structuredClone(emptyDb);
   }
-  const raw = fs.readFileSync(DB_FILE, "utf-8");
-  return { ...emptyDb, ...JSON.parse(raw) } as Database;
+
+  try {
+    const raw = fs.readFileSync(DB_FILE, "utf-8");
+    if (!raw.trim()) {
+      throw new Error("empty db file");
+    }
+    return normalizeDb(JSON.parse(raw) as Partial<Database>);
+  } catch {
+    const backup = `${DB_FILE}.broken-${Date.now()}`;
+    try {
+      fs.copyFileSync(DB_FILE, backup);
+    } catch {
+      // ignore backup failure
+    }
+    fs.writeFileSync(DB_FILE, JSON.stringify(emptyDb, null, 2), "utf-8");
+    return structuredClone(emptyDb);
+  }
 }
 
 export function writeDb(db: Database) {
   ensureDataDir();
-  fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2), "utf-8");
+  const payload = JSON.stringify(db, null, 2);
+  fs.writeFileSync(DB_TMP_FILE, payload, "utf-8");
+  fs.renameSync(DB_TMP_FILE, DB_FILE);
 }
 
 export function updateDb(mutator: (db: Database) => void): Database {

@@ -120,6 +120,18 @@ export interface SharedSentence {
   createdAt: string;
 }
 
+
+export interface StoryEmpathy {
+  id: string;
+  storyId: string;
+  bookId: string;
+  authorUserId: string;
+  voterUserId: string;
+  heartCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Database {
   users: User[];
   books: Book[];
@@ -129,6 +141,7 @@ export interface Database {
   chatMemberships: ChatMembership[];
   vocabulary: VocabularyEntry[];
   sharedSentences: SharedSentence[];
+  storyEmpathies: StoryEmpathy[];
 }
 
 export type RandomFeedItem =

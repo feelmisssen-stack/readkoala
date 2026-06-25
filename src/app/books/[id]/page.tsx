@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { MemorableSceneMenuCard } from "@/components/MemorableSceneMenuCard";
 import { ReadingProgress } from "@/components/ReadingProgress";
+import { StoryEmpathyPanel } from "@/components/StoryEmpathyPanel";
 import { BookCoverPlaceholder } from "@/components/BookCoverPlaceholder";
 import { iconMd } from "@/lib/icon-styles";
 import { hasReflectionSectionContent } from "@/lib/gamification";
@@ -85,7 +86,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
     fetch("/api/books")
       .then((r) => {
         if (r.status === 401) {
-          window.location.href = "/login";
+          window.location.href = "/";
           return null;
         }
         return r.json();
@@ -156,8 +157,11 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
             <BookCoverPlaceholder size="lg" />
           )}
         </div>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold text-koala-primary">{book.title}</h1>
+        <div className="relative min-w-0 flex-1">
+          <div className="absolute right-0 top-0">
+            <StoryEmpathyPanel bookId={id} />
+          </div>
+          <h1 className="pr-28 text-2xl font-bold text-koala-primary">{book.title}</h1>
           {book.author && <p className="mt-1 text-koala-muted">{book.author}</p>}
           {book.publisher && <p className="text-sm text-koala-muted">{book.publisher}</p>}
           <div className="mt-4">

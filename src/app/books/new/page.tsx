@@ -44,7 +44,7 @@ export default function NewBookPage() {
       const data = await res.json();
       if (!res.ok) {
         if (res.status === 401) {
-          window.location.href = "/login";
+          window.location.href = "/";
           return;
         }
         setError(data.error || "책 등록에 실패했어요.");

@@ -4,9 +4,17 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { iconMd } from "@/lib/icon-styles";
-import type { CarouselFeedItem } from "@/lib/types";
+import type { CarouselFeedItem, CarouselMomentKind } from "@/lib/types";
 
 const SLIDE_INTERVAL_MS = 3000;
+
+const MOMENT_LABELS: Record<CarouselMomentKind, string> = {
+  before_question: "읽기 전 질문",
+  during_question: "읽는 중 질문",
+  association: "이 책은 이럴때",
+  quote: "책속 한마디",
+  memorable_scene: "기억에 남는 장면",
+};
 
 export function FriendFeedCarousel() {
   const [items, setItems] = useState<CarouselFeedItem[]>([]);
@@ -194,7 +202,7 @@ export function FriendFeedCarousel() {
                       </div>
                     </div>
                     <span className="inline-block w-fit rounded-pill bg-koala-accent/20 px-3 py-0.5 text-xs font-medium text-koala-accent">
-                      {activeMoment.label}
+                      {MOMENT_LABELS[activeMoment.kind]}
                     </span>
                     <p className="mt-4 flex-1 text-base leading-relaxed transition-opacity duration-500">
                       &ldquo;{activeMoment.text}&rdquo;

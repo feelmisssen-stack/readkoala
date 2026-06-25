@@ -1,11 +1,14 @@
 import Image from "next/image";
 import { BookCoverPlaceholder } from "@/components/BookCoverPlaceholder";
 import { ReadingStatusBadgeFromBook } from "@/components/ReadingStatusBadge";
+import { StoryEmpathyPanel } from "@/components/StoryEmpathyPanel";
 import { SECTION_ICONS } from "@/lib/section-icons";
 import { iconMd } from "@/lib/icon-styles";
 import type { PublicStorySection } from "@/lib/reflection-public-view";
 
 interface BookStoryViewProps {
+  storyId: string;
+  bookId: string;
   username: string;
   book: {
     title: string;
@@ -22,7 +25,7 @@ interface BookStoryViewProps {
   sections: PublicStorySection[];
 }
 
-export function BookStoryView({ username, book, sections }: BookStoryViewProps) {
+export function BookStoryView({ storyId, bookId, username, book, sections }: BookStoryViewProps) {
   return (
     <div className="space-y-6">
       <div className="koala-card flex flex-col gap-6 p-6 sm:flex-row">
@@ -39,13 +42,23 @@ export function BookStoryView({ username, book, sections }: BookStoryViewProps) 
             <BookCoverPlaceholder size="lg" />
           )}
         </div>
-        <div className="flex-1">
-          <p className="text-sm text-koala-muted">{username}</p>
-          <h1 className="mt-1 text-2xl font-bold text-koala-primary">{book.title}</h1>
+        <div className="relative min-w-0 flex-1">
+          <div className="absolute right-0 top-0">
+            <StoryEmpathyPanel bookId={bookId} storyId={storyId} />
+          </div>
+          <p className="pr-28 text-sm text-koala-muted">{username}</p>
+          <h1 className="mt-1 pr-4 text-2xl font-bold text-koala-primary">{book.title}</h1>
           {book.author && <p className="mt-1 text-koala-muted">{book.author}</p>}
           {book.publisher && <p className="text-sm text-koala-muted">{book.publisher}</p>}
           <div className="mt-4">
-            <ReadingStatusBadgeFromBook book={book} />
+            <ReadingStatusBadgeFromBook
+              readingProgress={book.readingProgress}
+              currentPage={book.currentPage ?? 0}
+              totalPages={book.totalPages}
+              createdAt={book.createdAt}
+              updatedAt={book.updatedAt}
+              finishedAt={book.finishedAt}
+            />
           </div>
         </div>
       </div>

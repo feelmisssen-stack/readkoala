@@ -1,7 +1,7 @@
 import type { Book } from "./types";
 import { getReadingStatus, type ReadingStatus } from "./reading-progress";
 
-type ReadingMilestoneBook = Pick<
+export type ReadingMilestoneBook = Pick<
   Book,
   | "readingProgress"
   | "currentPage"

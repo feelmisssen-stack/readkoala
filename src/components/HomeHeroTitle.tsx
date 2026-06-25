@@ -11,11 +11,15 @@ export function HomeHeroTitle() {
   const titleRef = useRef<HTMLHeadingElement>(null);
 
   useLayoutEffect(() => {
-    const container = containerRef.current;
-    const title = titleRef.current;
-    if (!container || !title) return;
+    const containerEl = containerRef.current;
+    const titleEl = titleRef.current;
+    if (!containerEl || !titleEl) return;
 
     function fit() {
+      const container = containerRef.current;
+      const title = titleRef.current;
+      if (!container || !title) return;
+
       let size = MAX_FONT_PX;
       title.style.fontSize = `${size}px`;
       const maxWidth = container.clientWidth;
@@ -28,7 +32,7 @@ export function HomeHeroTitle() {
 
     fit();
     const observer = new ResizeObserver(fit);
-    observer.observe(container);
+    observer.observe(containerEl);
     return () => observer.disconnect();
   }, []);
 

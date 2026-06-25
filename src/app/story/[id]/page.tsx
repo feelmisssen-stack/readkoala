@@ -8,6 +8,7 @@ import type { PublicStorySection } from "@/lib/reflection-public-view";
 interface StoryResponse {
   username: string;
   book: {
+    id: string;
     title: string;
     author?: string;
     publisher?: string;
@@ -58,7 +59,13 @@ export default function StoryPage({ params }: { params: Promise<{ id: string }> 
   return (
     <div className="space-y-6">
       <BackLink href="/">홈으로</BackLink>
-      <BookStoryView username={story.username} book={story.book} sections={story.sections} />
+      <BookStoryView
+        storyId={id}
+        bookId={story.book.id}
+        username={story.username}
+        book={story.book}
+        sections={story.sections}
+      />
     </div>
   );
 }

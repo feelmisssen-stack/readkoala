@@ -27,7 +27,7 @@ export default function ChatPage() {
     fetch("/api/chat/rooms")
       .then((r) => {
         if (r.status === 401) {
-          window.location.href = "/login";
+          window.location.href = "/";
           return null;
         }
         return r.json();

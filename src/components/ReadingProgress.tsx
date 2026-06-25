@@ -60,7 +60,7 @@ export function ReadingProgress({
     totalPages,
     finishedAt,
     createdAt: createdAt ?? "",
-    updatedAt,
+    updatedAt: updatedAt ?? createdAt ?? "",
   });
   const display = buildReadingStatusDisplay(status, startedAt, resolvedFinishedAt);
   const barPercent = getBarPercent(readingProgress, currentPage, totalPages);
@@ -140,7 +140,11 @@ export function ReadingProgress({
           {display.suffix && <span className="text-koala-muted">{display.suffix}</span>}
         </div>
         {hasTotal && (
-          <span className={`shrink-0 text-koala-muted ${compact ? "text-[10px]" : "text-xs"}`}>
+          <span
+            className={`shrink-0 font-medium text-koala-primary ${
+              compact ? "text-xs" : "text-xs"
+            }`}
+          >
             {Math.min(currentPage, totalPages!)} / {totalPages}쪽
           </span>
         )}

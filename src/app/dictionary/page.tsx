@@ -74,7 +74,7 @@ export default function DictionaryPage() {
     fetch("/api/auth/me").then((r) => {
       if (r.status === 401 || r.ok) {
         r.json().then((d) => {
-          if (!d.user) window.location.href = "/login";
+          if (!d.user) window.location.href = "/";
           else setCurrentUserId(d.user.id);
         });
       }

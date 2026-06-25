@@ -25,6 +25,19 @@
         "chatParticipations": 1,
         "level": 1
       }
+    },
+    {
+      "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "username": "tester",
+      "passwordHash": "$2b$10$Mz5uv3EVp31YzU6zelVeJO2EqbPlaXNrWd.nXahjkk6mjJbrLYQTG",
+      "isAdmin": false,
+      "createdAt": "2026-06-25T03:00:00.000Z",
+      "stats": {
+        "booksRead": 0,
+        "totalChars": 0,
+        "chatParticipations": 0,
+        "level": 1
+      }
     }
   ],
   "books": [
@@ -728,6 +741,28 @@
       "word": "알근달근하다",
       "sentence": "떡볶이가 알근달근하다",
       "createdAt": "2026-06-22T06:30:39.363Z"
+    }
+  ],
+  "storyEmpathies": [
+    {
+      "id": "983d89ec-809a-43af-a895-ad06a150cad3",
+      "storyId": "dd4dda0b-faab-4880-8c63-966e59de9a2e",
+      "bookId": "f419cdd9-d3ba-4e71-9022-6900c1f331db",
+      "authorUserId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
+      "voterUserId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "heartCount": 3,
+      "createdAt": "2026-06-25T02:55:53.611Z",
+      "updatedAt": "2026-06-25T02:57:44.874Z"
+    },
+    {
+      "id": "8df1b322-bb88-4d36-97a2-64b7403bd09d",
+      "storyId": "dd4dda0b-faab-4880-8c63-966e59de9a2e",
+      "bookId": "f419cdd9-d3ba-4e71-9022-6900c1f331db",
+      "authorUserId": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
+      "voterUserId": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "heartCount": 2,
+      "createdAt": "2026-06-25T03:01:50.916Z",
+      "updatedAt": "2026-06-25T03:03:25.218Z"
     }
   ]
 }

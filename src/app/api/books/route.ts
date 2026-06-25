@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { v4 as uuid } from "uuid";
 import { readDb, updateDb } from "@/lib/db";
 import { getReflectionRecordLevel } from "@/lib/gamification";
+import { getUserWritingGrowth, getWritingGrowth } from "@/lib/writing-growth";
 import { getSession } from "@/lib/session";
 
 export async function GET() {
@@ -11,6 +12,13 @@ export async function GET() {
   }
 
   const db = readDb();
+  let writingGrowth;
+  try {
+    writingGrowth = getUserWritingGrowth(db, session.userId);
+  } catch {
+    writingGrowth = getWritingGrowth(0);
+  }
+
   const books = db.books
     .filter((b) => b.userId === session.userId)
     .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
@@ -24,7 +32,10 @@ export async function GET() {
       };
     });
 
-  return NextResponse.json({ books });
+  return NextResponse.json({
+    books,
+    writingGrowth,
+  });
 }
 
 export async function POST(request: Request) {

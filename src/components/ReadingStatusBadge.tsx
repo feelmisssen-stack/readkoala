@@ -2,6 +2,7 @@ import { getReadingStatus } from "@/lib/reading-progress";
 import {
   buildReadingStatusDisplay,
   resolveReadingDisplayDates,
+  type ReadingMilestoneBook,
 } from "@/lib/reading-dates";
 
 export function ReadingStatusBadge({
@@ -38,10 +39,8 @@ export function ReadingStatusBadge({
   );
 }
 
-export function ReadingStatusBadgeFromBook(
-  book: Parameters<typeof resolveReadingDisplayDates>[0]
-) {
-  const { status, startedAt, finishedAt } = resolveReadingDisplayDates(book);
+export function ReadingStatusBadgeFromBook(book: ReadingMilestoneBook) {
+  const { startedAt, finishedAt } = resolveReadingDisplayDates(book);
   return (
     <ReadingStatusBadge
       readingProgress={book.readingProgress}
