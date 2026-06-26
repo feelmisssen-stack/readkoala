@@ -12,9 +12,9 @@ export function KoalaGrowthCard({ growth }: KoalaGrowthCardProps) {
   const progressPercent = ((growth.stageIndex + 1) / growth.stageCount) * 100;
 
   return (
-    <div className="koala-card relative flex h-full flex-col overflow-hidden p-4 transition hover:shadow-md">
+    <div className="koala-card-status relative flex h-full flex-col overflow-hidden p-4 transition hover:shadow-md">
       <div className="flex min-h-28 flex-1 items-center gap-5">
-        <div className="relative h-32 w-28 shrink-0 overflow-hidden rounded-koala bg-white">
+        <div className="relative h-32 w-28 shrink-0 overflow-hidden rounded-koala border border-koala-accent/35 bg-koala-card">
           <KoalaGrowthIllustration visualTier={growth.visualTier} />
         </div>
 

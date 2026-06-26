@@ -26,6 +26,14 @@
   .koala-card-recorded:hover {
     background-color: rgb(var(--color-koala-secondary-rgb) / 0.34);
   }
+  .koala-card-status {
+    @apply rounded-koala-lg shadow-sm;
+    background-color: rgb(var(--color-koala-secondary-rgb) / 0.18);
+    border: 1px solid rgb(var(--color-koala-primary-rgb) / 0.25);
+  }
+  .koala-card-status:hover {
+    background-color: rgb(var(--color-koala-secondary-rgb) / 0.26);
+  }
   .koala-btn {
     @apply inline-flex items-center justify-center gap-2 rounded-pill px-5 py-2.5 font-medium transition-all;
   }

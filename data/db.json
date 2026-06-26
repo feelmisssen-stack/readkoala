@@ -3,7 +3,7 @@
     {
       "id": "ff1a9f0a-02ff-45b1-9787-d892744ec309",
       "username": "demo",
-      "nickname": "코코코코",
+      "nickname": "코코",
       "passwordHash": "$2b$10$v1w0/bQBlOthdbh1Y6eQT.FBqjWyotqeXnX8Ul.xmk.gj4SAcohBC",
       "isAdmin": false,
       "createdAt": "2026-06-17T07:20:49.539Z",
@@ -53,7 +53,7 @@
       "stats": {
         "booksRead": 0,
         "totalChars": 0,
-        "chatParticipations": 0,
+        "chatParticipations": 1,
         "level": 1
       }
     }
@@ -147,6 +147,21 @@
       "updatedAt": "2026-06-22T07:48:10.693Z",
       "totalPages": 232,
       "readingStartedAt": "2026-06-22T07:47:40.401Z"
+    },
+    {
+      "id": "fe73cc1c-73ae-43ac-84cc-b45f8749472c",
+      "userId": "c3d4e5f6-a7b8-9012-cdef-123456789abc",
+      "isbn": "9791192529448",
+      "title": "아름다운 아이 - 출간 10주년 개정판",
+      "author": "R. J. 팔라시오 (지은이), 천미나 (옮긴이)",
+      "coverUrl": "https://image.aladin.co.kr/product/32622/27/cover200/k322935459_2.jpg",
+      "publisher": "책과콩나무",
+      "currentPage": 200,
+      "readingProgress": 80,
+      "createdAt": "2026-06-26T12:00:39.621Z",
+      "updatedAt": "2026-06-26T12:01:25.665Z",
+      "totalPages": 480,
+      "readingStartedAt": "2026-06-26T12:00:49.582Z"
     }
   ],
   "reflections": [
@@ -628,6 +643,79 @@
       "reviewThoughts": "",
       "createdAt": "2026-06-22T07:47:40.401Z",
       "updatedAt": "2026-06-22T07:48:10.693Z"
+    },
+    {
+      "id": "b744ff77-d6b7-4b9b-b7be-d2ec46d8b69c",
+      "userId": "c3d4e5f6-a7b8-9012-cdef-123456789abc",
+      "bookId": "fe73cc1c-73ae-43ac-84cc-b45f8749472c",
+      "beforeReading": [
+        {
+          "question": "책속 그림을 훑어보며 떠오른 생각은?",
+          "answer": "질문: 주인공은 왜 헬멧을 쓰고 있을까요? / 짐작: 멋져보이려고"
+        }
+      ],
+      "beforeReadingActivities": [
+        {
+          "key": "title",
+          "label": "제목을 보고 어떤 생각이 들었나요?",
+          "checked": false
+        },
+        {
+          "key": "toc",
+          "label": "차례를 훑어봤나요? 어떤 부분이 궁금했나요?",
+          "checked": false
+        },
+        {
+          "key": "pictures",
+          "label": "책속 그림을 훑어보며 떠오른 생각은?",
+          "checked": true
+        },
+        {
+          "key": "skim",
+          "label": "글을 가볍게 훑어보며 알 수 있었던 것은?",
+          "checked": false
+        }
+      ],
+      "beforeReadingPairs": [
+        {
+          "activityKey": "pictures",
+          "ask": "주인공은 왜 헬멧을 쓰고 있을까요?",
+          "guess": "멋져보이려고"
+        }
+      ],
+      "duringReading": [],
+      "duringReadingActivities": [
+        {
+          "key": "fact",
+          "label": "책 내용에서 바로 답을 찾을 수 있는 질문과 답",
+          "checked": false
+        },
+        {
+          "key": "guess",
+          "label": "책 내용에서 답을 짐작하는 질문과 답",
+          "checked": false
+        },
+        {
+          "key": "feeling",
+          "label": "책을 읽고 떠오른 생각이나 느낌",
+          "checked": false
+        },
+        {
+          "key": "life",
+          "label": "자신의 삶과 관련지어 생각해 본 점",
+          "checked": false
+        }
+      ],
+      "duringReadingPairs": [],
+      "association": "",
+      "favoriteQuote": "",
+      "reviewTitle": "",
+      "reviewReason": "",
+      "reviewContent": "",
+      "reviewImpressiveScene": "",
+      "reviewThoughts": "",
+      "createdAt": "2026-06-26T12:01:01.092Z",
+      "updatedAt": "2026-06-26T12:01:25.665Z"
     }
   ],
   "chatRooms": [
@@ -681,6 +769,14 @@
       "username": "friend",
       "content": "오즈가 새로운 나라에서 적응하기 위해 그랬을 것 같아요",
       "createdAt": "2026-06-22T07:47:14.648Z"
+    },
+    {
+      "id": "bec27e2a-798d-489f-9230-f1dab4e7ad0c",
+      "roomId": "92f1c46b-c429-45d4-9946-154f5bb91311",
+      "userId": "c3d4e5f6-a7b8-9012-cdef-123456789abc",
+      "username": "도움말",
+      "content": "오즈가 거짓말을 하는건 그래도 나빠요",
+      "createdAt": "2026-06-26T12:05:25.262Z"
     }
   ],
   "chatMemberships": [
@@ -697,6 +793,13 @@
       "userId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
       "status": "approved",
       "createdAt": "2026-06-22T07:24:09.359Z"
+    },
+    {
+      "id": "968886c5-e0cb-4d12-af0f-11457bfe9402",
+      "roomId": "92f1c46b-c429-45d4-9946-154f5bb91311",
+      "userId": "c3d4e5f6-a7b8-9012-cdef-123456789abc",
+      "status": "approved",
+      "createdAt": "2026-06-26T12:04:59.961Z"
     }
   ],
   "vocabulary": [
@@ -734,6 +837,13 @@
       "word": "눈",
       "definition": "1. (명사) 빛의 자극을 받아 물체를 볼 수 있는 감각 기관. 척추동물의 경우 안구·시각 신경 따위로 되어 있어, 외계에서 들어온 빛은 각막·눈동자·수정체를 지나 유리체를 거쳐 망막에 이르는데, 그 사이에 굴광체(屈光體)에 의하여 굴절되어 망막에 상을 맺는다.\n2. (명사) 자·저울·온도계 따위에 표시하여 길이·양(量)·도수(度數) 따위를 나타내는 금.\n3. (명사) 그물 따위에서 코와 코를 이어 이룬 구멍.\n4. (명사) 대기 중의 수증기가 찬 기운을 만나 얼어서 땅 위로 떨어지는 얼음의 결정체.\n5. (명사) 새로 막 터져 돋아나려는 초목의 싹. 꽃눈, 잎눈 따위이다.",
       "createdAt": "2026-06-22T07:25:25.177Z"
+    },
+    {
+      "id": "dbc6083f-d03c-4667-9132-c23fd5aae80b",
+      "userId": "c3d4e5f6-a7b8-9012-cdef-123456789abc",
+      "word": "수정",
+      "definition": "1. (명사) → 수갑.\n2. (명사) 물가나 물 가운데에 지은 정자.\n3. (명사) 무색투명한 석영의 하나. 육방주상(六方柱狀)의 결정체이며, 주성분은 이산화 규소이다. 불순물의 혼합 정도에 따라 자색·흑색·황색·홍색 따위의 빛을 띠며, 도장·장식품·광학 기계 따위에 쓴다.\n4. (명사) 배를 타고 물로 다니는 길.\n5. (명사) 물의 정령(精靈). 또는 물속에 사는 요정.\n6. (명사) 동정을 지키는 일.\n7. (명사) 암수의 생식 세포가 하나로 합쳐져 접합자가 됨. 또는 그런 현상. 동물은 정자와 난자가 합쳐져 수정란을 이루고, 종자식물에서는 암술의 씨방 안의 난핵과 수술의 정핵이 결합하여 수정란을 만든다.\n8. (명사) 바로잡아 고침.\n9. (명사) 글이나 글자의 잘못된 점을 고침.\n10. (명사) 고치어 정돈함.\n11. (명사) 정자를 난자에 결합시키는 일.\n12. (명사) 나라를 안정시킴.\n13. (명사) 나라와 백성을 편안하게 함.\n14. (명사) 자기 나라의 내부 형편을 적국에 알려 줌.",
+      "createdAt": "2026-06-26T12:02:12.372Z"
     }
   ],
   "sharedSentences": [
@@ -760,6 +870,14 @@
       "word": "알근달근하다",
       "sentence": "떡볶이가 알근달근하다",
       "createdAt": "2026-06-22T06:30:39.363Z"
+    },
+    {
+      "id": "f00d1f95-b7bb-4968-ac8b-ecea220c33d7",
+      "userId": "c3d4e5f6-a7b8-9012-cdef-123456789abc",
+      "username": "도움말",
+      "word": "수정",
+      "sentence": "열매를 맺기 위해서는 벌이 식물을 수정해야 해요",
+      "createdAt": "2026-06-26T12:02:36.795Z"
     }
   ],
   "storyEmpathies": [
