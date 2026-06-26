@@ -146,10 +146,29 @@ export function FriendFeedMosaic() {
   }, []);
 
   useEffect(() => {
-    fetch("/api/auth/me")
-      .then((r) => r.json())
-      .then((d) => setUser(d.user || null))
-      .catch(() => setUser(null));
+    function loadUser() {
+      fetch("/api/auth/me")
+        .then((r) => r.json())
+        .then((d) => {
+          const nextUser = d.user || null;
+          setUser(nextUser);
+          if (!nextUser) {
+            setItems([]);
+            setFocusedId(null);
+            setSlideIndices({});
+            setLoading(false);
+          }
+        })
+        .catch(() => {
+          setUser(null);
+          setItems([]);
+          setLoading(false);
+        });
+    }
+
+    loadUser();
+    window.addEventListener("auth-changed", loadUser);
+    return () => window.removeEventListener("auth-changed", loadUser);
   }, []);
 
   useEffect(() => {

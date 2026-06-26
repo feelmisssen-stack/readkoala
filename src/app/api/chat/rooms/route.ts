@@ -4,6 +4,7 @@ import { readDb, updateDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { validateContent } from "@/lib/content-filter";
 import { getRoomParticipantNames } from "@/lib/chat";
+import { buildUserDisplayMap } from "@/lib/user-display";
 
 export async function GET() {
   const session = await getSession();
@@ -12,13 +13,14 @@ export async function GET() {
   }
 
   const db = readDb();
+  const displayMap = buildUserDisplayMap(db.users);
   const rooms = db.chatRooms
     .filter((r) => r.status === "approved")
     .map((room) => {
       const membership = db.chatMemberships.find(
         (m) => m.roomId === room.id && m.userId === session.userId
       );
-      const participants = getRoomParticipantNames(db.chatMessages, room.id);
+      const participants = getRoomParticipantNames(db.chatMessages, room.id, displayMap);
       return { ...room, membership, participants };
     });
 

@@ -85,10 +85,10 @@ export default function BooksPage() {
       </div>
 
       <p className="rounded-koala bg-koala-secondary/15 px-4 py-3 text-sm text-koala-muted">
-        감상 기록과 낱말 문장을 쓸수록 코알라가 자라나요.
+        내가 쓴 감상기록으로 잎새는 진해지고 코알라는 자라나요.
       </p>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid items-stretch gap-4 sm:grid-cols-2">
         <KoalaGrowthCard growth={writingGrowth} />
 
         {books.length === 0 ? (

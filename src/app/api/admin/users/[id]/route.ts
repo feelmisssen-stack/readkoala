@@ -1,6 +1,39 @@
 import { NextResponse } from "next/server";
-import { updateDb } from "@/lib/db";
+import bcrypt from "bcryptjs";
+import { readDb, updateDb } from "@/lib/db";
 import { requireGoogleAdmin } from "@/lib/admin-auth";
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    await requireGoogleAdmin();
+  } catch {
+    return NextResponse.json({ error: "관리자 로그인이 필요해요." }, { status: 401 });
+  }
+
+  const { id } = await params;
+  const { password } = await request.json();
+
+  if (!password || password.length < 4) {
+    return NextResponse.json({ error: "비밀번호는 4자 이상이어야 해요." }, { status: 400 });
+  }
+
+  const db = readDb();
+  const user = db.users.find((u) => u.id === id);
+  if (!user) {
+    return NextResponse.json({ error: "회원을 찾을 수 없어요." }, { status: 404 });
+  }
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  updateDb((d) => {
+    const target = d.users.find((u) => u.id === id);
+    if (target) target.passwordHash = passwordHash;
+  });
+
+  return NextResponse.json({ ok: true, username: user.username });
+}
 
 export async function DELETE(
   _request: Request,

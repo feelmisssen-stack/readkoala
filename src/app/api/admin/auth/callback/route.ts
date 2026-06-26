@@ -5,7 +5,9 @@ import {
   getAppUrl,
   isAllowedAdminEmail,
 } from "@/lib/google-admin";
+import { readDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { findUserByEmail } from "@/lib/user-display";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -32,6 +34,15 @@ export async function GET(request: Request) {
     const session = await getSession();
     session.googleAdminEmail = profile.email;
     session.googleAdminName = profile.name;
+
+    const db = readDb();
+    const appUser = findUserByEmail(db.users, profile.email);
+    if (appUser) {
+      session.userId = appUser.id;
+      session.username = appUser.username;
+      session.isAdmin = appUser.isAdmin;
+    }
+
     await session.save();
 
     return NextResponse.redirect(new URL("/admin", base));

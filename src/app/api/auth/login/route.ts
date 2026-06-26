@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { readDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { getDisplayName } from "@/lib/user-display";
 
 export async function POST(request: Request) {
   const { username, password } = await request.json();
@@ -22,5 +23,13 @@ export async function POST(request: Request) {
   session.isAdmin = user.isAdmin;
   await session.save();
 
-  return NextResponse.json({ ok: true, user: { username: user.username, isAdmin: user.isAdmin } });
+  return NextResponse.json({
+    ok: true,
+    user: {
+      username: user.username,
+      nickname: user.nickname,
+      displayName: getDisplayName(user),
+      isAdmin: user.isAdmin,
+    },
+  });
 }

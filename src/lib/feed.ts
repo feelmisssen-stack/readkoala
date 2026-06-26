@@ -1,4 +1,5 @@
 import type { CarouselFeedItem, CarouselMoment, Database, RandomFeedItem, Reflection } from "./types";
+import { buildUserDisplayMap } from "./user-display";
 import {
   BEFORE_READING_QUESTIONS,
   DURING_READING_QUESTIONS,
@@ -69,7 +70,7 @@ function addReadingMoments(
 export function buildRandomFeed(db: Database): RandomFeedItem[] {
   const items: RandomFeedItem[] = [];
   const bookMap = new Map(db.books.map((b) => [b.id, b]));
-  const userMap = new Map(db.users.map((u) => [u.id, u.username]));
+  const userMap = buildUserDisplayMap(db.users);
 
   for (const r of db.reflections) {
     const book = bookMap.get(r.bookId);
@@ -105,7 +106,7 @@ export function buildRandomFeed(db: Database): RandomFeedItem[] {
       type: "shared_sentence",
       text: s.sentence,
       word: s.word,
-      username: s.username,
+      username: userMap.get(s.userId) || s.username,
     });
   }
 
@@ -167,7 +168,7 @@ function buildMomentsFromReflection(reflection: Reflection, bookTitle?: string):
 
 export function buildCarouselFeed(db: Database, excludeUserId?: string): CarouselFeedItem[] {
   const bookMap = new Map(db.books.map((b) => [b.id, b]));
-  const userMap = new Map(db.users.map((u) => [u.id, u.username]));
+  const userMap = buildUserDisplayMap(db.users);
   const reflectedBookIds = new Set<string>();
   const items: CarouselFeedItem[] = [];
 

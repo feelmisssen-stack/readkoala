@@ -6,7 +6,8 @@ export const CHAT_MESSAGE_LIMIT_PER_USER = 5;
 
 export function getRoomParticipantNames(
   messages: { roomId: string; userId: string; username: string; createdAt: string }[],
-  roomId: string
+  roomId: string,
+  displayMap?: Map<string, string>
 ): string[] {
   const seen = new Set<string>();
   const names: string[] = [];
@@ -17,7 +18,7 @@ export function getRoomParticipantNames(
   for (const message of roomMessages) {
     if (seen.has(message.userId)) continue;
     seen.add(message.userId);
-    names.push(message.username);
+    names.push(displayMap?.get(message.userId) || message.username);
   }
   return names;
 }

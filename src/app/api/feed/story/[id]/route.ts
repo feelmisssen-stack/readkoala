@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { readDb } from "@/lib/db";
 import { buildPublicStorySections } from "@/lib/reflection-public-view";
+import { getDisplayName } from "@/lib/user-display";
 
 export async function GET(
   _request: Request,
@@ -28,7 +29,8 @@ export async function GET(
     return NextResponse.json({ error: "책을 찾을 수 없어요." }, { status: 404 });
   }
 
-  const username = db.users.find((user) => user.id === book.userId)?.username || "친구";
+  const author = db.users.find((user) => user.id === book.userId);
+  const username = author ? getDisplayName(author) : "친구";
 
   return NextResponse.json({
     story: {

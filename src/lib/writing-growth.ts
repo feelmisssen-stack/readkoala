@@ -8,7 +8,7 @@ export const KOALA_STAGES = [
   {
     level: 1,
     name: "쿨쿨 아기 코알라",
-    description: "아직 책을 읽지 않아 코알라가 졸린가 봐요. 책을 읽고 코알라를 깨워주세요!",
+    description: "아직 책을 읽지 않아 코알라가 졸린가 봐요.\n책을 읽고 코알라를 깨워주세요!",
   },
   {
     level: 2,
@@ -28,7 +28,7 @@ export const KOALA_STAGES = [
   {
     level: 5,
     name: "초록잎 꼬마 사서 코알라",
-    description: "이제 제법 책을 잘 읽는걸요? 도란서재의 정식 꼬마 사서로 임명합니다!",
+    description: "이제 제법 책을 잘 읽는걸요?\n도란서재의 정식 꼬마 사서로 임명합니다!",
   },
   {
     level: 6,
@@ -53,7 +53,7 @@ export const KOALA_STAGES = [
   {
     level: 10,
     name: "도란서재 명예 관장 코알라",
-    description: "최고의 영예! 꾸준한 독서로 도란서재를 빛낸 가장 위대한 코알라입니다.",
+    description: "최고의 영예!\n꾸준한 독서로 도란서재를 빛낸 가장 위대한 코알라입니다.",
   },
 ] as const;
 
@@ -71,9 +71,16 @@ export const KOALA_STAGE_IMAGES = [
   "/images/koala-stages/koala-lv10.png",
 ] as const;
 
+/** 이미지 교체 시 숫자를 올리면 브라우저·Next 캐시를 갱신합니다 */
+export const KOALA_STAGE_IMAGE_VERSION = "3";
+
 export function getKoalaStageImage(stageIndex: number): string {
   const index = Math.max(0, Math.min(stageIndex, KOALA_STAGE_IMAGES.length - 1));
-  return KOALA_STAGE_IMAGES[index];
+  return `${KOALA_STAGE_IMAGES[index]}?v=${KOALA_STAGE_IMAGE_VERSION}`;
+}
+
+export function splitStageDescription(description: string): string[] {
+  return description.split("\n");
 }
 
 export function countTextBytes(text: string): number {

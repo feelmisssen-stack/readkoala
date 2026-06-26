@@ -55,7 +55,7 @@ export function MyReadingRecord() {
     fetch("/api/auth/me")
       .then((r) => r.json())
       .then((d) => {
-        if (d.user?.username) setUsername(d.user.username);
+        if (d.user?.displayName || d.user?.username) setUsername(d.user.displayName || d.user.username);
       })
       .catch(() => {});
   }, []);

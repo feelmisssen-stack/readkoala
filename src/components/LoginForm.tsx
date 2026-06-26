@@ -40,7 +40,6 @@ export function LoginForm({ onSuccess, className = "" }: LoginFormProps) {
       <div className="koala-card p-8">
         <div className="mb-6 text-center">
           <h2 className="text-xl font-bold text-koala-primary">도란서재 로그인</h2>
-          <p className="mt-1 text-sm text-koala-muted">아이디와 비밀번호로 들어가요</p>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -71,10 +70,9 @@ export function LoginForm({ onSuccess, className = "" }: LoginFormProps) {
             {loading ? "로그인 중..." : "로그인"}
           </button>
         </form>
-        <p className="mt-4 text-center text-sm text-koala-muted">
-          처음이신가요?{" "}
-          <Link href="/register" className="text-koala-primary underline">
-            회원가입
+        <p className="mt-5 text-center">
+          <Link href="/admin" className="text-xs text-koala-muted underline hover:text-koala-primary">
+            관리자로 로그인
           </Link>
         </p>
       </div>

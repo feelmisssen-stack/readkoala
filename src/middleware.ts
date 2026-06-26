@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type { SessionData } from "@/lib/session";
 import { sessionOptions } from "@/lib/session";
 
-const PUBLIC_PATHS = new Set(["/", "/register", "/login", "/admin"]);
+const PUBLIC_PATHS = new Set(["/", "/login", "/admin"]);
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;

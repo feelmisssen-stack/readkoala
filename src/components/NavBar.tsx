@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Library } from "lucide-react";
+import { Library, User } from "lucide-react";
 
 const links = [
   { href: "/", label: "홈" },
@@ -14,8 +14,7 @@ const links = [
 
 export function NavBar() {
   const pathname = usePathname();
-  const router = useRouter();
-  const [user, setUser] = useState<{ username: string } | null>(null);
+  const [user, setUser] = useState<{ username: string; displayName?: string } | null>(null);
   const [isGoogleAdmin, setIsGoogleAdmin] = useState(false);
 
   useEffect(() => {
@@ -38,7 +37,7 @@ export function NavBar() {
       .catch(() => setIsGoogleAdmin(false));
   }, [pathname]);
 
-  if (pathname === "/register" || pathname === "/admin") return null;
+  if (pathname === "/admin") return null;
 
   return (
     <header className="sticky top-0 z-50 border-b border-koala-secondary/30 bg-koala-card/90 backdrop-blur">
@@ -78,13 +77,20 @@ export function NavBar() {
               )}
             </nav>
             <div className="flex items-center gap-2">
-              <span className="hidden text-sm text-koala-muted sm:inline">{user.username}님</span>
+              <Link
+                href="/settings"
+                title="회원 정보"
+                aria-label="회원 정보 수정"
+                className="inline-flex items-center gap-1.5 rounded-pill px-2.5 py-1 text-sm text-koala-muted transition-opacity hover:opacity-80"
+              >
+                <User className="size-3.5 shrink-0" strokeWidth={2} aria-hidden />
+                <span>{(user.displayName || user.username) + "님"}</span>
+              </Link>
               <button
                 onClick={async () => {
                   await fetch("/api/auth/logout", { method: "POST" });
-                  setUser(null);
-                  router.push("/");
-                  router.refresh();
+                  window.dispatchEvent(new Event("auth-changed"));
+                  window.location.href = "/";
                 }}
                 className="koala-btn-secondary text-sm"
               >

@@ -275,21 +275,6 @@ export default function WriteSectionPage({
       setError("아이디와 비밀번호를 입력해 주세요.");
       return false;
     }
-    if (password !== passwordConfirm) {
-      setError("비밀번호가 일치하지 않아요.");
-      return false;
-    }
-
-    const reg = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password, passwordConfirm }),
-    });
-    if (reg.ok) {
-      setIsLoggedIn(true);
-      setNeedsAuth(false);
-      return true;
-    }
 
     const login = await fetch("/api/auth/login", {
       method: "POST",
@@ -302,8 +287,8 @@ export default function WriteSectionPage({
       return true;
     }
 
-    const data = await reg.json().catch(() => ({}));
-    setError(data.error || "가입 또는 로그인에 실패했어요.");
+    const data = await login.json().catch(() => ({}));
+    setError(data.error || "로그인에 실패했어요. 관리자에게 아이디를 확인해 주세요.");
     return false;
   }
 

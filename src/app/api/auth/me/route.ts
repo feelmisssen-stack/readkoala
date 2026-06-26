@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { readDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { calculateLevel } from "@/lib/gamification";
+import { getDisplayName } from "@/lib/user-display";
 
 export async function GET() {
   const session = await getSession();
@@ -20,6 +21,8 @@ export async function GET() {
     user: {
       id: user.id,
       username: user.username,
+      nickname: user.nickname,
+      displayName: getDisplayName(user),
       isAdmin: user.isAdmin,
       stats: { ...user.stats, level },
     },

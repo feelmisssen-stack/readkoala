@@ -1,5 +1,5 @@
 import { KoalaGrowthIllustration } from "@/components/KoalaGrowthIllustration";
-import { KOALA_STAGES } from "@/lib/writing-growth";
+import { KOALA_STAGES, splitStageDescription } from "@/lib/writing-growth";
 
 export default function KoalaStagesPreviewPage() {
   return (
@@ -14,10 +14,18 @@ export default function KoalaStagesPreviewPage() {
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {KOALA_STAGES.map((stage, index) => (
           <article key={stage.level} className="koala-card flex flex-col items-center p-5 text-center">
-            <KoalaGrowthIllustration visualTier={index} className="h-40 max-w-[11rem]" />
+            <div className="relative mx-auto h-40 w-40">
+              <KoalaGrowthIllustration visualTier={index} />
+            </div>
             <p className="mt-3 text-xs font-semibold text-koala-accent">Lv. {stage.level}</p>
             <h2 className="mt-1 text-sm font-bold text-koala-primary">{stage.name}</h2>
-            <p className="mt-2 text-xs leading-relaxed text-koala-muted">{stage.description}</p>
+            <div className="mt-2 text-xs leading-relaxed text-koala-muted">
+              {splitStageDescription(stage.description).map((line, lineIndex) => (
+                <p key={lineIndex} className={lineIndex > 0 ? "mt-1" : undefined}>
+                  {line}
+                </p>
+              ))}
+            </div>
           </article>
         ))}
       </div>

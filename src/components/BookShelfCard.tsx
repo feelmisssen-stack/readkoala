@@ -115,7 +115,7 @@ export function BookShelfCard({ book, deleting, onDelete, onBookUpdate }: BookSh
   }, [book.id, book.isbn, book.totalPages, patchBook]);
 
   return (
-    <div className="koala-card relative p-4 transition hover:shadow-md">
+    <div className="koala-card relative flex h-full flex-col p-4 transition hover:shadow-md">
       <button
         type="button"
         onClick={onDelete}

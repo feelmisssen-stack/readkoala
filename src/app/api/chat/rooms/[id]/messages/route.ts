@@ -3,6 +3,7 @@ import { readDb, updateDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { validateContent } from "@/lib/content-filter";
 import { CHAT_MESSAGE_LIMIT_PER_USER, countUserMessagesInRoom, ensureApprovedMembership } from "@/lib/chat";
+import { buildUserDisplayMap, getDisplayName } from "@/lib/user-display";
 import { v4 as uuid } from "uuid";
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -21,16 +22,26 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     ensureApprovedMembership(d, id, session.userId!);
   });
 
-  const messages = readDb().chatMessages
+  const db = readDb();
+  const displayMap = buildUserDisplayMap(db.users);
+  const messages = db.chatMessages
     .filter((m) => m.roomId === id)
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+    .map((m) => ({
+      ...m,
+      username: displayMap.get(m.userId) || m.username,
+    }));
 
-  const myMessageCount = countUserMessagesInRoom(messages, id, session.userId);
+  const myMessageCount = countUserMessagesInRoom(db.chatMessages, id, session.userId);
+
+  const currentUser = db.users.find((u) => u.id === session.userId);
 
   return NextResponse.json({
     messages,
     currentUserId: session.userId,
-    currentUsername: session.username ?? null,
+    currentUsername: currentUser
+      ? currentUser.nickname?.trim() || currentUser.username
+      : session.username ?? null,
     myMessageCount,
     messageLimit: CHAT_MESSAGE_LIMIT_PER_USER,
   });
@@ -67,11 +78,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     );
   }
 
+  const author = db.users.find((u) => u.id === session.userId);
   const message = {
     id: uuid(),
     roomId: id,
     userId: session.userId,
-    username: session.username || "친구",
+    username: author ? getDisplayName(author) : session.username || "친구",
     content,
     createdAt: new Date().toISOString(),
   };

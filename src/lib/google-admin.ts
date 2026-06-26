@@ -10,17 +10,19 @@ export function getGoogleRedirectUri(): string {
   return `${getAppUrl()}/api/admin/auth/callback`;
 }
 
+const DEFAULT_ADMIN_EMAIL = "feelmiss@gaehyeon.sen.es.kr";
+
 export function getAllowedAdminEmails(): string[] {
-  return (process.env.ADMIN_EMAILS || "")
+  const fromEnv = (process.env.ADMIN_EMAILS || "")
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
+  if (fromEnv.length > 0) return fromEnv;
+  return [DEFAULT_ADMIN_EMAIL];
 }
 
 export function isAllowedAdminEmail(email: string): boolean {
-  const allowed = getAllowedAdminEmails();
-  if (allowed.length === 0) return false;
-  return allowed.includes(email.trim().toLowerCase());
+  return getAllowedAdminEmails().includes(email.trim().toLowerCase());
 }
 
 export function getGoogleAuthUrl(): string {

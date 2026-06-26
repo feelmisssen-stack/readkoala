@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Noto_Serif_KR } from "next/font/google";
 import "./globals.css";
 import { NavBar } from "@/components/NavBar";
+import { AuthGate } from "@/components/AuthGate";
 
 const notoSerif = Noto_Serif_KR({
   subsets: ["latin"],
@@ -20,7 +21,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="ko">
       <body className={`${notoSerif.variable} min-h-screen`}>
         <NavBar />
-        <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+        <AuthGate>
+          <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+        </AuthGate>
       </body>
     </html>
   );
