@@ -4,6 +4,7 @@ import { readDb, updateDb } from "@/lib/db";
 import { getReflectionRecordLevel } from "@/lib/gamification";
 import { getUserWritingGrowth, getWritingGrowth } from "@/lib/writing-growth";
 import { getSession } from "@/lib/session";
+import { rejectInvalidContent } from "@/lib/content-filter-api";
 
 export async function GET() {
   const session = await getSession();
@@ -45,6 +46,9 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
+  const blocked = rejectInvalidContent(body.title, body.author);
+  if (blocked) return blocked;
+
   const now = new Date().toISOString();
 
   const book = {

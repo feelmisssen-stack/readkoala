@@ -6,6 +6,7 @@ import Image from "next/image";
 import { IsbnScanner } from "@/components/IsbnScanner";
 import { BookCoverPlaceholder } from "@/components/BookCoverPlaceholder";
 import type { BookSearchResult } from "@/lib/types";
+import { alertContentFilterApiError } from "@/lib/content-filter-client";
 
 export default function NewBookPage() {
   const router = useRouter();
@@ -47,7 +48,9 @@ export default function NewBookPage() {
           window.location.href = "/";
           return;
         }
-        setError(data.error || "책 등록에 실패했어요.");
+        if (!alertContentFilterApiError(res, data)) {
+          setError(data.error || "책 등록에 실패했어요.");
+        }
         return;
       }
       router.push(`/books/${data.book.id}`);

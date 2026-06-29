@@ -28,6 +28,8 @@ import {
   type ReflectionSection,
 } from "@/lib/reflection-templates";
 import { SECTION_ICONS } from "@/lib/section-icons";
+import { collectReflectionTexts } from "@/lib/content-filter";
+import { alertContentFilterApiError, warnIfInvalidContent } from "@/lib/content-filter-client";
 import type { BeforeReadingActivity, BeforeReadingPair, Book, Reflection } from "@/lib/types";
 
 const VALID_SECTIONS = new Set<string>(SECTION_ORDER);
@@ -57,6 +59,9 @@ export default function WriteSectionPage({
   const [reviewImpressiveScene, setReviewImpressiveScene] = useState("");
   const [reviewThoughts, setReviewThoughts] = useState("");
   const [memorableSceneImage, setMemorableSceneImage] = useState("");
+  const [memorableSceneStatus, setMemorableSceneStatus] = useState<
+    "approved" | "pending" | undefined
+  >();
   const [error, setError] = useState("");
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [loaded, setLoaded] = useState(false);
@@ -156,6 +161,7 @@ export default function WriteSectionPage({
         setReviewImpressiveScene(r0.reviewImpressiveScene || "");
         setReviewThoughts(r0.reviewThoughts || "");
         setMemorableSceneImage(r0.memorableSceneImage || "");
+        setMemorableSceneStatus(r0.memorableSceneStatus);
       })
       .finally(() => setLoaded(true));
   }, [bookId, section]);
@@ -189,14 +195,24 @@ export default function WriteSectionPage({
     setSaveStatus("saving");
     setError("");
 
+    const body = buildBody();
+    if (!warnIfInvalidContent(...collectReflectionTexts(body)).ok) {
+      setSaveStatus("idle");
+      return false;
+    }
+
     try {
       const res = await fetch("/api/reflections", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(buildBody()),
+        body: JSON.stringify(body),
       });
       const data = await res.json();
       if (!res.ok) {
+        if (alertContentFilterApiError(res, data)) {
+          setSaveStatus("idle");
+          return false;
+        }
         setError(data.error || "저장에 실패했어요.");
         setSaveStatus("error");
         return false;
@@ -391,7 +407,11 @@ export default function WriteSectionPage({
         <MemorableSceneUpload
           bookId={bookId}
           imageUrl={memorableSceneImage}
-          onUploaded={setMemorableSceneImage}
+          sceneStatus={memorableSceneStatus}
+          onUploaded={(url, status) => {
+            setMemorableSceneImage(url || "");
+            setMemorableSceneStatus(status);
+          }}
           disabled={needsAuth}
         />
       )}
@@ -474,6 +494,7 @@ export default function WriteSectionPage({
 
       {typedSection === "review" && (
         <AiHelperChat
+          bookId={bookId}
           bookTitle={book?.title}
           reviewDraft={{
             reviewTitle,

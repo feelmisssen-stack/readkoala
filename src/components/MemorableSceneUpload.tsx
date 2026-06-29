@@ -4,17 +4,25 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { ImagePlus, Upload } from "lucide-react";
 import { iconMd, iconSm } from "@/lib/icon-styles";
+import {
+  MemorableScenePendingNotice,
+  resolveMemorableSceneStatus,
+  type MemorableSceneStatus,
+} from "@/components/MemorableSceneStatus";
+import { useImageDrop } from "@/lib/use-image-drop";
 
 interface MemorableSceneUploadProps {
   bookId: string;
   imageUrl?: string;
-  onUploaded: (url: string) => void;
+  sceneStatus?: MemorableSceneStatus;
+  onUploaded: (url: string | undefined, status: MemorableSceneStatus) => void;
   disabled?: boolean;
 }
 
 export function MemorableSceneUpload({
   bookId,
   imageUrl,
+  sceneStatus,
   onUploaded,
   disabled,
 }: MemorableSceneUploadProps) {
@@ -22,10 +30,14 @@ export function MemorableSceneUpload({
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
   const [preview, setPreview] = useState(imageUrl || "");
+  const [status, setStatus] = useState<MemorableSceneStatus | "empty">(
+    resolveMemorableSceneStatus(imageUrl, sceneStatus)
+  );
 
   useEffect(() => {
     setPreview(imageUrl || "");
-  }, [imageUrl]);
+    setStatus(resolveMemorableSceneStatus(imageUrl, sceneStatus));
+  }, [imageUrl, sceneStatus]);
 
   async function handleFile(file: File) {
     setUploading(true);
@@ -44,18 +56,47 @@ export function MemorableSceneUpload({
         setError(data.error || "업로드에 실패했어요.");
         return;
       }
-      setPreview(data.imageUrl);
-      onUploaded(data.imageUrl);
+
+      const nextStatus = (data.status as MemorableSceneStatus) || "approved";
+      if (data.pending || nextStatus === "pending") {
+        setPreview("");
+        setStatus("pending");
+        onUploaded(undefined, "pending");
+        return;
+      }
+
+      setPreview(data.imageUrl || "");
+      setStatus("approved");
+      onUploaded(data.imageUrl, "approved");
     } finally {
       setUploading(false);
     }
   }
 
+  const isPending = status === "pending";
+  const { isDragging, dropHandlers } = useImageDrop(
+    (file) => {
+      void handleFile(file);
+    },
+    {
+      disabled: disabled || uploading,
+      onInvalidFile: setError,
+    }
+  );
+
+  const dropZoneClassName = `flex w-full flex-col items-center gap-3 rounded-koala border-2 border-dashed px-6 py-12 transition disabled:opacity-50 ${
+    isDragging
+      ? "border-koala-primary bg-koala-primary/10"
+      : "border-koala-secondary/50 bg-koala-secondary/10 hover:bg-koala-secondary/20"
+  }`;
+
   return (
-    <div className="koala-card space-y-4 p-5">
+    <div className="koala-card space-y-4 p-5" {...dropHandlers}>
       <p className="text-sm text-koala-muted">기억에 남는 장면을 그려서 올려봅시다</p>
 
-      {preview ? (
+      {isPending ? (
+        <MemorableScenePendingNotice className="mx-auto w-full max-w-md" />
+      ) : preview ? (
         <div className="relative mx-auto aspect-[4/3] w-full max-w-md overflow-hidden rounded-koala bg-koala-secondary/20">
           <Image src={preview} alt="기억에 남는 장면" fill className="object-contain" unoptimized />
         </div>
@@ -64,10 +105,12 @@ export function MemorableSceneUpload({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={disabled || uploading}
-          className="flex w-full flex-col items-center gap-3 rounded-koala border-2 border-dashed border-koala-secondary/50 bg-koala-secondary/10 px-6 py-12 transition hover:bg-koala-secondary/20 disabled:opacity-50"
+          className={dropZoneClassName}
         >
           <ImagePlus className={`${iconMd} text-koala-primary`} strokeWidth={1.75} aria-hidden />
-          <span className="text-sm text-koala-muted">그림 파일을 선택하세요</span>
+          <span className="text-sm text-koala-muted">
+            {isDragging ? "여기에 그림을 놓으세요" : "그림 파일을 선택하거나 끌어다 놓으세요"}
+          </span>
         </button>
       )}
 
@@ -83,7 +126,7 @@ export function MemorableSceneUpload({
         }}
       />
 
-      {preview && (
+      {(preview || isPending) && (
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
@@ -91,11 +134,11 @@ export function MemorableSceneUpload({
           className="koala-btn-secondary inline-flex items-center gap-1.5 text-sm"
         >
           <Upload className={iconSm} aria-hidden />
-          다른 그림으로 바꾸기
+          {isPending ? "다른 그림으로 다시 올리기" : "다른 그림으로 바꾸기"}
         </button>
       )}
 
-      {uploading && <p className="text-xs text-koala-muted">업로드 중...</p>}
+      {uploading && <p className="text-xs text-koala-muted">그림을 확인하고 있어요...</p>}
       {error && <p className="text-sm text-red-500">{error}</p>}
     </div>
   );

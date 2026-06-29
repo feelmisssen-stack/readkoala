@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BackLink } from "@/components/BackLink";
+import { warnIfInvalidNickname, alertContentFilterApiError } from "@/lib/content-filter-client";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -32,6 +33,7 @@ export default function SettingsPage() {
 
   async function saveNickname(e: React.FormEvent) {
     e.preventDefault();
+    if (!warnIfInvalidNickname(nickname).ok) return;
     setSavingNickname(true);
     setError("");
     setSuccess("");
@@ -43,7 +45,9 @@ export default function SettingsPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "닉네임 변경에 실패했어요.");
+        if (!alertContentFilterApiError(res, data)) {
+          setError(data.error || "닉네임 변경에 실패했어요.");
+        }
         return;
       }
       setSuccess("닉네임을 바꿨어요.");

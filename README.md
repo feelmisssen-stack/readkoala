@@ -9,7 +9,7 @@
 - ISBN 입력 및 바코드 스캔
 - 독서 온도계 (진행률)
 - 단계별 감상문 작성 (읽기 전/중, 연상 문장, 책속 한마디, 감상문)
-- AI 독서 도우미 (OpenAI 키 없으면 정적 힌트)
+- AI 독서 도우미 (Gemini 키 없으면 정적 힌트)
 - 메인 화면 랜덤 노출 + 오늘 하루 보지 않기
 - 독서 기록 모아 보기
 - 책 이야기방 (관리자 승인)
@@ -47,7 +47,8 @@ npm run dev
 | `ALADIN_TTB_KEY` | [알라딘 Open API](https://blog.aladin.co.kr/openapi/popup/6695306) TTBKey (도서 검색, 선택) |
 | `DATA4LIBRARY_API_KEY` | [도서관 정보나루](https://www.data4library.kr) API 키 (선택) |
 | `STDICT_API_KEY` | [표준국어대사전](https://stdict.korean.go.kr/openapi/openApiRegister.do) API 키 (국어사전) |
-| `OPENAI_API_KEY` | AI 도우미용 (선택) |
+| `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) API 키 — 감상문 도우미·그림 검사 (선택) |
+| `GEMINI_MODEL` | Gemini 모델 ID (기본 `gemini-3.1-flash-lite`) |
 
 API 키 없이도 Google Books / Open Library / 내장 사전으로 동작합니다.
 

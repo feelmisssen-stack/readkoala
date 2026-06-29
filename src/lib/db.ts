@@ -12,10 +12,13 @@ const emptyDb: Database = {
   reflections: [],
   chatRooms: [],
   chatMessages: [],
+  chatMessageHearts: [],
   chatMemberships: [],
   vocabulary: [],
   sharedSentences: [],
   storyEmpathies: [],
+  moderationReports: [],
+  aiHelperSessions: [],
 };
 
 function ensureDataDir() {
@@ -29,6 +32,9 @@ function normalizeDb(parsed: Partial<Database>): Database {
     ...emptyDb,
     ...parsed,
     storyEmpathies: parsed.storyEmpathies ?? [],
+    chatMessageHearts: parsed.chatMessageHearts ?? [],
+    moderationReports: parsed.moderationReports ?? [],
+    aiHelperSessions: parsed.aiHelperSessions ?? [],
   } as Database;
 }
 

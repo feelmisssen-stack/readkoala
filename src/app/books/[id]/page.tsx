@@ -194,14 +194,30 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
                   key={section}
                   bookId={id}
                   initialImageUrl={reflection?.memorableSceneImage}
-                  onUploaded={(url) =>
+                  initialSceneStatus={reflection?.memorableSceneStatus}
+                  onUploaded={(url, status) =>
                     setReflection((prev) =>
-                      prev ? { ...prev, memorableSceneImage: url } : prev
+                      prev
+                        ? {
+                            ...prev,
+                            memorableSceneImage: url,
+                            memorableSceneStatus: status,
+                            memorableScenePendingImage:
+                              status === "pending" ? prev.memorableScenePendingImage : undefined,
+                          }
+                        : prev
                     )
                   }
                   onDeleted={() =>
                     setReflection((prev) =>
-                      prev ? { ...prev, memorableSceneImage: undefined } : prev
+                      prev
+                        ? {
+                            ...prev,
+                            memorableSceneImage: undefined,
+                            memorableScenePendingImage: undefined,
+                            memorableSceneStatus: undefined,
+                          }
+                        : prev
                     )
                   }
                 />

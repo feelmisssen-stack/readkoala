@@ -3,6 +3,7 @@ import { calcProgressFromPages } from "@/lib/reading-progress";
 import { applyReadingMilestones } from "@/lib/reading-dates";
 import { readDb, updateDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { rejectInvalidContent } from "@/lib/content-filter-api";
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -26,6 +27,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const body = await request.json();
+  if (body.title) {
+    const blocked = rejectInvalidContent(body.title);
+    if (blocked) return blocked;
+  }
+
   const db = readDb();
   const book = db.books.find((b) => b.id === id && b.userId === session.userId);
   if (!book) {

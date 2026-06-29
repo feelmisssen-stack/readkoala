@@ -23,9 +23,17 @@ const FALLBACK_DICT: Record<string, string> = {
   성장: "점점 자라거나 발전함.",
 };
 
+export interface DictSense {
+  definition: string;
+  pos?: string;
+  /** 표준국어대사전 동형어 번호 (sup_no) */
+  senseNo?: number;
+}
+
 export interface DictResult {
   word: string;
   definition: string;
+  senses: DictSense[];
   source: "api" | "fallback";
   error?: "missing_api_key" | "api_error" | "not_found";
 }
@@ -84,10 +92,15 @@ function pickMatchingItems(items: StdictItem[], query: string): StdictItem[] {
   return items.length > 0 ? [items[0]] : [];
 }
 
-function formatItemDefinitions(item: StdictItem): string[] {
+function formatItemSenses(item: StdictItem): DictSense[] {
   const definitions = extractDefinitions(item);
-  const pos = item.pos ? `(${item.pos}) ` : "";
-  return definitions.map((d) => `${pos}${d}`);
+  const pos = item.pos?.trim();
+  const senseNo = Number(item.sup_no) || undefined;
+  return definitions.map((definition) => ({
+    definition,
+    ...(senseNo ? { senseNo } : {}),
+    ...(pos ? { pos } : {}),
+  }));
 }
 
 function toDictResult(items: StdictItem[], query: string): DictResult | null {
@@ -97,17 +110,25 @@ function toDictResult(items: StdictItem[], query: string): DictResult | null {
     return na - nb;
   });
 
-  const lines = sorted.flatMap((item) => formatItemDefinitions(item)).filter(Boolean);
-  if (lines.length === 0) return null;
+  const senses = sorted.flatMap((item) => formatItemSenses(item)).filter((s) => s.definition);
+  if (senses.length === 0) return null;
 
   const definition =
-    lines.length === 1
-      ? lines[0]
-      : lines.map((line, i) => `${i + 1}. ${line}`).join("\n");
+    senses.length === 1
+      ? senses[0].pos
+        ? `(${senses[0].pos}) ${senses[0].definition}`
+        : senses[0].definition
+      : senses
+          .map((sense, i) => {
+            const pos = sense.pos ? `(${sense.pos}) ` : "";
+            return `${i + 1}. ${pos}${sense.definition}`;
+          })
+          .join("\n");
 
   return {
     word: sorted[0]?.word || query,
     definition,
+    senses,
     source: "api",
   };
 }
@@ -177,6 +198,7 @@ export async function lookupWord(word: string): Promise<DictResult | null> {
       word: trimmed,
       definition:
         "표준국어대사전 API 키가 없어요. 국어사전 페이지 위쪽에서 API 키를 입력하고 저장해 주세요.",
+      senses: [],
       source: "fallback",
       error: "missing_api_key",
     };
@@ -190,24 +212,27 @@ export async function lookupWord(word: string): Promise<DictResult | null> {
     return {
       word: trimmed,
       definition: `사전 API 호출에 실패했어요. (${message}) STDICT_API_KEY가 올바른지 확인해 주세요.`,
+      senses: [],
       source: "fallback",
       error: "api_error",
     };
   }
 
   if (FALLBACK_DICT[trimmed]) {
-    return { word: trimmed, definition: FALLBACK_DICT[trimmed], source: "fallback" };
+    const def = FALLBACK_DICT[trimmed];
+    return { word: trimmed, definition: def, senses: [{ definition: def }], source: "fallback" };
   }
 
   for (const [key, def] of Object.entries(FALLBACK_DICT)) {
     if (key.includes(trimmed) || trimmed.includes(key)) {
-      return { word: key, definition: def, source: "fallback" };
+      return { word: key, definition: def, senses: [{ definition: def }], source: "fallback" };
     }
   }
 
   return {
     word: trimmed,
     definition: `"${trimmed}"의 뜻을 표준국어대사전에서 찾지 못했어요. 다른 표현으로 검색해 보세요.`,
+    senses: [],
     source: "fallback",
     error: "not_found",
   };

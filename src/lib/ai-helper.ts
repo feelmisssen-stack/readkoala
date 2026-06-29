@@ -1,3 +1,5 @@
+import { callGeminiGenerateContent } from "@/lib/gemini";
+
 export type WritingContext =
   | "before_reading"
   | "during_reading"
@@ -46,10 +48,6 @@ const REVIEW_FIELDS: { key: keyof ReviewDraft; label: string; hint: string }[] =
   },
 ];
 
-function getFirstEmptyReviewField(draft: ReviewDraft) {
-  return REVIEW_FIELDS.find((f) => !draft[f.key]?.trim()) ?? null;
-}
-
 function buildReviewDraftSummary(draft: ReviewDraft): string {
   const lines: string[] = [];
   if (draft.bookTitle?.trim()) lines.push(`책 제목: ${draft.bookTitle.trim()}`);
@@ -61,20 +59,20 @@ function buildReviewDraftSummary(draft: ReviewDraft): string {
 }
 
 function buildReviewSystemPrompt(draft: ReviewDraft): string {
-  const nextField = getFirstEmptyReviewField(draft);
   return `당신은 초등학생을 돕는 따뜻한 독서 도우미입니다. 지금 학생은 「감상문」을 쓰는 중입니다.
 
-[지금까지 적은 내용]
+[지금까지 감상문에 적어 둔 내용 — 참고만 하세요]
 ${buildReviewDraftSummary(draft)}
 
 [대화 방식 — 꼭 지켜 주세요]
-1. 학생이 한 말을 먼저 짧게 되짚어 주세요. (예: "○○ 장면이 제일 기억에 남는다고 했구나.")
-2. 질문은 한 번에 하나만 하세요.
-3. 답을 대신 길게 쓰지 말고, 학생이 스스로 쓰게 이끌어 주세요. 필요하면 문장 한 줄 예시만 제시하세요.
-4. 감상문 순서를 자연스럽게 안내하세요: 감상문 제목 → 읽은 까닭 → 책의 내용 → 인상 깊은 장면 → 읽고 떠오른 생각.
-5. 쉬운 말, 2~4문장 이내로 답하세요. 이모지는 0~1개만 써도 됩니다.
-6. 욕설이나 부적절한 표현은 사용하지 마세요.
-${nextField ? `\n[지금 우선 도와줄 칸]\n「${nextField.label}」 — ${nextField.hint}` : "\n[지금]\n대부분의 칸이 채워졌어요. 전체를 다듬거나 마음에 드는 부분을 칭찬해 주세요."}`;
+1. 학생이 방금 한 말에 가장 먼저 반응하세요. 짧게 되짚거나 공감해 주세요.
+2. 감상문 항목 순서(제목→까닭→내용→장면→느낌)를 맞추려고 억지로 끌고 가지 마세요.
+3. 학생이 궁금해한 것, 힘들어한 것, 좋아한 것에 맞춰 대화를 이어 가세요.
+4. 질문은 한 번에 하나만 하세요.
+5. 답을 대신 길게 쓰지 말고, 학생이 스스로 감상문 칸에 쓸 수 있게 이끌어 주세요. 필요하면 문장 한 줄 예시만 제시하세요.
+6. 쉬운 말, 2~4문장 이내로 답하세요. 이모지는 0~1개만 써도 됩니다.
+7. 욕설이나 부적절한 표현은 사용하지 마세요.
+8. 아직 비어 있는 칸이 있어도, 지금 대화 흐름이 더 중요합니다. 필요할 때만 자연스럽게 감상문 작성을 돕으세요.`;
 }
 
 function snippet(text: string, max = 28): string {
@@ -89,7 +87,6 @@ function getReviewFallbackReply(
   isGreeting?: boolean
 ): string {
   const lastUser = [...messages].reverse().find((m) => m.role === "user")?.content?.trim();
-  const nextField = getFirstEmptyReviewField(draft);
   const book = draft.bookTitle?.trim() ? `「${draft.bookTitle.trim()}」` : "이 책";
 
   if (isGreeting) {
@@ -97,24 +94,13 @@ function getReviewFallbackReply(
   }
 
   if (!lastUser) {
-    if (nextField) {
-      return `안녕! ${book} 감상문을 같이 써 볼까?\n\n먼저 「${nextField.label}」부터 생각해 보자.\n${nextField.hint}`;
-    }
-    return `안녕! ${book} 감상문을 많이 써 두었네.\n\n가장 마음에 드는 부분이 어느 칸인지 말해 줄래?`;
+    return `안녕! ${book} 감상문을 같이 생각해 볼까?\n\n지금 떠오르는 말이나 어려운 점을 편하게 말해 줘.`;
   }
 
   const lower = lastUser.toLowerCase();
 
   if (lower.includes("예시") || lower.includes("예를")) {
-    const examples: Record<string, string> = {
-      reviewTitle: "용기를 배운 하루",
-      reviewReason: "친구가 재미있다고 해서 빌려 읽었어요.",
-      reviewContent: "주인공이 어려운 일을 겪지만 친구들과 함께 해결해요.",
-      reviewImpressiveScene: "주인공이 친구를 도와준 장면이 가장 기억에 남아요.",
-      reviewThoughts: "나도 친구에게 먼저 다가가 봐야겠다고 생각했어요.",
-    };
-    const key = nextField?.key ?? "reviewThoughts";
-    return `예를 들면 이렇게 쓸 수 있어.\n\n"${examples[key]}"\n\n꼭 똑같이 쓰지 말고, 네 말로 바꿔 볼래?`;
+    return `좋아! 예를 들면 이렇게 쓸 수 있어.\n\n"주인공이 친구를 도와준 장면이 가장 기억에 남아요."\n\n꼭 똑같이 쓰지 말고, 네 말로 바꿔 볼래?`;
   }
 
   if (
@@ -124,17 +110,10 @@ function getReviewFallbackReply(
     lower.includes("힘들") ||
     lower.includes("어려")
   ) {
-    if (nextField) {
-      return `괜찮아, 처음엔 다들 어려워.\n\n「${nextField.label}」은 ${nextField.hint}\n\n한 문장만 적어도 충분해!`;
-    }
-    return `괜찮아! 이미 많이 썼어.\n\n"${snippet(lastUser)}"라고 한 부분을 감상문 칸에 옮겨 적어 보면 돼.`;
+    return `괜찮아, 처음엔 다들 어려워.\n\n"${snippet(lastUser)}"라고 한 부분부터 천천히 말해 볼까?\n\n한 문장만 적어도 충분해!`;
   }
 
-  if (nextField) {
-    return `"${snippet(lastUser)}" 이야기 고마워!\n\n그 생각을 「${nextField.label}」 칸에 쓰면 좋겠어.\n${nextField.hint}`;
-  }
-
-  return `"${snippet(lastUser)}" 정말 좋은 생각이야!\n\n이미 감상문이 잘 채워지고 있어. 마음에 드는 문장을 한 번 더 다듬어 볼까?`;
+  return `"${snippet(lastUser)}" 이야기 고마워!\n\n그 생각을 감상문 칸에 옮겨 적어 보면 좋겠어. 더 말하고 싶은 게 있니?`;
 }
 
 export async function getWritingHelp(options: {
@@ -150,36 +129,19 @@ export async function getWritingHelp(options: {
       return REVIEW_HELPER_GREETING;
     }
 
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (apiKey) {
-      try {
-        const chatMessages: { role: "system" | "user" | "assistant"; content: string }[] = [
-          { role: "system", content: buildReviewSystemPrompt(reviewDraft) },
-        ];
-
-        for (const m of messages) {
-          chatMessages.push({ role: m.role, content: m.content });
-        }
-
-        const res = await fetch("https://api.openai.com/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${apiKey}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "gpt-4o-mini",
-            messages: chatMessages,
-            max_tokens: 350,
-            temperature: 0.7,
-          }),
-        });
-        const data = await res.json();
-        const reply = data.choices?.[0]?.message?.content?.trim();
-        if (reply) return reply;
-      } catch {
-        /* fallback below */
-      }
+    try {
+      const reply = await callGeminiGenerateContent({
+        systemInstruction: buildReviewSystemPrompt(reviewDraft),
+        contents: messages.map((m) => ({
+          role: m.role === "assistant" ? "model" : "user",
+          parts: [{ text: m.content }],
+        })),
+        temperature: 0.7,
+        maxOutputTokens: 350,
+      });
+      if (reply) return reply;
+    } catch {
+      /* fallback below */
     }
 
     return getReviewFallbackReply(reviewDraft, messages, isGreeting);

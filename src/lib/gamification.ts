@@ -1,5 +1,6 @@
 import type { ReflectionSection } from "./reflection-templates";
 import type { Reflection, UserStats } from "./types";
+import { hasMemorableSceneActivity } from "./image-moderation";
 
 export function calculateLevel(stats: UserStats): number {
   const score =
@@ -113,7 +114,7 @@ export function hasReflectionSectionContent(
     case "review":
       return hasReviewContent(reflection);
     case "memorable_scene":
-      return !!reflection.memorableSceneImage?.trim();
+      return hasMemorableSceneActivity(reflection);
     default:
       return false;
   }
@@ -129,7 +130,7 @@ export function getReflectionRecordLevel(reflection: Reflection | null | undefin
     !!reflection.association?.trim(),
     !!reflection.favoriteQuote?.trim(),
     hasReviewContent(reflection),
-    !!reflection.memorableSceneImage?.trim(),
+    hasMemorableSceneActivity(reflection),
   ].filter(Boolean).length;
 
   if (filledSections === 0) return 0;

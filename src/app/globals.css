@@ -61,4 +61,33 @@
   .koala-label {
     @apply mb-1.5 block text-sm font-medium text-koala-muted;
   }
+  .vocab-sense-mark {
+    margin-left: 0.05em;
+    font-size: 0.62em;
+    font-weight: 700;
+    line-height: 1;
+    vertical-align: super;
+  }
+  .koala-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--color-koala-primary-rgb) / 0.45)
+      rgb(var(--color-koala-secondary-rgb) / 0.15);
+    scrollbar-gutter: stable;
+  }
+  .koala-scrollbar::-webkit-scrollbar {
+    width: 10px;
+  }
+  .koala-scrollbar::-webkit-scrollbar-track {
+    background: rgb(var(--color-koala-secondary-rgb) / 0.15);
+    border-radius: 999px;
+  }
+  .koala-scrollbar::-webkit-scrollbar-thumb {
+    background: rgb(var(--color-koala-primary-rgb) / 0.4);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  .koala-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--color-koala-primary-rgb) / 0.6);
+  }
 }

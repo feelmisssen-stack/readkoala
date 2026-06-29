@@ -4,9 +4,11 @@ import { NextResponse } from "next/server";
 import { v4 as uuid } from "uuid";
 import { readDb, updateDb } from "@/lib/db";
 import { applyReadingMilestones } from "@/lib/reading-dates";
+import { moderateImageBuffer } from "@/lib/image-moderation";
 import { getSession } from "@/lib/session";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "memorable-scenes");
+const PENDING_DIR = path.join(UPLOAD_DIR, "pending");
 const MAX_BYTES = 5 * 1024 * 1024;
 
 const EXT_BY_MIME: Record<string, string> = {
@@ -15,6 +17,62 @@ const EXT_BY_MIME: Record<string, string> = {
   "image/webp": ".webp",
   "image/gif": ".gif",
 };
+
+function buildReflectionWithScene(
+  existing: ReturnType<typeof readDb>["reflections"][number] | undefined,
+  sessionUserId: string,
+  bookId: string,
+  now: string,
+  scene: {
+    memorableSceneImage?: string;
+    memorableScenePendingImage?: string;
+    memorableSceneStatus: "approved" | "pending";
+    memorableScenePendingReason?: "api_unavailable" | "content_review";
+    memorableScenePendingDetail?: string;
+  }
+) {
+  if (existing) {
+    return {
+      ...existing,
+      memorableSceneImage: scene.memorableSceneImage,
+      memorableScenePendingImage: scene.memorableScenePendingImage,
+      memorableSceneStatus: scene.memorableSceneStatus,
+      memorableScenePendingReason: scene.memorableScenePendingReason,
+      memorableScenePendingDetail: scene.memorableScenePendingDetail,
+      updatedAt: now,
+    };
+  }
+
+  return {
+    id: uuid(),
+    userId: sessionUserId,
+    bookId,
+    beforeReading: [],
+    duringReading: [],
+    association: "",
+    favoriteQuote: "",
+    reviewTitle: "",
+    reviewReason: "",
+    reviewContent: "",
+    reviewImpressiveScene: "",
+    reviewThoughts: "",
+    memorableSceneImage: scene.memorableSceneImage,
+    memorableScenePendingImage: scene.memorableScenePendingImage,
+    memorableSceneStatus: scene.memorableSceneStatus,
+    memorableScenePendingReason: scene.memorableScenePendingReason,
+    memorableScenePendingDetail: scene.memorableScenePendingDetail,
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+async function removeFileIfExists(filepath: string) {
+  try {
+    await unlink(filepath);
+  } catch {
+    // ignore missing files
+  }
+}
 
 export async function POST(request: Request) {
   const session = await getSession();
@@ -47,38 +105,47 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "책을 먼저 등록해 주세요." }, { status: 400 });
   }
 
-  const filename = `${session.userId}-${bookId}${ext}`;
-  const filepath = path.join(UPLOAD_DIR, filename);
-  const imageUrl = `/uploads/memorable-scenes/${filename}`;
-
-  await mkdir(UPLOAD_DIR, { recursive: true });
   const buffer = Buffer.from(await file.arrayBuffer());
-  await writeFile(filepath, buffer);
+  const moderation = await moderateImageBuffer(buffer, file.type);
+  const approved = moderation.safe;
+
+  const filename = `${session.userId}-${bookId}${ext}`;
+  const approvedPath = path.join(UPLOAD_DIR, filename);
+  const pendingPath = path.join(PENDING_DIR, filename);
+  const approvedUrl = `/uploads/memorable-scenes/${filename}`;
+  const pendingUrl = `/uploads/memorable-scenes/pending/${filename}`;
+
+  await mkdir(approved ? UPLOAD_DIR : PENDING_DIR, { recursive: true });
+  if (approved) {
+    await mkdir(UPLOAD_DIR, { recursive: true });
+    await writeFile(approvedPath, buffer);
+    await removeFileIfExists(pendingPath);
+  } else {
+    await mkdir(PENDING_DIR, { recursive: true });
+    await writeFile(pendingPath, buffer);
+    await removeFileIfExists(approvedPath);
+  }
 
   const now = new Date().toISOString();
   const existing = db.reflections.find(
     (r) => r.userId === session.userId && r.bookId === bookId
   );
 
-  const reflection = existing
-    ? { ...existing, memorableSceneImage: imageUrl, updatedAt: now }
-    : {
-        id: uuid(),
-        userId: session.userId,
-        bookId,
-        beforeReading: [],
-        duringReading: [],
-        association: "",
-        favoriteQuote: "",
-        reviewTitle: "",
-        reviewReason: "",
-        reviewContent: "",
-        reviewImpressiveScene: "",
-        reviewThoughts: "",
-        memorableSceneImage: imageUrl,
-        createdAt: now,
-        updatedAt: now,
-      };
+  const reflection = buildReflectionWithScene(existing, session.userId, bookId, now, {
+    memorableSceneImage: approved ? approvedUrl : undefined,
+    memorableScenePendingImage: approved ? undefined : pendingUrl,
+    memorableSceneStatus: approved ? "approved" : "pending",
+    memorableScenePendingReason: approved
+      ? undefined
+      : moderation.apiUnavailable
+        ? "api_unavailable"
+        : "content_review",
+    memorableScenePendingDetail: approved
+      ? undefined
+      : moderation.apiUnavailable
+        ? undefined
+        : moderation.reason,
+  });
 
   updateDb((d) => {
     if (existing) {
@@ -95,7 +162,12 @@ export async function POST(request: Request) {
     }
   });
 
-  return NextResponse.json({ imageUrl, reflection });
+  return NextResponse.json({
+    status: reflection.memorableSceneStatus,
+    imageUrl: reflection.memorableSceneImage,
+    pending: !approved,
+    reflection,
+  });
 }
 
 export async function DELETE(request: Request) {
@@ -114,12 +186,18 @@ export async function DELETE(request: Request) {
   const reflection = db.reflections.find(
     (r) => r.userId === session.userId && r.bookId === bookId
   );
-  if (!reflection?.memorableSceneImage) {
+  if (!reflection?.memorableSceneImage && !reflection?.memorableScenePendingImage) {
     return NextResponse.json({ ok: true });
   }
 
-  const imagePath = reflection.memorableSceneImage.replace(/^\//, "");
-  const filepath = path.join(process.cwd(), "public", imagePath);
+  if (reflection.memorableSceneImage) {
+    const imagePath = reflection.memorableSceneImage.replace(/^\//, "");
+    await removeFileIfExists(path.join(process.cwd(), "public", imagePath));
+  }
+  if (reflection.memorableScenePendingImage) {
+    const pendingPath = reflection.memorableScenePendingImage.replace(/^\//, "");
+    await removeFileIfExists(path.join(process.cwd(), "public", pendingPath));
+  }
 
   updateDb((d) => {
     const idx = d.reflections.findIndex(
@@ -129,16 +207,14 @@ export async function DELETE(request: Request) {
       d.reflections[idx] = {
         ...d.reflections[idx],
         memorableSceneImage: undefined,
+        memorableScenePendingImage: undefined,
+        memorableSceneStatus: undefined,
+        memorableScenePendingReason: undefined,
+        memorableScenePendingDetail: undefined,
         updatedAt: new Date().toISOString(),
       };
     }
   });
-
-  try {
-    await unlink(filepath);
-  } catch {
-    // 파일이 없어도 DB에서 제거됨
-  }
 
   return NextResponse.json({ ok: true });
 }

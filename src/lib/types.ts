@@ -74,6 +74,10 @@ export interface Reflection {
   reviewImpressiveScene: string;
   reviewThoughts: string;
   memorableSceneImage?: string;
+  memorableScenePendingImage?: string;
+  memorableSceneStatus?: "approved" | "pending";
+  memorableScenePendingReason?: "api_unavailable" | "content_review";
+  memorableScenePendingDetail?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -97,6 +101,14 @@ export interface ChatMessage {
   createdAt: string;
 }
 
+export interface ChatMessageHeart {
+  id: string;
+  messageId: string;
+  roomId: string;
+  userId: string;
+  createdAt: string;
+}
+
 export interface ChatMembership {
   id: string;
   roomId: string;
@@ -110,6 +122,8 @@ export interface VocabularyEntry {
   userId: string;
   word: string;
   definition: string;
+  /** 표준국어대사전 동형어 번호 — 같은 낱말이 여러 뜻일 때 구분 */
+  senseNo?: number;
   createdAt: string;
 }
 
@@ -117,7 +131,10 @@ export interface SharedSentence {
   id: string;
   userId: string;
   username: string;
+  vocabularyId?: string;
   word: string;
+  definition: string;
+  senseNo?: number;
   sentence: string;
   createdAt: string;
 }
@@ -134,16 +151,58 @@ export interface StoryEmpathy {
   updatedAt: string;
 }
 
+export type ModerationReportSource =
+  | "reflection"
+  | "chat_message"
+  | "chat_room"
+  | "shared_sentence"
+  | "dictionary"
+  | "ai_helper"
+  | "profile";
+
+export interface ModerationReport {
+  id: string;
+  userId: string;
+  source: ModerationReportSource;
+  status: "pending" | "dismissed";
+  reason?: "profanity" | "pii";
+  preview: string;
+  bookId?: string;
+  bookTitle?: string;
+  fieldLabel?: string;
+  createdAt: string;
+  reviewedAt?: string;
+}
+
+export interface AiHelperMessage {
+  role: "user" | "assistant";
+  content: string;
+  createdAt: string;
+}
+
+export interface AiHelperSession {
+  id: string;
+  userId: string;
+  bookId?: string;
+  bookTitle?: string;
+  messages: AiHelperMessage[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Database {
   users: User[];
   books: Book[];
   reflections: Reflection[];
   chatRooms: ChatRoom[];
   chatMessages: ChatMessage[];
+  chatMessageHearts: ChatMessageHeart[];
   chatMemberships: ChatMembership[];
   vocabulary: VocabularyEntry[];
   sharedSentences: SharedSentence[];
   storyEmpathies: StoryEmpathy[];
+  moderationReports: ModerationReport[];
+  aiHelperSessions: AiHelperSession[];
 }
 
 export type RandomFeedItem =

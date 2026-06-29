@@ -6,17 +6,25 @@ import { ImagePlus, Upload, X } from "lucide-react";
 import { iconMd, iconSm } from "@/lib/icon-styles";
 import { SECTION_ICONS } from "@/lib/section-icons";
 import { SECTION_LABELS } from "@/lib/reflection-templates";
+import {
+  MemorableScenePendingNotice,
+  resolveMemorableSceneStatus,
+  type MemorableSceneStatus,
+} from "@/components/MemorableSceneStatus";
+import { useImageDrop } from "@/lib/use-image-drop";
 
 interface MemorableSceneMenuCardProps {
   bookId: string;
   initialImageUrl?: string;
-  onUploaded?: (url: string) => void;
+  initialSceneStatus?: MemorableSceneStatus;
+  onUploaded?: (url: string | undefined, status: MemorableSceneStatus) => void;
   onDeleted?: () => void;
 }
 
 export function MemorableSceneMenuCard({
   bookId,
   initialImageUrl,
+  initialSceneStatus,
   onUploaded,
   onDeleted,
 }: MemorableSceneMenuCardProps) {
@@ -24,13 +32,35 @@ export function MemorableSceneMenuCard({
   const inputRef = useRef<HTMLInputElement>(null);
   const [expanded, setExpanded] = useState(false);
   const [imageUrl, setImageUrl] = useState(initialImageUrl || "");
+  const [status, setStatus] = useState<MemorableSceneStatus | "empty">(
+    resolveMemorableSceneStatus(initialImageUrl, initialSceneStatus)
+  );
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     setImageUrl(initialImageUrl || "");
-  }, [initialImageUrl]);
+    setStatus(resolveMemorableSceneStatus(initialImageUrl, initialSceneStatus));
+  }, [initialImageUrl, initialSceneStatus]);
+
+  const isPending = status === "pending";
+  const hasScene = isPending || !!imageUrl;
+  const { isDragging, dropHandlers } = useImageDrop(
+    (file) => {
+      void handleFile(file);
+    },
+    {
+      disabled: uploading,
+      onInvalidFile: setError,
+    }
+  );
+
+  const dropZoneClassName = `flex w-full flex-col items-center gap-2 rounded-koala border-2 border-dashed px-4 py-8 transition disabled:opacity-50 ${
+    isDragging
+      ? "border-koala-primary bg-koala-primary/10"
+      : "border-koala-secondary/50 bg-koala-secondary/10 hover:bg-koala-secondary/20"
+  }`;
 
   async function handleFile(file: File) {
     setUploading(true);
@@ -49,8 +79,19 @@ export function MemorableSceneMenuCard({
         setError(data.error || "업로드에 실패했어요.");
         return;
       }
-      setImageUrl(data.imageUrl);
-      onUploaded?.(data.imageUrl);
+
+      const nextStatus = (data.status as MemorableSceneStatus) || "approved";
+      if (data.pending || nextStatus === "pending") {
+        setImageUrl("");
+        setStatus("pending");
+        onUploaded?.(undefined, "pending");
+        setExpanded(false);
+        return;
+      }
+
+      setImageUrl(data.imageUrl || "");
+      setStatus("approved");
+      onUploaded?.(data.imageUrl, "approved");
       setExpanded(false);
     } finally {
       setUploading(false);
@@ -60,7 +101,7 @@ export function MemorableSceneMenuCard({
   async function handleDelete(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    if (!imageUrl || deleting) return;
+    if (!hasScene || deleting) return;
     if (!confirm("올린 그림을 지울까요?")) return;
 
     setDeleting(true);
@@ -76,6 +117,7 @@ export function MemorableSceneMenuCard({
         return;
       }
       setImageUrl("");
+      setStatus("empty");
       onDeleted?.();
     } finally {
       setDeleting(false);
@@ -84,7 +126,7 @@ export function MemorableSceneMenuCard({
 
   if (expanded) {
     return (
-      <div className="koala-card p-4 sm:col-span-2">
+      <div className="koala-card p-4 sm:col-span-2" {...dropHandlers}>
         <div className="mb-3 flex items-start justify-between gap-2">
           <div className="flex items-center gap-3">
             <Icon className={`${iconMd} shrink-0 text-koala-primary`} strokeWidth={1.75} aria-hidden />
@@ -103,14 +145,24 @@ export function MemorableSceneMenuCard({
           </button>
         </div>
 
+        {isPending ? (
+          <MemorableScenePendingNotice className="mb-3" />
+        ) : null}
+
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="flex w-full flex-col items-center gap-2 rounded-koala border-2 border-dashed border-koala-secondary/50 bg-koala-secondary/10 px-4 py-8 transition hover:bg-koala-secondary/20 disabled:opacity-50"
+          className={dropZoneClassName}
         >
           <ImagePlus className={`${iconMd} text-koala-primary`} strokeWidth={1.75} aria-hidden />
-          <span className="text-sm text-koala-muted">그림 파일을 선택하세요</span>
+          <span className="text-sm text-koala-muted">
+            {isDragging
+              ? "여기에 그림을 놓으세요"
+              : isPending
+                ? "다른 그림 파일을 선택하거나 끌어다 놓으세요"
+                : "그림 파일을 선택하거나 끌어다 놓으세요"}
+          </span>
           <span className="text-xs text-koala-muted">JPG, PNG, WEBP, GIF · 최대 5MB</span>
         </button>
 
@@ -126,7 +178,7 @@ export function MemorableSceneMenuCard({
           }}
         />
 
-        {uploading && <p className="mt-2 text-xs text-koala-muted">업로드 중...</p>}
+        {uploading && <p className="mt-2 text-xs text-koala-muted">그림을 확인하고 있어요...</p>}
         {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
       </div>
     );
@@ -135,7 +187,7 @@ export function MemorableSceneMenuCard({
   return (
     <div
       className={`relative koala-card flex w-full items-center gap-3 p-4 transition ${
-        imageUrl ? "koala-card-recorded" : "hover:bg-koala-secondary/10"
+        hasScene ? "koala-card-recorded" : "hover:bg-koala-secondary/10"
       }`}
     >
       <button
@@ -146,14 +198,20 @@ export function MemorableSceneMenuCard({
         <Icon className={`${iconMd} shrink-0 text-koala-primary`} strokeWidth={1.75} aria-hidden />
         <div className="min-w-0 flex-1">
           <h3 className="font-medium text-koala-primary">{SECTION_LABELS.memorable_scene}</h3>
-          <p className="mt-0.5 text-xs text-koala-muted">기억에 남는 장면을 그려서 올려봅시다</p>
+          <p className="mt-0.5 text-xs text-koala-muted">
+            {isPending ? "선생님 확인 중이에요" : "기억에 남는 장면을 그려서 올려봅시다"}
+          </p>
         </div>
-        {!imageUrl && <Upload className={`${iconSm} shrink-0 text-koala-muted`} aria-hidden />}
+        {!hasScene && <Upload className={`${iconSm} shrink-0 text-koala-muted`} aria-hidden />}
       </button>
-      {imageUrl && (
+      {hasScene && (
         <div className="relative h-14 w-14 shrink-0">
           <div className="relative h-full w-full overflow-hidden rounded-md border border-koala-secondary/30 bg-koala-secondary/10">
-            <Image src={imageUrl} alt="기억에 남는 장면 미리보기" fill className="object-cover" unoptimized />
+            {isPending ? (
+              <MemorableScenePendingNotice compact />
+            ) : (
+              <Image src={imageUrl} alt="기억에 남는 장면 미리보기" fill className="object-cover" unoptimized />
+            )}
           </div>
           <button
             type="button"

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { readDb, updateDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
-import { validateContent } from "@/lib/content-filter";
+import { rejectInvalidNickname } from "@/lib/content-filter-api";
 import { getDisplayName } from "@/lib/user-display";
 
 export async function PATCH(request: Request) {
@@ -30,10 +30,8 @@ export async function PATCH(request: Request) {
     if (!trimmed) {
       return NextResponse.json({ error: "닉네임을 입력해 주세요." }, { status: 400 });
     }
-    const check = validateContent(trimmed);
-    if (!check.ok) {
-      return NextResponse.json({ error: check.message }, { status: 400 });
-    }
+    const blocked = rejectInvalidNickname(trimmed);
+    if (blocked) return blocked;
   }
 
   if (hasPasswordChange) {

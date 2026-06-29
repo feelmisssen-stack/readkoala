@@ -3,7 +3,7 @@ import bcrypt from "bcryptjs";
 import { v4 as uuid } from "uuid";
 import { readDb, updateDb } from "@/lib/db";
 import { requireGoogleAdmin } from "@/lib/admin-auth";
-import { validateContent } from "@/lib/content-filter";
+import { rejectInvalidContent, rejectInvalidNickname } from "@/lib/content-filter-api";
 
 export async function GET() {
   try {
@@ -44,17 +44,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "비밀번호는 4자 이상이어야 해요." }, { status: 400 });
   }
 
-  const contentCheck = validateContent(trimmedUsername);
-  if (!contentCheck.ok) {
-    return NextResponse.json({ error: contentCheck.message }, { status: 400 });
-  }
+  const blockedUsername = rejectInvalidContent(trimmedUsername);
+  if (blockedUsername) return blockedUsername;
 
   const trimmedNickname = nickname?.trim();
   if (trimmedNickname) {
-    const nickCheck = validateContent(trimmedNickname);
-    if (!nickCheck.ok) {
-      return NextResponse.json({ error: nickCheck.message }, { status: 400 });
-    }
+    const blockedNickname = rejectInvalidNickname(trimmedNickname);
+    if (blockedNickname) return blockedNickname;
   }
 
   const db = readDb();

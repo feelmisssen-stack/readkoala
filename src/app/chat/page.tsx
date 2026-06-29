@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BookOpen, Plus, Users } from "lucide-react";
 import { iconSm } from "@/lib/icon-styles";
+import { warnIfInvalidContent, alertContentFilterApiError } from "@/lib/content-filter-client";
 import type { Book } from "@/lib/types";
 
 interface ChatRoom {
@@ -16,9 +17,7 @@ interface ChatRoom {
 
 export default function ChatPage() {
   const [rooms, setRooms] = useState<ChatRoom[]>([]);
-  const [pendingRooms, setPendingRooms] = useState<ChatRoom[]>([]);
   const [books, setBooks] = useState<Book[]>([]);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [showCreate, setShowCreate] = useState(false);
   const [newRoomName, setNewRoomName] = useState("");
   const [selectedBookId, setSelectedBookId] = useState("");
@@ -35,12 +34,7 @@ export default function ChatPage() {
       .then((d) => {
         if (!d) return;
         setRooms(d.rooms || []);
-        setPendingRooms(d.pendingRooms || []);
       });
-
-    fetch("/api/auth/me")
-      .then((r) => r.json())
-      .then((d) => setIsAdmin(!!d.user?.isAdmin));
 
     fetch("/api/books")
       .then((r) => r.json())
@@ -53,25 +47,22 @@ export default function ChatPage() {
 
   async function createRoom() {
     if (!selectedBookId) return;
+    if (newRoomName.trim() && !warnIfInvalidContent(newRoomName).ok) return;
     const res = await fetch("/api/chat/rooms", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ bookId: selectedBookId, name: newRoomName }),
     });
+    if (!res.ok) {
+      const data = await res.json();
+      alertContentFilterApiError(res, data);
+      return;
+    }
     if (res.ok) {
       setShowCreate(false);
       setNewRoomName("");
       load();
     }
-  }
-
-  async function approveRoom(id: string, action: "approve" | "reject") {
-    await fetch(`/api/chat/rooms/${id}/approve`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action }),
-    });
-    load();
   }
 
   return (
@@ -105,41 +96,8 @@ export default function ChatPage() {
             onChange={(e) => setNewRoomName(e.target.value)}
           />
           <button type="button" onClick={createRoom} className="koala-btn-accent text-sm">
-            만들기 (관리자 승인 필요)
+            만들기
           </button>
-        </div>
-      )}
-
-      {isAdmin && pendingRooms.length > 0 && (
-        <div className="space-y-3">
-          <h2 className="font-medium text-koala-accent">승인 대기 방 (관리자)</h2>
-          {pendingRooms.map((room) => (
-            <div key={room.id} className="koala-card flex items-center justify-between p-4">
-              <div>
-                <p className="font-bold">{room.name}</p>
-                <p className="inline-flex items-center gap-1 text-sm text-koala-muted">
-                  <BookOpen className={iconSm} aria-hidden />
-                  {room.bookTitle}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => approveRoom(room.id, "approve")}
-                  className="koala-btn-primary text-sm"
-                >
-                  승인
-                </button>
-                <button
-                  type="button"
-                  onClick={() => approveRoom(room.id, "reject")}
-                  className="koala-btn-secondary text-sm"
-                >
-                  거절
-                </button>
-              </div>
-            </div>
-          ))}
         </div>
       )}
 

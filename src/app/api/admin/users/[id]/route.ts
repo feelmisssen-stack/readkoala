@@ -54,7 +54,13 @@ export async function DELETE(
     d.vocabulary = d.vocabulary.filter((v) => v.userId !== id);
     d.sharedSentences = d.sharedSentences.filter((s) => s.userId !== id);
     d.chatMemberships = d.chatMemberships.filter((m) => m.userId !== id);
+    const removedMessageIds = new Set(
+      d.chatMessages.filter((m) => m.userId === id).map((m) => m.id)
+    );
     d.chatMessages = d.chatMessages.filter((m) => m.userId !== id);
+    d.chatMessageHearts = d.chatMessageHearts.filter(
+      (h) => h.userId !== id && !removedMessageIds.has(h.messageId)
+    );
     d.chatRooms = d.chatRooms.filter((r) => r.creatorId !== id);
   });
 

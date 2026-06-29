@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { v4 as uuid } from "uuid";
 import { readDb, updateDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
-import { validateContent } from "@/lib/content-filter";
+import { rejectInvalidContentForUser } from "@/lib/content-filter-api";
 import { getRoomParticipantNames } from "@/lib/chat";
 import { buildUserDisplayMap } from "@/lib/user-display";
 
@@ -15,7 +15,7 @@ export async function GET() {
   const db = readDb();
   const displayMap = buildUserDisplayMap(db.users);
   const rooms = db.chatRooms
-    .filter((r) => r.status === "approved")
+    .filter((r) => r.status === "approved" || r.status === "pending")
     .map((room) => {
       const membership = db.chatMemberships.find(
         (m) => m.roomId === room.id && m.userId === session.userId
@@ -38,13 +38,19 @@ export async function POST(request: Request) {
   }
 
   const { bookId, name } = await request.json();
-  const check = validateContent(name);
-  if (!check.ok) {
-    return NextResponse.json({ error: check.message }, { status: 400 });
-  }
 
   const db = readDb();
   const book = db.books.find((b) => b.id === bookId);
+  const blocked = rejectInvalidContentForUser([name], {
+    userId: session.userId,
+    source: "chat_room",
+    bookId,
+    bookTitle: book?.title,
+    fieldLabel: "이야기뜰 이름",
+    preview: name,
+  });
+  if (blocked) return blocked;
+
   if (!book) {
     return NextResponse.json({ error: "책을 찾을 수 없어요." }, { status: 400 });
   }
@@ -55,7 +61,7 @@ export async function POST(request: Request) {
     bookTitle: book.title,
     creatorId: session.userId,
     name: name || `${book.title} 이야기뜰`,
-    status: "pending" as const,
+    status: "approved" as const,
     createdAt: new Date().toISOString(),
   };
 

@@ -1,5 +1,6 @@
 import type { CarouselFeedItem, CarouselMoment, Database, RandomFeedItem, Reflection } from "./types";
 import { buildUserDisplayMap } from "./user-display";
+import { isMemorableScenePublic } from "./image-moderation";
 import {
   BEFORE_READING_QUESTIONS,
   DURING_READING_QUESTIONS,
@@ -159,8 +160,8 @@ function buildMomentsFromReflection(reflection: Reflection, bookTitle?: string):
   if (reflection.favoriteQuote?.trim()) {
     moments.push({ kind: "quote", text: reflection.favoriteQuote.trim() });
   }
-  if (reflection.memorableSceneImage?.trim()) {
-    moments.push({ kind: "memorable_scene", imageUrl: reflection.memorableSceneImage.trim() });
+  if (isMemorableScenePublic(reflection)) {
+    moments.push({ kind: "memorable_scene", imageUrl: reflection.memorableSceneImage!.trim() });
   }
 
   return moments;

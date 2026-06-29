@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { v4 as uuid } from "uuid";
 import { readDb, updateDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
-import { validateContent } from "@/lib/content-filter";
+import { rejectInvalidReflectionBody } from "@/lib/content-filter-api";
 import { countReflectionChars, calculateLevel } from "@/lib/gamification";
 import { applyReadingMilestones } from "@/lib/reading-dates";
 
@@ -34,24 +34,15 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const texts = [
-    body.association,
-    body.favoriteQuote,
-    body.reviewTitle,
-    body.reviewReason,
-    body.reviewContent,
-    body.reviewImpressiveScene,
-    body.reviewThoughts,
-    ...(body.beforeReading || []).flatMap((q: { question: string; answer: string }) => [q.question, q.answer]),
-    ...(body.duringReading || []).flatMap((q: { question: string; answer: string }) => [q.question, q.answer]),
-  ];
-  const check = validateContent(...texts);
-  if (!check.ok) {
-    return NextResponse.json({ error: check.message }, { status: 400 });
-  }
-
   const db = readDb();
   const book = db.books.find((b) => b.id === body.bookId && b.userId === session.userId);
+  const blocked = rejectInvalidReflectionBody(body, {
+    userId: session.userId,
+    bookId: body.bookId,
+    bookTitle: book?.title,
+  });
+  if (blocked) return blocked;
+
   if (!book) {
     return NextResponse.json({ error: "책을 먼저 등록해 주세요." }, { status: 400 });
   }

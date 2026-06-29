@@ -6,6 +6,7 @@ import {
   type ReflectionSection,
 } from "./reflection-templates";
 import type { Reflection } from "./types";
+import { isMemorableScenePublic } from "./image-moderation";
 
 export interface PublicReadingQuestion {
   label: string;
@@ -135,11 +136,11 @@ export function buildPublicStorySections(reflection: Reflection | null): PublicS
     });
   }
 
-  if (reflection.memorableSceneImage?.trim()) {
+  if (isMemorableScenePublic(reflection)) {
     sections.push({
       section: "memorable_scene",
       title: "기억에 남는 장면",
-      imageUrl: reflection.memorableSceneImage.trim(),
+      imageUrl: reflection.memorableSceneImage!.trim(),
     });
   }
 
