@@ -5,6 +5,14 @@ import { isFirebaseAdminConfigured } from "./config";
 
 export { isFirebaseAdminConfigured };
 
+function normalizePrivateKey(raw: string) {
+  const trimmed = raw.trim().replace(/^"|"$/g, "");
+  if (trimmed.includes("\\n")) {
+    return trimmed.replace(/\\n/g, "\n");
+  }
+  return trimmed;
+}
+
 export function getAdminApp(): App {
   if (!isFirebaseAdminConfigured()) {
     throw new Error(
@@ -16,7 +24,7 @@ export function getAdminApp(): App {
     return getApps()[0]!;
   }
 
-  const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY!.replace(/\\n/g, "\n");
+  const privateKey = normalizePrivateKey(process.env.FIREBASE_ADMIN_PRIVATE_KEY ?? "");
 
   return initializeApp({
     credential: cert({

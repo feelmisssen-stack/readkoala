@@ -4,8 +4,8 @@ import {
   isFirebaseAuthEnabled,
   isFirebaseClientConfigured,
 } from "@/lib/firebase/config";
-import { getAdminFirestore } from "@/lib/firebase/admin";
-import { isFirebaseStorageEnabled, testFirebaseStorageConnection } from "@/lib/firebase/scene-storage";
+
+export const runtime = "nodejs";
 
 function envChecklist() {
   const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY ?? "";
@@ -30,7 +30,6 @@ export async function GET() {
   const clientConfigured = isFirebaseClientConfigured();
   const adminConfigured = isFirebaseAdminConfigured();
   const authEnabled = isFirebaseAuthEnabled();
-  const storageConfigured = isFirebaseStorageEnabled();
   const env = envChecklist();
 
   if (!clientConfigured) {
@@ -39,10 +38,7 @@ export async function GET() {
       clientConfigured,
       adminConfigured,
       authEnabled,
-      storageConfigured,
       env,
-      firestoreTest: null,
-      storageTest: null,
       message: "NEXT_PUBLIC_FIREBASE_* 환경 변수 6개를 Vercel에 넣어 주세요.",
     });
   }
@@ -53,10 +49,7 @@ export async function GET() {
       clientConfigured,
       adminConfigured,
       authEnabled,
-      storageConfigured,
       env,
-      firestoreTest: null,
-      storageTest: null,
       message: "FIREBASE_ADMIN_* 환경 변수 3개를 Vercel에 넣어 주세요.",
     });
   }
@@ -67,16 +60,19 @@ export async function GET() {
       clientConfigured,
       adminConfigured,
       authEnabled,
-      storageConfigured,
       env,
-      firestoreTest: null,
-      storageTest: null,
       message:
         "FIREBASE_ADMIN_PRIVATE_KEY 형식이 잘못됐어요. .env.local에서 통째로 복사해 Vercel에 붙여넣고 Redeploy 하세요.",
     });
   }
 
   try {
+    const { getAdminFirestore } = await import("@/lib/firebase/admin");
+    const { isFirebaseStorageEnabled, testFirebaseStorageConnection } = await import(
+      "@/lib/firebase/scene-storage"
+    );
+    const storageConfigured = isFirebaseStorageEnabled();
+
     let storageTest: Awaited<ReturnType<typeof testFirebaseStorageConnection>> | null = null;
     if (storageConfigured) {
       storageTest = await testFirebaseStorageConnection();
@@ -101,7 +97,7 @@ export async function GET() {
         testedAt: snap.data()?.testedAt ?? testedAt,
       },
       storageTest,
-      message: buildStatusMessage(authEnabled, storageConfigured, storageTest),
+      message: "Firebase 연결이 정상이에요.",
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Firebase 연결 실패";
@@ -111,10 +107,7 @@ export async function GET() {
         clientConfigured,
         adminConfigured,
         authEnabled,
-        storageConfigured,
         env,
-        firestoreTest: { ok: false, error: errorMessage },
-        storageTest: null,
         message:
           "Firebase Admin 키가 깨진 것 같아요. Vercel의 FIREBASE_ADMIN_PRIVATE_KEY를 .env.local과 똑같이 넣고 Redeploy 하세요.",
         detail: errorMessage,
@@ -122,28 +115,4 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
-
-function buildStatusMessage(
-  authEnabled: boolean,
-  storageConfigured: boolean,
-  storageTest: Awaited<ReturnType<typeof testFirebaseStorageConnection>> | null
-) {
-  const parts = [
-    authEnabled
-      ? "Firebase 클라이언트·Admin·Firestore·로그인 연결"
-      : "Firebase 클라이언트·Admin·Firestore 연결",
-  ];
-
-  if (!storageConfigured) {
-    parts.push("Storage 버킷 미설정");
-    return `${parts.join("·")}이 확인됐습니다.`;
-  }
-
-  if (storageTest?.ok) {
-    parts.push("Storage 업로드");
-    return `${parts.join("·")}이 확인됐습니다.`;
-  }
-
-  return `${parts.join("·")}은 확인됐지만 Storage 업로드에 실패했습니다. Blaze 요금제와 Storage 활성화를 확인해 주세요.`;
 }
