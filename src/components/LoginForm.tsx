@@ -24,12 +24,22 @@ export function LoginForm({ onSuccess, className = "" }: LoginFormProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ username, password }),
       });
-      const data = await res.json();
+
+      let data: { error?: string } = {};
+      try {
+        data = await res.json();
+      } catch {
+        setError("서버 오류가 났어요. Vercel 환경 변수(Firebase 키)를 확인해 주세요.");
+        return;
+      }
+
       if (!res.ok) {
         setError(data.error || "로그인에 실패했어요.");
         return;
       }
       onSuccess?.();
+    } catch {
+      setError("로그인 요청에 실패했어요. 잠시 후 다시 시도해 주세요.");
     } finally {
       setLoading(false);
     }

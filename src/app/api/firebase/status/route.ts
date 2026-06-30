@@ -1,13 +1,37 @@
 import { NextResponse } from "next/server";
-import { isFirebaseAdminConfigured, isFirebaseAuthEnabled, isFirebaseClientConfigured } from "@/lib/firebase/config";
+import {
+  isFirebaseAdminConfigured,
+  isFirebaseAuthEnabled,
+  isFirebaseClientConfigured,
+} from "@/lib/firebase/config";
 import { getAdminFirestore } from "@/lib/firebase/admin";
 import { isFirebaseStorageEnabled, testFirebaseStorageConnection } from "@/lib/firebase/scene-storage";
+
+function envChecklist() {
+  const privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY ?? "";
+  return {
+    NEXT_PUBLIC_FIREBASE_API_KEY: Boolean(process.env.NEXT_PUBLIC_FIREBASE_API_KEY),
+    NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: Boolean(process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN),
+    NEXT_PUBLIC_FIREBASE_PROJECT_ID: Boolean(process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID),
+    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: Boolean(process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET),
+    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: Boolean(
+      process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+    ),
+    NEXT_PUBLIC_FIREBASE_APP_ID: Boolean(process.env.NEXT_PUBLIC_FIREBASE_APP_ID),
+    FIREBASE_ADMIN_PROJECT_ID: Boolean(process.env.FIREBASE_ADMIN_PROJECT_ID),
+    FIREBASE_ADMIN_CLIENT_EMAIL: Boolean(process.env.FIREBASE_ADMIN_CLIENT_EMAIL),
+    FIREBASE_ADMIN_PRIVATE_KEY: Boolean(privateKey),
+    adminPrivateKeyLooksValid:
+      privateKey.includes("BEGIN PRIVATE KEY") && privateKey.includes("END PRIVATE KEY"),
+  };
+}
 
 export async function GET() {
   const clientConfigured = isFirebaseClientConfigured();
   const adminConfigured = isFirebaseAdminConfigured();
   const authEnabled = isFirebaseAuthEnabled();
   const storageConfigured = isFirebaseStorageEnabled();
+  const env = envChecklist();
 
   if (!clientConfigured) {
     return NextResponse.json({
@@ -16,32 +40,48 @@ export async function GET() {
       adminConfigured,
       authEnabled,
       storageConfigured,
+      env,
       firestoreTest: null,
       storageTest: null,
-      message: "NEXT_PUBLIC_FIREBASE_* 환경 변수를 확인해 주세요.",
+      message: "NEXT_PUBLIC_FIREBASE_* 환경 변수 6개를 Vercel에 넣어 주세요.",
     });
   }
 
   if (!adminConfigured) {
     return NextResponse.json({
-      ok: true,
+      ok: false,
       clientConfigured,
       adminConfigured,
       authEnabled,
       storageConfigured,
+      env,
       firestoreTest: null,
       storageTest: null,
-      message:
-        "클라이언트 설정은 완료됐습니다. 서버 Firestore·로그인은 FIREBASE_ADMIN_* 키를 넣은 뒤 다시 확인하세요.",
+      message: "FIREBASE_ADMIN_* 환경 변수 3개를 Vercel에 넣어 주세요.",
     });
   }
 
-  let storageTest: Awaited<ReturnType<typeof testFirebaseStorageConnection>> | null = null;
-  if (storageConfigured) {
-    storageTest = await testFirebaseStorageConnection();
+  if (!env.adminPrivateKeyLooksValid) {
+    return NextResponse.json({
+      ok: false,
+      clientConfigured,
+      adminConfigured,
+      authEnabled,
+      storageConfigured,
+      env,
+      firestoreTest: null,
+      storageTest: null,
+      message:
+        "FIREBASE_ADMIN_PRIVATE_KEY 형식이 잘못됐어요. .env.local에서 통째로 복사해 Vercel에 붙여넣고 Redeploy 하세요.",
+    });
   }
 
   try {
+    let storageTest: Awaited<ReturnType<typeof testFirebaseStorageConnection>> | null = null;
+    if (storageConfigured) {
+      storageTest = await testFirebaseStorageConnection();
+    }
+
     const db = getAdminFirestore();
     const testedAt = new Date().toISOString();
     const ref = db.collection("_system").doc("connection-test");
@@ -55,6 +95,7 @@ export async function GET() {
       adminConfigured,
       authEnabled,
       storageConfigured,
+      env,
       firestoreTest: {
         ok: true,
         testedAt: snap.data()?.testedAt ?? testedAt,
@@ -63,6 +104,7 @@ export async function GET() {
       message: buildStatusMessage(authEnabled, storageConfigured, storageTest),
     });
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : "Firebase 연결 실패";
     return NextResponse.json(
       {
         ok: false,
@@ -70,12 +112,12 @@ export async function GET() {
         adminConfigured,
         authEnabled,
         storageConfigured,
-        firestoreTest: {
-          ok: false,
-          error: error instanceof Error ? error.message : "Firestore test failed",
-        },
-        storageTest,
-        message: "Firestore 연결 테스트에 실패했습니다.",
+        env,
+        firestoreTest: { ok: false, error: errorMessage },
+        storageTest: null,
+        message:
+          "Firebase Admin 키가 깨진 것 같아요. Vercel의 FIREBASE_ADMIN_PRIVATE_KEY를 .env.local과 똑같이 넣고 Redeploy 하세요.",
+        detail: errorMessage,
       },
       { status: 500 }
     );
