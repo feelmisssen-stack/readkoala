@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import { resolveUserBySession } from "@/lib/users/resolve-user";
+
+export const runtime = "nodejs";
 
 export async function GET() {
   const session = await getSession();
@@ -8,6 +9,7 @@ export async function GET() {
     return NextResponse.json({ user: null });
   }
 
+  const { resolveUserBySession } = await import("@/lib/users/resolve-user");
   const user = await resolveUserBySession({
     userId: session.userId,
     firebaseUid: session.firebaseUid,
