@@ -80,6 +80,7 @@ async function syncUsers() {
 
   const localDb = JSON.parse(fs.readFileSync(DB_FILE, "utf8"));
   const defaultPassword = process.argv[2] || "demo1234";
+  const resetPasswords = process.argv.includes("--reset-passwords");
 
   for (const user of localDb.users ?? []) {
     if (user.isAdmin) {
@@ -100,7 +101,14 @@ async function syncUsers() {
       .get();
 
     if (!existing.empty) {
-      console.log(`이미 있음: ${user.username}`);
+      if (resetPasswords) {
+        const doc = existing.docs[0];
+        const uid = doc.id;
+        await auth.updateUser(uid, { password: defaultPassword });
+        console.log(`비밀번호 재설정: ${user.username} / ${defaultPassword}`);
+      } else {
+        console.log(`이미 있음: ${user.username}`);
+      }
       continue;
     }
 

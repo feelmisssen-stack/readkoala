@@ -3,6 +3,8 @@ import { getSession } from "@/lib/session";
 import { isGoogleOnlyLoginUser } from "@/lib/admin-google-account";
 import { isFirebaseAuthEnabled } from "@/lib/firebase/config";
 import { signInWithUsernamePassword } from "@/lib/firebase/server-auth";
+
+export const runtime = "nodejs";
 import {
   getFirestoreUser,
   getFirestoreUserByUsername,
