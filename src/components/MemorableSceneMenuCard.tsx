@@ -12,6 +12,7 @@ import {
   type MemorableSceneStatus,
 } from "@/components/MemorableSceneStatus";
 import { useImageDrop } from "@/lib/use-image-drop";
+import { compressImageForMemorableScene } from "@/lib/compress-image";
 
 interface MemorableSceneMenuCardProps {
   bookId: string;
@@ -36,6 +37,7 @@ export function MemorableSceneMenuCard({
     resolveMemorableSceneStatus(initialImageUrl, initialSceneStatus)
   );
   const [uploading, setUploading] = useState(false);
+  const [uploadStage, setUploadStage] = useState<"compress" | "upload" | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
 
@@ -66,9 +68,13 @@ export function MemorableSceneMenuCard({
     setUploading(true);
     setError("");
     try {
+      setUploadStage("compress");
+      const compressed = await compressImageForMemorableScene(file);
+
+      setUploadStage("upload");
       const formData = new FormData();
       formData.append("bookId", bookId);
-      formData.append("file", file);
+      formData.append("file", compressed);
 
       const res = await fetch("/api/reflections/memorable-scene", {
         method: "POST",
@@ -93,7 +99,10 @@ export function MemorableSceneMenuCard({
       setStatus("approved");
       onUploaded?.(data.imageUrl, "approved");
       setExpanded(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "업로드에 실패했어요.");
     } finally {
+      setUploadStage(null);
       setUploading(false);
     }
   }
@@ -163,7 +172,7 @@ export function MemorableSceneMenuCard({
                 ? "다른 그림 파일을 선택하거나 끌어다 놓으세요"
                 : "그림 파일을 선택하거나 끌어다 놓으세요"}
           </span>
-          <span className="text-xs text-koala-muted">JPG, PNG, WEBP, GIF · 최대 5MB</span>
+          <span className="text-xs text-koala-muted">JPG, PNG, WEBP, GIF · 자동으로 500KB 이하로 줄여요</span>
         </button>
 
         <input
@@ -178,7 +187,13 @@ export function MemorableSceneMenuCard({
           }}
         />
 
-        {uploading && <p className="mt-2 text-xs text-koala-muted">그림을 확인하고 있어요...</p>}
+        {uploading && (
+          <p className="mt-2 text-xs text-koala-muted">
+            {uploadStage === "compress"
+              ? "그림 크기를 줄이고 있어요..."
+              : "그림을 확인하고 있어요..."}
+          </p>
+        )}
         {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
       </div>
     );

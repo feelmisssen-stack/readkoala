@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { v4 as uuid } from "uuid";
-import { readDb, updateDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { rejectInvalidContentForUser } from "@/lib/content-filter-api";
 import {
@@ -8,11 +7,19 @@ import {
   CHAT_SPEAKER_LIMIT,
   canUserChatInRoom,
   countUserMessagesInRoom,
-  ensureApprovedMembership,
   getMessageHeartCounts,
   getRoomSpeakerIds,
 } from "@/lib/chat";
-import { buildUserDisplayMap, getDisplayName } from "@/lib/user-display";
+import { loadFeedDatabase } from "@/lib/repositories/feed-data";
+import { resolveUserBySession } from "@/lib/users/resolve-user";
+import {
+  approveChatRoomIfPending,
+  createChatMessage,
+  ensureApprovedChatMembership,
+  getChatRoomById,
+  listChatHeartsByRoom,
+  listChatMessagesByRoom,
+} from "@/lib/repositories/chat-repository";
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
@@ -21,45 +28,38 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }
 
   const { id } = await params;
-  const room = readDb().chatRooms.find(
-    (r) => r.id === id && (r.status === "approved" || r.status === "pending")
-  );
-  if (!room) {
+  const room = await getChatRoomById(id);
+  if (!room || (room.status !== "approved" && room.status !== "pending")) {
     return NextResponse.json({ error: "방을 찾을 수 없어요." }, { status: 404 });
   }
 
-  updateDb((d) => {
-    ensureApprovedMembership(d, id, session.userId!);
-    const target = d.chatRooms.find((r) => r.id === id);
-    if (target?.status === "pending") target.status = "approved";
-  });
+  await ensureApprovedChatMembership(id, session.userId, session.firebaseUid);
+  await approveChatRoomIfPending(id);
 
-  const db = readDb();
-  const displayMap = buildUserDisplayMap(db.users);
-  const roomMessages = db.chatMessages
-    .filter((m) => m.roomId === id)
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  const [roomMessages, hearts, feedData, currentUser] = await Promise.all([
+    listChatMessagesByRoom(id),
+    listChatHeartsByRoom(id),
+    loadFeedDatabase(),
+    resolveUserBySession({ userId: session.userId, firebaseUid: session.firebaseUid }),
+  ]);
 
-  const messageIds = roomMessages.map((m) => m.id);
-  const heartCounts = getMessageHeartCounts(db.chatMessageHearts, messageIds);
+  const displayMap = new Map(feedData.users.map((user) => [user.id, user.nickname?.trim() || user.username]));
+  const messageIds = roomMessages.map((message) => message.id);
+  const heartCounts = getMessageHeartCounts(hearts, messageIds);
   const myHearts = new Set(
-    db.chatMessageHearts
-      .filter((h) => h.roomId === id && h.userId === session.userId)
-      .map((h) => h.messageId)
+    hearts.filter((heart) => heart.userId === session.userId).map((heart) => heart.messageId)
   );
 
-  const messages = roomMessages.map((m) => ({
-    ...m,
-    username: displayMap.get(m.userId) || m.username,
-    heartCount: heartCounts.get(m.id) || 0,
-    heartedByMe: myHearts.has(m.id),
+  const messages = roomMessages.map((message) => ({
+    ...message,
+    username: displayMap.get(message.userId) || message.username,
+    heartCount: heartCounts.get(message.id) || 0,
+    heartedByMe: myHearts.has(message.id),
   }));
 
-  const myMessageCount = countUserMessagesInRoom(db.chatMessages, id, session.userId);
-  const speakers = getRoomSpeakerIds(db.chatMessages, id);
-  const canChat = canUserChatInRoom(db.chatMessages, id, session.userId);
-
-  const currentUser = db.users.find((u) => u.id === session.userId);
+  const myMessageCount = countUserMessagesInRoom(roomMessages, id, session.userId);
+  const speakers = getRoomSpeakerIds(roomMessages, id);
+  const canChat = canUserChatInRoom(roomMessages, id, session.userId);
 
   return NextResponse.json({
     messages,
@@ -68,9 +68,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
       bookTitle: room.bookTitle,
     },
     currentUserId: session.userId,
-    currentUsername: currentUser
-      ? currentUser.nickname?.trim() || currentUser.username
-      : session.username ?? null,
+    currentUsername: currentUser?.displayName || session.username || null,
     myMessageCount,
     messageLimit: CHAT_MESSAGE_LIMIT_PER_USER,
     canChat,
@@ -88,11 +86,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { id } = await params;
   const { content } = await request.json();
 
-  const db = readDb();
-  const room = db.chatRooms.find(
-    (r) => r.id === id && (r.status === "approved" || r.status === "pending")
-  );
-  if (!room) {
+  const room = await getChatRoomById(id);
+  if (!room || (room.status !== "approved" && room.status !== "pending")) {
     return NextResponse.json({ error: "방을 찾을 수 없어요." }, { status: 404 });
   }
 
@@ -105,20 +100,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   });
   if (blocked) return blocked;
 
-  if (!canUserChatInRoom(db.chatMessages, id, session.userId)) {
+  const roomMessages = await listChatMessagesByRoom(id);
+  if (!canUserChatInRoom(roomMessages, id, session.userId)) {
     return NextResponse.json(
-      { error: `이 이야기뜰에서는 이미 ${CHAT_SPEAKER_LIMIT}명이 대화 중이에요. 들어는 볼 수 있지만 글은 남길 수 없어요.` },
+      {
+        error: `이 이야기뜰에서는 이미 ${CHAT_SPEAKER_LIMIT}명이 대화 중이에요. 들어는 볼 수 있지만 글은 남길 수 없어요.`,
+      },
       { status: 403 }
     );
   }
 
-  updateDb((d) => {
-    ensureApprovedMembership(d, id, session.userId!);
-    const target = d.chatRooms.find((r) => r.id === id);
-    if (target?.status === "pending") target.status = "approved";
-  });
+  await ensureApprovedChatMembership(id, session.userId, session.firebaseUid);
+  await approveChatRoomIfPending(id);
 
-  const myMessageCount = countUserMessagesInRoom(readDb().chatMessages, id, session.userId);
+  const myMessageCount = countUserMessagesInRoom(roomMessages, id, session.userId);
   if (myMessageCount >= CHAT_MESSAGE_LIMIT_PER_USER) {
     return NextResponse.json(
       { error: `이 이야기뜰에는 최대 ${CHAT_MESSAGE_LIMIT_PER_USER}번까지만 글을 남길 수 있어요.` },
@@ -126,18 +121,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     );
   }
 
-  const author = db.users.find((u) => u.id === session.userId);
-  const message = {
+  const author = await resolveUserBySession({
+    userId: session.userId,
+    firebaseUid: session.firebaseUid,
+  });
+
+  const message = await createChatMessage({
     id: uuid(),
     roomId: id,
     userId: session.userId,
-    username: author ? getDisplayName(author) : session.username || "친구",
+    username: author?.displayName || session.username || "친구",
     content,
     createdAt: new Date().toISOString(),
-  };
-
-  updateDb((d) => {
-    d.chatMessages.push(message);
   });
 
   return NextResponse.json({ message });

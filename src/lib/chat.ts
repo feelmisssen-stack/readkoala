@@ -1,7 +1,3 @@
-import { v4 as uuid } from "uuid";
-import { calculateLevel } from "./gamification";
-import type { ChatMembership, Database } from "./types";
-
 export const CHAT_MESSAGE_LIMIT_PER_USER = 5;
 export const CHAT_SPEAKER_LIMIT = 5;
 
@@ -64,41 +60,4 @@ export function getMessageHeartCounts(
     counts.set(heart.messageId, (counts.get(heart.messageId) || 0) + 1);
   }
   return counts;
-}
-
-export function ensureApprovedMembership(
-  db: Database,
-  roomId: string,
-  userId: string
-): ChatMembership {
-  const existing = db.chatMemberships.find((m) => m.roomId === roomId && m.userId === userId);
-
-  if (existing) {
-    if (existing.status !== "approved") {
-      existing.status = "approved";
-      const user = db.users.find((u) => u.id === userId);
-      if (user) {
-        user.stats.chatParticipations += 1;
-        user.stats.level = calculateLevel(user.stats);
-      }
-    }
-    return existing;
-  }
-
-  const membership: ChatMembership = {
-    id: uuid(),
-    roomId,
-    userId,
-    status: "approved",
-    createdAt: new Date().toISOString(),
-  };
-  db.chatMemberships.push(membership);
-
-  const user = db.users.find((u) => u.id === userId);
-  if (user) {
-    user.stats.chatParticipations += 1;
-    user.stats.level = calculateLevel(user.stats);
-  }
-
-  return membership;
 }

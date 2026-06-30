@@ -1,0 +1,15 @@
+rules_version = '2';
+
+// 모든 Firestore 읽기·쓰기는 Next.js 서버(Admin SDK)만 수행합니다.
+// 브라우저에서 firebase/firestore로 직접 접근하는 경로는 없습니다.
+//
+// 컬렉션: users, books, reflections, sharedSentences,
+//         chatRooms, chatMessages, chatMessageHearts, chatMemberships,
+//         moderationReports, aiHelperSessions, storyEmpathies, _system
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

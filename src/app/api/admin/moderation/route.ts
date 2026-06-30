@@ -9,5 +9,5 @@ export async function GET() {
     return NextResponse.json({ error: "관리자 로그인이 필요해요." }, { status: 401 });
   }
 
-  return NextResponse.json({ items: listSafetyReviewItems() });
+  return NextResponse.json({ items: await listSafetyReviewItems() });
 }

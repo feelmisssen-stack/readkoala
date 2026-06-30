@@ -10,6 +10,7 @@ import {
   type MemorableSceneStatus,
 } from "@/components/MemorableSceneStatus";
 import { useImageDrop } from "@/lib/use-image-drop";
+import { compressImageForMemorableScene } from "@/lib/compress-image";
 
 interface MemorableSceneUploadProps {
   bookId: string;
@@ -28,6 +29,7 @@ export function MemorableSceneUpload({
 }: MemorableSceneUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadStage, setUploadStage] = useState<"compress" | "upload" | null>(null);
   const [error, setError] = useState("");
   const [preview, setPreview] = useState(imageUrl || "");
   const [status, setStatus] = useState<MemorableSceneStatus | "empty">(
@@ -43,9 +45,13 @@ export function MemorableSceneUpload({
     setUploading(true);
     setError("");
     try {
+      setUploadStage("compress");
+      const compressed = await compressImageForMemorableScene(file);
+
+      setUploadStage("upload");
       const formData = new FormData();
       formData.append("bookId", bookId);
-      formData.append("file", file);
+      formData.append("file", compressed);
 
       const res = await fetch("/api/reflections/memorable-scene", {
         method: "POST",
@@ -68,7 +74,10 @@ export function MemorableSceneUpload({
       setPreview(data.imageUrl || "");
       setStatus("approved");
       onUploaded(data.imageUrl, "approved");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "업로드에 실패했어요.");
     } finally {
+      setUploadStage(null);
       setUploading(false);
     }
   }
@@ -138,7 +147,13 @@ export function MemorableSceneUpload({
         </button>
       )}
 
-      {uploading && <p className="text-xs text-koala-muted">그림을 확인하고 있어요...</p>}
+      {uploading && (
+        <p className="text-xs text-koala-muted">
+          {uploadStage === "compress"
+            ? "그림 크기를 줄이고 있어요..."
+            : "그림을 확인하고 있어요..."}
+        </p>
+      )}
       {error && <p className="text-sm text-red-500">{error}</p>}
     </div>
   );

@@ -5,9 +5,11 @@ import {
   getAppUrl,
   isAllowedAdminEmail,
 } from "@/lib/google-admin";
-import { readDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
-import { findUserByEmail } from "@/lib/user-display";
+import {
+  findFirestoreUserByEmail,
+  resolveEffectiveUserId,
+} from "@/lib/users/firestore-user";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -35,12 +37,11 @@ export async function GET(request: Request) {
     session.googleAdminEmail = profile.email;
     session.googleAdminName = profile.name;
 
-    const db = readDb();
-    const appUser = findUserByEmail(db.users, profile.email);
-    if (appUser) {
-      session.userId = appUser.id;
-      session.username = appUser.username;
-      session.isAdmin = appUser.isAdmin;
+    const appProfile = await findFirestoreUserByEmail(profile.email);
+    if (appProfile) {
+      session.userId = resolveEffectiveUserId(appProfile, appProfile.id);
+      session.username = appProfile.username;
+      session.isAdmin = true;
     }
 
     await session.save();

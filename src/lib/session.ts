@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 
 export interface SessionData {
   userId?: string;
+  firebaseUid?: string;
   username?: string;
   isAdmin?: boolean;
   googleAdminEmail?: string;

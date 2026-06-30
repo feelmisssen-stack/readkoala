@@ -1,0 +1,13 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "reflections",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "bookId", "order": "ASCENDING" }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

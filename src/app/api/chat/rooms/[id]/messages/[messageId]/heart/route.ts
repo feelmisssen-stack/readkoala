@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
-import { v4 as uuid } from "uuid";
-import { readDb, updateDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
+import {
+  getChatRoomById,
+  listChatMessagesByRoom,
+  toggleChatMessageHeart,
+} from "@/lib/repositories/chat-repository";
 
 export async function POST(
   _request: Request,
@@ -13,15 +16,12 @@ export async function POST(
   }
 
   const { id, messageId } = await params;
-  const db = readDb();
-  const room = db.chatRooms.find(
-    (r) => r.id === id && (r.status === "approved" || r.status === "pending")
-  );
-  if (!room) {
+  const room = await getChatRoomById(id);
+  if (!room || (room.status !== "approved" && room.status !== "pending")) {
     return NextResponse.json({ error: "방을 찾을 수 없어요." }, { status: 404 });
   }
 
-  const message = db.chatMessages.find((m) => m.id === messageId && m.roomId === id);
+  const message = (await listChatMessagesByRoom(id)).find((entry) => entry.id === messageId);
   if (!message) {
     return NextResponse.json({ error: "메시지를 찾을 수 없어요." }, { status: 404 });
   }
@@ -30,28 +30,11 @@ export async function POST(
     return NextResponse.json({ error: "내 메시지에는 호응을 남길 수 없어요." }, { status: 400 });
   }
 
-  let hearted = false;
-  updateDb((d) => {
-    const idx = d.chatMessageHearts.findIndex(
-      (h) => h.messageId === messageId && h.userId === session.userId
-    );
-    if (idx >= 0) {
-      d.chatMessageHearts.splice(idx, 1);
-      hearted = false;
-      return;
-    }
-    d.chatMessageHearts.push({
-      id: uuid(),
-      messageId,
-      roomId: id,
-      userId: session.userId!,
-      createdAt: new Date().toISOString(),
-    });
-    hearted = true;
+  const { hearted, heartCount } = await toggleChatMessageHeart({
+    roomId: id,
+    messageId,
+    userId: session.userId,
   });
-
-  const updated = readDb();
-  const heartCount = updated.chatMessageHearts.filter((h) => h.messageId === messageId).length;
 
   return NextResponse.json({ ok: true, hearted, heartCount });
 }

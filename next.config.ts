@@ -11,6 +11,8 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "data4library.kr" },
       { protocol: "https", hostname: "image.aladin.co.kr" },
       { protocol: "http", hostname: "image.aladin.co.kr" },
+      { protocol: "https", hostname: "firebasestorage.googleapis.com" },
+      { protocol: "https", hostname: "storage.googleapis.com" },
     ],
   },
 };

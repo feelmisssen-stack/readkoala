@@ -1,22 +1,25 @@
 import { NextResponse } from "next/server";
-import { v4 as uuid } from "uuid";
-import { readDb, updateDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { rejectInvalidContentForUser } from "@/lib/content-filter-api";
 import { buildUserDisplayMap } from "@/lib/user-display";
-import { buildVocabSenseMap, resolveVocabSense } from "@/lib/vocabulary-display";
+import { resolveUserBySession } from "@/lib/users/resolve-user";
+import { loadFeedDatabase } from "@/lib/repositories/feed-data";
+import {
+  createSharedSentence,
+  listAllSharedSentences,
+} from "@/lib/repositories/shared-sentences-repository";
 
 export async function GET() {
-  const db = readDb();
-  const displayMap = buildUserDisplayMap(db.users);
-  const sentences = db.sharedSentences
-    .map((s) => ({
-      ...s,
-      username: displayMap.get(s.userId) || s.username,
-      definition: s.definition || "",
-    }))
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  return NextResponse.json({ sentences });
+  const [sentences, feedData] = await Promise.all([listAllSharedSentences(), loadFeedDatabase()]);
+  const displayMap = buildUserDisplayMap(feedData.users);
+
+  const enriched = sentences.map((sentence) => ({
+    ...sentence,
+    username: displayMap.get(sentence.userId) || sentence.username,
+    definition: sentence.definition || "",
+  }));
+
+  return NextResponse.json({ sentences: enriched });
 }
 
 export async function POST(request: Request) {
@@ -25,7 +28,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
   }
 
-  const { vocabularyId, sentence } = await request.json();
+  const { vocabularyId, sentence, word, definition, senseNo } = await request.json();
+  if (!word?.trim()) {
+    return NextResponse.json({ error: "낱말을 골라 주세요." }, { status: 400 });
+  }
+  if (!sentence?.trim()) {
+    return NextResponse.json({ error: "문장을 입력해 주세요." }, { status: 400 });
+  }
+
   const blocked = rejectInvalidContentForUser([sentence], {
     userId: session.userId,
     source: "shared_sentence",
@@ -34,33 +44,21 @@ export async function POST(request: Request) {
   });
   if (blocked) return blocked;
 
-  const db = readDb();
-  const vocab = db.vocabulary.find((v) => v.id === vocabularyId && v.userId === session.userId);
-  if (!vocab) {
-    return NextResponse.json({ error: "낱말집에서 낱말을 골라 주세요." }, { status: 400 });
-  }
+  const user = await resolveUserBySession({
+    userId: session.userId,
+    firebaseUid: session.firebaseUid,
+  });
+  const displayName = user?.displayName || session.username || "친구";
+  const parsedSenseNo = Number(senseNo);
 
-  const user = db.users.find((u) => u.id === session.userId);
-  const displayName = user ? user.nickname?.trim() || user.username : session.username || "친구";
-
-  const userVocab = db.vocabulary.filter((v) => v.userId === session.userId);
-  const senseMap = buildVocabSenseMap(userVocab);
-  const sense = resolveVocabSense(vocab, userVocab, senseMap);
-
-  const entry = {
-    id: uuid(),
+  const entry = await createSharedSentence({
     userId: session.userId,
     username: displayName,
-    vocabularyId: vocab.id,
-    word: vocab.word,
-    definition: vocab.definition,
-    ...(sense.showSenseNo ? { senseNo: sense.senseNo } : vocab.senseNo ? { senseNo: vocab.senseNo } : {}),
+    vocabularyId: typeof vocabularyId === "string" ? vocabularyId : undefined,
+    word: word.trim(),
+    definition: definition?.trim() || "",
+    ...(parsedSenseNo > 0 ? { senseNo: parsedSenseNo } : {}),
     sentence: sentence.trim(),
-    createdAt: new Date().toISOString(),
-  };
-
-  updateDb((d) => {
-    d.sharedSentences.push(entry);
   });
 
   return NextResponse.json({ entry });

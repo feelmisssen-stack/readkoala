@@ -1,35 +1,66 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import { readDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
-import { getDisplayName } from "@/lib/user-display";
+import { isGoogleOnlyLoginUser } from "@/lib/admin-google-account";
+import { isFirebaseAuthEnabled } from "@/lib/firebase/config";
+import { signInWithUsernamePassword } from "@/lib/firebase/server-auth";
+import {
+  getFirestoreUser,
+  getFirestoreUserByUsername,
+  resolveEffectiveUserId,
+} from "@/lib/users/firestore-user";
+import { resolveUserByFirebaseUid } from "@/lib/users/resolve-user";
+
+const GOOGLE_ONLY_LOGIN_MESSAGE =
+  "이 아이디는 관리자 계정이에요. 관리자 페이지에서 Google 로그인을 사용해 주세요.";
+
+const FIREBASE_REQUIRED_MESSAGE =
+  "Firebase 설정이 필요해요. .env.local의 NEXT_PUBLIC_FIREBASE_*와 FIREBASE_ADMIN_*를 확인해 주세요.";
+
+async function isPasswordLoginBlocked(username: string) {
+  const profile = await getFirestoreUserByUsername(username);
+  if (!profile) return false;
+  return isGoogleOnlyLoginUser({ email: profile.email, googleOnly: profile.googleOnly });
+}
 
 export async function POST(request: Request) {
+  if (!isFirebaseAuthEnabled()) {
+    return NextResponse.json({ error: FIREBASE_REQUIRED_MESSAGE }, { status: 503 });
+  }
+
   const { username, password } = await request.json();
 
   if (!username || !password) {
     return NextResponse.json({ error: "아이디와 비밀번호를 입력해 주세요." }, { status: 400 });
   }
 
-  const db = readDb();
-  const user = db.users.find((u) => u.username === username.trim());
-  if (!user || !(await bcrypt.compare(password, user.passwordHash))) {
-    return NextResponse.json({ error: "아이디 또는 비밀번호가 틀려요." }, { status: 401 });
+  const trimmedUsername = username.trim();
+
+  if (await isPasswordLoginBlocked(trimmedUsername)) {
+    return NextResponse.json({ error: GOOGLE_ONLY_LOGIN_MESSAGE }, { status: 403 });
   }
 
-  const session = await getSession();
-  session.userId = user.id;
-  session.username = user.username;
-  session.isAdmin = user.isAdmin;
-  await session.save();
+  try {
+    const { uid } = await signInWithUsernamePassword(trimmedUsername, password);
+    const profile = await getFirestoreUser(uid);
+    if (!profile) {
+      return NextResponse.json({ error: "회원 정보를 찾을 수 없어요." }, { status: 404 });
+    }
 
-  return NextResponse.json({
-    ok: true,
-    user: {
-      username: user.username,
-      nickname: user.nickname,
-      displayName: getDisplayName(user),
-      isAdmin: user.isAdmin,
-    },
-  });
+    if (isGoogleOnlyLoginUser({ email: profile.email, googleOnly: profile.googleOnly })) {
+      return NextResponse.json({ error: GOOGLE_ONLY_LOGIN_MESSAGE }, { status: 403 });
+    }
+
+    const session = await getSession();
+    session.firebaseUid = uid;
+    session.userId = resolveEffectiveUserId(profile, uid);
+    session.username = profile.username;
+    session.isAdmin = profile.isAdmin;
+    await session.save();
+
+    const user = await resolveUserByFirebaseUid(uid);
+    return NextResponse.json({ ok: true, user });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "로그인에 실패했어요.";
+    return NextResponse.json({ error: message }, { status: 401 });
+  }
 }

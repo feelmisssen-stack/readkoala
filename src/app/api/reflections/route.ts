@@ -1,10 +1,17 @@
 import { NextResponse } from "next/server";
 import { v4 as uuid } from "uuid";
-import { readDb, updateDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { rejectInvalidReflectionBody } from "@/lib/content-filter-api";
-import { countReflectionChars, calculateLevel } from "@/lib/gamification";
+import { countReflectionChars } from "@/lib/gamification";
 import { applyReadingMilestones } from "@/lib/reading-dates";
+import { getBookForUser, saveBook } from "@/lib/repositories/books-repository";
+import {
+  getReflectionByUserAndBook,
+  listReflectionsByUserId,
+  saveReflection,
+} from "@/lib/repositories/reflections-repository";
+import { addReflectionChars } from "@/lib/repositories/user-stats-repository";
+import type { Reflection } from "@/lib/types";
 
 export async function GET(request: Request) {
   const session = await getSession();
@@ -14,15 +21,10 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const bookId = searchParams.get("bookId");
-
-  const db = readDb();
-  let reflections = db.reflections.filter((r) => r.userId === session.userId);
-
-  if (bookId) {
-    reflections = reflections.filter((r) => r.bookId === bookId);
-  }
-
-  reflections.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  const reflections = await listReflectionsByUserId(
+    session.userId,
+    bookId || undefined
+  );
 
   return NextResponse.json({ reflections });
 }
@@ -34,8 +36,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const db = readDb();
-  const book = db.books.find((b) => b.id === body.bookId && b.userId === session.userId);
+  const book = await getBookForUser(body.bookId, session.userId);
   const blocked = rejectInvalidReflectionBody(body, {
     userId: session.userId,
     bookId: body.bookId,
@@ -48,11 +49,9 @@ export async function POST(request: Request) {
   }
 
   const now = new Date().toISOString();
-  const existing = db.reflections.find(
-    (r) => r.userId === session.userId && r.bookId === body.bookId
-  );
+  const existing = await getReflectionByUserAndBook(session.userId, body.bookId);
 
-  const reflection = existing
+  const reflection: Reflection = existing
     ? {
         ...existing,
         beforeReadingActivities: body.beforeReadingActivities ?? existing.beforeReadingActivities,
@@ -92,26 +91,18 @@ export async function POST(request: Request) {
       };
 
   const charCount = existing ? 0 : countReflectionChars(reflection);
+  await saveReflection(reflection);
 
-  updateDb((d) => {
-    if (existing) {
-      const idx = d.reflections.findIndex((r) => r.id === existing.id);
-      d.reflections[idx] = reflection;
-    } else {
-      d.reflections.push(reflection);
-    }
-    const user = d.users.find((u) => u.id === session.userId);
-    if (user && charCount > 0) {
-      user.stats.totalChars += charCount;
-      user.stats.level = calculateLevel(user.stats);
-    }
-    const b = d.books.find((x) => x.id === body.bookId);
-    if (b && b.readingProgress < 100) {
-      b.readingProgress = Math.max(b.readingProgress, 80);
-      b.updatedAt = now;
-      applyReadingMilestones(b, now);
-    }
-  });
+  if (charCount > 0) {
+    await addReflectionChars(session.userId, charCount, session.firebaseUid);
+  }
+
+  if (book.readingProgress < 100) {
+    book.readingProgress = Math.max(book.readingProgress, 80);
+    book.updatedAt = now;
+    applyReadingMilestones(book, now);
+    await saveBook(book);
+  }
 
   return NextResponse.json({ reflection });
 }

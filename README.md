@@ -49,8 +49,31 @@ npm run dev
 | `STDICT_API_KEY` | [표준국어대사전](https://stdict.korean.go.kr/openapi/openApiRegister.do) API 키 (국어사전) |
 | `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) API 키 — 감상문 도우미·그림 검사 (선택) |
 | `GEMINI_MODEL` | Gemini 모델 ID (기본 `gemini-3.1-flash-lite`) |
+| `NEXT_PUBLIC_FIREBASE_*` | Firebase 웹 앱 설정 (콘솔 > 프로젝트 설정) |
+| `FIREBASE_ADMIN_*` | Firebase Admin 서비스 계정 (서버 API용) |
 
 API 키 없이도 Google Books / Open Library / 내장 사전으로 동작합니다.
+
+### Firebase 데이터 저장
+
+`NEXT_PUBLIC_FIREBASE_*`와 `FIREBASE_ADMIN_*`가 모두 설정되어야 앱이 동작합니다.
+
+| 데이터 | 저장소 |
+|--------|-----------|
+| 회원, 책, 감상문, 채팅, 공유 문장, 검토·AI 로그, 공감 | Firestore |
+| 기억에 남는 장면 그림 파일 | Firebase Storage |
+| 낱말집, 초성 퀴즈 진행 | 브라우저 localStorage |
+
+`data/db.json`은 낱말집 1회 이전·동기화 스크립트용으로만 남아 있습니다.
+
+보안 규칙 배포 (최초 1회, 테스트 모드 종료):
+
+```bash
+npx firebase login
+npm run firebase:deploy-rules
+```
+
+PowerShell에서 `npm` 실행 오류 시 `npm.cmd`를 사용하세요.
 
 ## 기술 스택
 
@@ -58,7 +81,7 @@ API 키 없이도 Google Books / Open Library / 내장 사전으로 동작합니
 - TypeScript
 - Tailwind CSS
 - iron-session + bcrypt
-- JSON 파일 기반 로컬 DB (`data/db.json`)
+- Firebase (Auth, Firestore, Storage) — 필수
 
 ## 주요 경로
 

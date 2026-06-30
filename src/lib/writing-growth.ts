@@ -169,3 +169,21 @@ export function getWritingGrowth(totalBytes: number): WritingGrowth {
 export function getUserWritingGrowth(db: Database, userId: string): WritingGrowth {
   return getWritingGrowth(getUserWritingByteTotal(db, userId));
 }
+
+export function getUserWritingGrowthFromEntries(
+  reflections: Reflection[],
+  sharedSentences: Database["sharedSentences"],
+  userId: string
+): WritingGrowth {
+  let total = 0;
+
+  for (const reflection of reflections.filter((entry) => entry.userId === userId)) {
+    total += countReflectionBytes(reflection);
+  }
+
+  for (const sentence of sharedSentences.filter((entry) => entry.userId === userId)) {
+    total += countTextBytes(sentence.sentence);
+  }
+
+  return getWritingGrowth(total);
+}

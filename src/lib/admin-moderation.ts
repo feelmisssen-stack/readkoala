@@ -1,8 +1,18 @@
 import { copyFile, mkdir, unlink } from "fs/promises";
 import path from "path";
-import { readDb, updateDb } from "@/lib/db";
-import { buildUserDisplayMap } from "@/lib/user-display";
 import type { ModerationReportSource } from "@/lib/types";
+import { buildUserDisplayMap } from "@/lib/user-display";
+import { loadFeedDatabase } from "@/lib/repositories/feed-data";
+import {
+  dismissModerationReport as dismissModerationReportInStore,
+  listPendingModerationReports,
+} from "@/lib/repositories/moderation-reports-repository";
+import { getReflectionById, saveReflection } from "@/lib/repositories/reflections-repository";
+import {
+  approveSceneImage,
+  isFirebaseStorageUrl,
+  removeSceneImage,
+} from "@/lib/memorable-scene-storage";
 
 const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "memorable-scenes");
 const PENDING_DIR = path.join(UPLOAD_DIR, "pending");
@@ -42,17 +52,20 @@ export function getSourceLabel(source: ModerationReportSource): string {
   return SOURCE_LABELS[source];
 }
 
-export function listSafetyReviewItems(): AdminSafetyReviewItem[] {
-  const db = readDb();
-  const displayMap = buildUserDisplayMap(db.users);
+export async function listSafetyReviewItems(): Promise<AdminSafetyReviewItem[]> {
+  const [feedData, pendingReports] = await Promise.all([
+    loadFeedDatabase(),
+    listPendingModerationReports(),
+  ]);
+  const displayMap = buildUserDisplayMap(feedData.users);
   const items: AdminSafetyReviewItem[] = [];
 
-  for (const reflection of db.reflections) {
+  for (const reflection of feedData.reflections) {
     if (reflection.memorableSceneStatus !== "pending" || !reflection.memorableScenePendingImage) {
       continue;
     }
-    const book = db.books.find((b) => b.id === reflection.bookId);
-    const user = db.users.find((u) => u.id === reflection.userId);
+    const book = feedData.books.find((entry) => entry.id === reflection.bookId);
+    const user = feedData.users.find((entry) => entry.id === reflection.userId);
     items.push({
       id: `scene-${reflection.id}`,
       kind: "scene_image",
@@ -76,9 +89,8 @@ export function listSafetyReviewItems(): AdminSafetyReviewItem[] {
     });
   }
 
-  for (const report of db.moderationReports) {
-    if (report.status !== "pending") continue;
-    const user = db.users.find((u) => u.id === report.userId);
+  for (const report of pendingReports) {
+    const user = feedData.users.find((entry) => entry.id === report.userId);
     items.push({
       id: `report-${report.id}`,
       kind: "text_report",
@@ -118,78 +130,70 @@ async function removeFileIfExists(filepath: string) {
 }
 
 export async function approveMemorableScene(reflectionId: string) {
-  const db = readDb();
-  const reflection = db.reflections.find((r) => r.id === reflectionId);
+  const reflection = await getReflectionById(reflectionId);
   if (!reflection?.memorableScenePendingImage) {
     throw new Error("NOT_FOUND");
   }
 
-  const pendingUrl = reflection.memorableScenePendingImage;
-  const filename = path.basename(pendingUrl);
-  const pendingPath = path.join(PENDING_DIR, filename);
-  const approvedPath = path.join(UPLOAD_DIR, filename);
-  const approvedUrl = `/uploads/memorable-scenes/${filename}`;
+  const now = new Date().toISOString();
+  let approvedUrl: string;
 
-  await mkdir(UPLOAD_DIR, { recursive: true });
-  try {
-    await copyFile(pendingPath, approvedPath);
-    await removeFileIfExists(pendingPath);
-  } catch {
-    throw new Error("FILE_ERROR");
+  if (isFirebaseStorageUrl(reflection.memorableScenePendingImage)) {
+    approvedUrl = await approveSceneImage({
+      userId: reflection.userId,
+      bookId: reflection.bookId,
+      pendingUrl: reflection.memorableScenePendingImage,
+    });
+  } else {
+    const pendingUrl = reflection.memorableScenePendingImage;
+    const filename = path.basename(pendingUrl);
+    const pendingPath = path.join(PENDING_DIR, filename);
+    const approvedPath = path.join(UPLOAD_DIR, filename);
+    approvedUrl = `/uploads/memorable-scenes/${filename}`;
+
+    await mkdir(UPLOAD_DIR, { recursive: true });
+    try {
+      await copyFile(pendingPath, approvedPath);
+      await removeFileIfExists(pendingPath);
+    } catch {
+      throw new Error("FILE_ERROR");
+    }
   }
 
-  const now = new Date().toISOString();
-  updateDb((d) => {
-    const idx = d.reflections.findIndex((r) => r.id === reflectionId);
-    if (idx < 0) return;
-    d.reflections[idx] = {
-      ...d.reflections[idx],
-      memorableSceneImage: approvedUrl,
-      memorableScenePendingImage: undefined,
-      memorableSceneStatus: "approved",
-      memorableScenePendingReason: undefined,
-      memorableScenePendingDetail: undefined,
-      updatedAt: now,
-    };
+  await saveReflection({
+    ...reflection,
+    memorableSceneImage: approvedUrl,
+    memorableScenePendingImage: undefined,
+    memorableSceneStatus: "approved",
+    memorableScenePendingReason: undefined,
+    memorableScenePendingDetail: undefined,
+    updatedAt: now,
   });
 }
 
 export async function rejectMemorableScene(reflectionId: string) {
-  const db = readDb();
-  const reflection = db.reflections.find((r) => r.id === reflectionId);
+  const reflection = await getReflectionById(reflectionId);
   if (!reflection) throw new Error("NOT_FOUND");
 
   if (reflection.memorableScenePendingImage) {
-    const pendingPath = path.join(
-      process.cwd(),
-      "public",
-      reflection.memorableScenePendingImage.replace(/^\//, "")
-    );
-    await removeFileIfExists(pendingPath);
+    await removeSceneImage(reflection.memorableScenePendingImage);
   }
 
   const now = new Date().toISOString();
-  updateDb((d) => {
-    const idx = d.reflections.findIndex((r) => r.id === reflectionId);
-    if (idx < 0) return;
-    d.reflections[idx] = {
-      ...d.reflections[idx],
-      memorableSceneImage: undefined,
-      memorableScenePendingImage: undefined,
-      memorableSceneStatus: undefined,
-      memorableScenePendingReason: undefined,
-      memorableScenePendingDetail: undefined,
-      updatedAt: now,
-    };
+  await saveReflection({
+    ...reflection,
+    memorableSceneImage: undefined,
+    memorableScenePendingImage: undefined,
+    memorableSceneStatus: undefined,
+    memorableScenePendingReason: undefined,
+    memorableScenePendingDetail: undefined,
+    updatedAt: now,
   });
 }
 
-export function dismissModerationReport(reportId: string) {
-  const now = new Date().toISOString();
-  updateDb((d) => {
-    const report = d.moderationReports.find((r) => r.id === reportId);
-    if (!report) return;
-    report.status = "dismissed";
-    report.reviewedAt = now;
-  });
+export async function dismissModerationReport(reportId: string) {
+  const updated = await dismissModerationReportInStore(reportId);
+  if (!updated) {
+    throw new Error("NOT_FOUND");
+  }
 }

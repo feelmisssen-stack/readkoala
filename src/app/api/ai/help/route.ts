@@ -43,12 +43,14 @@ export async function POST(request: Request) {
 
   if (session.userId && !isGreeting) {
     const lastUser = [...messages].reverse().find((message) => message.role === "user");
-    appendAiHelperExchange({
+    void appendAiHelperExchange({
       userId: session.userId,
       bookId,
       bookTitle: reviewDraft.bookTitle,
       userMessage: lastUser?.content,
       assistantReply: reply,
+    }).catch((error) => {
+      console.error("Failed to log AI helper exchange:", error);
     });
   }
 

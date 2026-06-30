@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
-import { readDb } from "@/lib/db";
 import { buildCarouselFeed, buildPersonalMoments } from "@/lib/feed";
+import { loadFeedDatabase } from "@/lib/repositories/feed-data";
+import type { Database } from "@/lib/types";
 
 export async function GET() {
-  const db = readDb();
+  const db = (await loadFeedDatabase()) as Database;
   const session = await getSession();
   const excludeUserId = session.userId || undefined;
 
@@ -12,9 +13,7 @@ export async function GET() {
   if (items.length === 0 && excludeUserId) {
     items = buildCarouselFeed(db);
   }
-  const personalMoments = session.userId
-    ? buildPersonalMoments(db, session.userId)
-    : [];
+  const personalMoments = session.userId ? buildPersonalMoments(db, session.userId) : [];
 
   return NextResponse.json({ items, personalMoments });
 }

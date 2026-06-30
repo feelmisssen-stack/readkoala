@@ -2,6 +2,8 @@ import fs from "fs";
 import path from "path";
 import type { Database } from "./types";
 
+/** @deprecated 런타임 데이터는 Firestore를 사용합니다. readDb는 낱말집 1회 이전(/api/dictionary/vocabulary/legacy)과 동기화 스크립트용입니다. */
+
 const DATA_DIR = path.join(process.cwd(), "data");
 const DB_FILE = path.join(DATA_DIR, "db.json");
 const DB_TMP_FILE = path.join(DATA_DIR, "db.json.tmp");

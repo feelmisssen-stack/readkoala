@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { readDb, updateDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
-import { calculateLevel } from "@/lib/gamification";
+import { updateChatMembershipStatus } from "@/lib/repositories/chat-repository";
 
 export async function POST(request: Request) {
   const session = await getSession();
@@ -10,20 +9,16 @@ export async function POST(request: Request) {
   }
 
   const { membershipId, action } = await request.json();
-
-  updateDb((db) => {
-    const membership = db.chatMemberships.find((m) => m.id === membershipId);
-    if (membership) {
-      membership.status = action === "approve" ? "approved" : "rejected";
-      if (action === "approve") {
-        const user = db.users.find((u) => u.id === membership.userId);
-        if (user) {
-          user.stats.chatParticipations += 1;
-          user.stats.level = calculateLevel(user.stats);
-        }
-      }
-    }
-  });
+  const status = action === "approve" ? "approved" : "rejected";
+  const updated = await updateChatMembershipStatus(
+    membershipId,
+    status,
+    undefined,
+    session.firebaseUid
+  );
+  if (!updated) {
+    return NextResponse.json({ error: "참여 신청을 찾을 수 없어요." }, { status: 404 });
+  }
 
   return NextResponse.json({ ok: true });
 }

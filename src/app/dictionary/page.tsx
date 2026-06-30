@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { BookMarked, CheckCircle2, Trash2 } from "lucide-react";
 import { iconSm } from "@/lib/icon-styles";
 import type { DictSense } from "@/lib/dictionary-api";
@@ -16,6 +16,18 @@ import {
   resolveVocabSense,
 } from "@/lib/vocabulary-display";
 import { alertContentFilterApiError, warnIfInvalidContent } from "@/lib/content-filter-client";
+import {
+  addLocalVocabularyEntry,
+  deleteLocalVocabularyEntry,
+  importLegacyVocabulary,
+  readLocalVocabulary,
+} from "@/lib/dictionary/local-vocabulary";
+import {
+  clearQuizSolvedIds,
+  readQuizSolvedIds,
+  writeQuizSolvedIds,
+} from "@/lib/dictionary/quiz-progress";
+import { checkQuizAnswer, pickVocabQuiz, type VocabQuiz } from "@/lib/dictionary/quiz";
 
 interface VocabEntry {
   id: string;
@@ -36,12 +48,7 @@ interface SharedSentence {
   sentence: string;
 }
 
-interface Quiz {
-  id: string;
-  hint: string;
-  definition: string;
-  answerLength: number;
-}
+interface Quiz extends VocabQuiz {}
 
 type LookupMode = "search" | "quiz";
 
@@ -74,6 +81,8 @@ export default function DictionaryPage() {
   const [deletingVocabId, setDeletingVocabId] = useState<string | null>(null);
   const [vocabPage, setVocabPage] = useState(1);
   const [sentencePage, setSentencePage] = useState(1);
+  const [pageReady, setPageReady] = useState(false);
+  const quizProgressHydrated = useRef(false);
 
   const vocabPagination = useMemo(
     () => paginateList(vocabulary, vocabPage),
@@ -97,10 +106,28 @@ export default function DictionaryPage() {
     }
   }, [sentencePage, sentencePagination.totalPages]);
 
-  function loadVocab() {
-    fetch("/api/dictionary/vocabulary")
-      .then((r) => r.json())
-      .then((d) => setVocabulary(d.vocabulary || []));
+  function refreshVocabulary(userId: string) {
+    setVocabulary(readLocalVocabulary(userId));
+  }
+
+  async function initVocabulary(userId: string) {
+    try {
+      if (readLocalVocabulary(userId).length === 0) {
+        const res = await fetch("/api/dictionary/vocabulary/legacy");
+        if (res.ok) {
+          const data = await res.json();
+          importLegacyVocabulary(userId, data.vocabulary || []);
+        }
+      }
+      refreshVocabulary(userId);
+      setSolvedQuizIds(readQuizSolvedIds(userId));
+      quizProgressHydrated.current = true;
+    } catch {
+      refreshVocabulary(userId);
+      quizProgressHydrated.current = true;
+    } finally {
+      setPageReady(true);
+    }
   }
 
   function loadSentences() {
@@ -110,21 +137,37 @@ export default function DictionaryPage() {
   }
 
   useEffect(() => {
-    fetch("/api/auth/me").then((r) => {
-      if (r.status === 401 || r.ok) {
-        r.json().then((d) => {
-          if (!d.user) window.location.href = "/";
-          else setCurrentUserId(d.user.id);
-        });
-      }
-    });
-    loadVocab();
+    fetch("/api/auth/me")
+      .then((r) => {
+        if (!r.ok && r.status !== 401) {
+          setPageReady(true);
+          return null;
+        }
+        return r.json();
+      })
+      .then((d) => {
+        if (!d) return;
+        if (!d.user) {
+          window.location.href = "/";
+          return;
+        }
+        setCurrentUserId(d.user.id);
+        void initVocabulary(d.user.id);
+      })
+      .catch(() => {
+        window.location.href = "/";
+      });
     loadSentences();
     fetch("/api/dictionary/status")
       .then((r) => r.json())
       .then((d) => setApiConfigured(!!d.configured))
       .catch(() => setApiConfigured(false));
   }, []);
+
+  useEffect(() => {
+    if (!currentUserId || !quizProgressHydrated.current) return;
+    writeQuizSolvedIds(currentUserId, solvedQuizIds);
+  }, [currentUserId, solvedQuizIds]);
 
   async function saveApiKey() {
     setApiKeySaving(true);
@@ -160,33 +203,29 @@ export default function DictionaryPage() {
   }
 
   async function addToVocab(sense: DictSense) {
-    if (!result) return;
+    if (!result || !currentUserId) return;
     const definition = formatSenseDefinition(sense);
-    const res = await fetch("/api/dictionary/vocabulary", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    try {
+      addLocalVocabularyEntry(currentUserId, {
         word: result.word,
         definition,
         ...(sense.senseNo ? { senseNo: sense.senseNo } : {}),
-      }),
-    });
-    if (res.ok) {
-      loadVocab();
+      });
+      refreshVocabulary(currentUserId);
       setVocabPage(1);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : "낱말집에 넣지 못했어요.");
     }
   }
 
-  async function startQuiz(resetRound = false) {
+  function startQuiz(resetRound = false) {
     setQuizMessage("");
     const excludes = resetRound ? [] : [...solvedQuizIds];
     if (!resetRound && quiz?.id && !excludes.includes(quiz.id)) {
       excludes.push(quiz.id);
     }
-    const excludeParam =
-      excludes.length > 0 ? `?exclude=${encodeURIComponent(excludes.join(","))}` : "";
-    const res = await fetch(`/api/dictionary/quiz${excludeParam}`);
-    const data = await res.json();
+
+    const data = pickVocabQuiz(vocabulary, excludes);
     if (!data.quiz) {
       setQuiz(null);
       if (data.completed) {
@@ -196,7 +235,14 @@ export default function DictionaryPage() {
       }
       return;
     }
-    if (resetRound) setSolvedQuizIds(new Set());
+
+    if (resetRound) {
+      if (currentUserId) {
+        clearQuizSolvedIds(currentUserId);
+        quizProgressHydrated.current = true;
+      }
+      setSolvedQuizIds(new Set());
+    }
     setQuiz(data.quiz);
     setQuizAnswer("");
     setQuizResult(null);
@@ -205,19 +251,13 @@ export default function DictionaryPage() {
 
   function switchToQuiz() {
     setLookupMode("quiz");
-    setSolvedQuizIds(new Set());
-    void startQuiz(true);
+    startQuiz(true);
   }
 
-  async function checkQuiz() {
+  function checkQuiz() {
     if (!quiz || quizResult === "correct" || quizResult === "incorrect") return;
-    const res = await fetch("/api/dictionary/quiz/check", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ quizId: quiz.id, answer: quizAnswer }),
-    });
-    const data = await res.json();
-    if (data.correct) {
+    const entry = vocabulary.find((item) => item.id === quiz.id);
+    if (entry && checkQuizAnswer(entry.word, quizAnswer)) {
       setQuizResult("correct");
       setSolvedQuizIds((prev) => new Set(prev).add(quiz.id));
       return;
@@ -241,10 +281,24 @@ export default function DictionaryPage() {
   async function shareSentence() {
     if (!selectedVocabId || !newSentence.trim()) return;
     if (!warnIfInvalidContent(newSentence).ok) return;
+
+    const vocab = vocabulary.find((entry) => entry.id === selectedVocabId);
+    if (!vocab) {
+      alert("낱말집에서 낱말을 골라 주세요.");
+      return;
+    }
+
+    const sense = resolveVocabSense(vocab, vocabulary, vocabSenseMap);
     const res = await fetch("/api/dictionary/sentences", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ vocabularyId: selectedVocabId, sentence: newSentence }),
+      body: JSON.stringify({
+        vocabularyId: selectedVocabId,
+        sentence: newSentence,
+        word: vocab.word,
+        definition: vocab.definition,
+        ...(sense.showSenseNo ? { senseNo: sense.senseNo } : vocab.senseNo ? { senseNo: vocab.senseNo } : {}),
+      }),
     });
     if (!res.ok) {
       const data = await res.json();
@@ -272,12 +326,12 @@ export default function DictionaryPage() {
   }
 
   async function deleteVocab(id: string) {
+    if (!currentUserId) return;
     if (!confirm("이 낱말을 낱말집에서 지울까요?")) return;
     setDeletingVocabId(id);
     try {
-      const res = await fetch(`/api/dictionary/vocabulary/${id}`, { method: "DELETE" });
-      if (res.ok) {
-        setVocabulary((prev) => prev.filter((v) => v.id !== id));
+      if (deleteLocalVocabularyEntry(currentUserId, id)) {
+        refreshVocabulary(currentUserId);
         if (quiz?.id === id) {
           setQuiz(null);
           setQuizMessage("낱말집에 단어를 먼저 추가해 주세요.");
@@ -286,6 +340,14 @@ export default function DictionaryPage() {
     } finally {
       setDeletingVocabId(null);
     }
+  }
+
+  if (!pageReady) {
+    return (
+      <div className="flex min-h-[320px] items-center justify-center">
+        <p className="text-sm text-koala-muted">낱말집을 불러오는 중...</p>
+      </div>
+    );
   }
 
   return (

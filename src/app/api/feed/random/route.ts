@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
-import { readDb } from "@/lib/db";
 import { buildRandomFeed, pickRandomItem } from "@/lib/feed";
+import { loadFeedDatabase } from "@/lib/repositories/feed-data";
+import type { Database } from "@/lib/types";
 
 export async function GET() {
-  const db = readDb();
-  const items = buildRandomFeed(db);
+  const db = await loadFeedDatabase();
+  const items = buildRandomFeed(db as Database);
   const item = pickRandomItem(items);
   return NextResponse.json({ item });
 }

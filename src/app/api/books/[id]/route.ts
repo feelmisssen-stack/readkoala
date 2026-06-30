@@ -1,15 +1,23 @@
 import { NextResponse } from "next/server";
 import { calcProgressFromPages } from "@/lib/reading-progress";
 import { applyReadingMilestones } from "@/lib/reading-dates";
-import { readDb, updateDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { rejectInvalidContent } from "@/lib/content-filter-api";
+import {
+  deleteBookForUser,
+  getBookById,
+  getBookForUser,
+  saveBook,
+} from "@/lib/repositories/books-repository";
+import { deleteReflectionsForBook } from "@/lib/repositories/reflections-repository";
+import { deleteStoryEmpathiesForBook } from "@/lib/repositories/story-empathies-repository";
+import { deleteChatRoomsByBookId } from "@/lib/repositories/chat-repository";
+import { syncBooksReadStat } from "@/lib/repositories/user-stats-repository";
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const session = await getSession();
-  const db = readDb();
-  const book = db.books.find((b) => b.id === id);
+  const book = await getBookById(id);
   if (!book) {
     return NextResponse.json({ error: "책을 찾을 수 없어요." }, { status: 404 });
   }
@@ -32,61 +40,53 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (blocked) return blocked;
   }
 
-  const db = readDb();
-  const book = db.books.find((b) => b.id === id && b.userId === session.userId);
+  const book = await getBookForUser(id, session.userId);
   if (!book) {
     return NextResponse.json({ error: "책을 찾을 수 없어요." }, { status: 404 });
   }
 
-  let snapshot = {
-    readingProgress: book.readingProgress,
-    currentPage: book.currentPage,
-    readingStartedAt: book.readingStartedAt,
-    finishedAt: book.finishedAt,
-  };
+  if (body.title) book.title = body.title;
+  if (body.totalPages !== undefined) {
+    book.totalPages = body.totalPages > 0 ? body.totalPages : undefined;
+  }
 
-  updateDb((d) => {
-    const b = d.books.find((x) => x.id === id)!;
-    if (body.title) b.title = body.title;
-    if (body.totalPages !== undefined) b.totalPages = body.totalPages > 0 ? body.totalPages : undefined;
-
-    if (body.currentPage !== undefined) {
-      b.currentPage = Math.max(0, body.currentPage);
-      if (b.totalPages && b.totalPages > 0) {
-        b.readingProgress = calcProgressFromPages(b.currentPage, b.totalPages);
-      }
-    } else if (body.readingProgress !== undefined) {
-      b.readingProgress = body.readingProgress;
+  if (body.currentPage !== undefined) {
+    book.currentPage = Math.max(0, body.currentPage);
+    if (book.totalPages && book.totalPages > 0) {
+      book.readingProgress = calcProgressFromPages(book.currentPage, book.totalPages);
     }
+  } else if (body.readingProgress !== undefined) {
+    book.readingProgress = body.readingProgress;
+  }
 
-    if (body.totalPages !== undefined && body.currentPage === undefined && b.currentPage && b.totalPages) {
-      b.readingProgress = calcProgressFromPages(b.currentPage, b.totalPages);
-    }
+  if (
+    body.totalPages !== undefined &&
+    body.currentPage === undefined &&
+    book.currentPage &&
+    book.totalPages
+  ) {
+    book.readingProgress = calcProgressFromPages(book.currentPage, book.totalPages);
+  }
 
-    const now = new Date().toISOString();
-    b.updatedAt = now;
-    applyReadingMilestones(b, now);
+  const now = new Date().toISOString();
+  book.updatedAt = now;
+  applyReadingMilestones(book, now);
 
-    const progress = b.readingProgress;
-    if (progress >= 100) {
-      const user = d.users.find((u) => u.id === session.userId);
-      if (user) {
-        const readCount = d.books.filter(
-          (bk) => bk.userId === session.userId && bk.readingProgress >= 100
-        ).length;
-        user.stats.booksRead = readCount;
-      }
-    }
+  await saveBook(book);
 
-    snapshot = {
-      readingProgress: b.readingProgress,
-      currentPage: b.currentPage,
-      readingStartedAt: b.readingStartedAt,
-      finishedAt: b.finishedAt,
-    };
+  if (book.readingProgress >= 100) {
+    await syncBooksReadStat(session.userId, session.firebaseUid);
+  }
+
+  return NextResponse.json({
+    ok: true,
+    book: {
+      readingProgress: book.readingProgress,
+      currentPage: book.currentPage,
+      readingStartedAt: book.readingStartedAt,
+      finishedAt: book.finishedAt,
+    },
   });
-
-  return NextResponse.json({ ok: true, book: snapshot });
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -96,25 +96,17 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   }
 
   const { id } = await params;
-  const db = readDb();
-  const book = db.books.find((b) => b.id === id && b.userId === session.userId);
+  const book = await getBookForUser(id, session.userId);
   if (!book) {
     return NextResponse.json({ error: "책을 찾을 수 없어요." }, { status: 404 });
   }
 
-  updateDb((d) => {
-    d.books = d.books.filter((b) => b.id !== id);
-    d.reflections = d.reflections.filter((r) => r.bookId !== id);
-    d.chatRooms = d.chatRooms.filter((r) => r.bookId !== id);
+  await deleteBookForUser(id, session.userId);
+  await deleteReflectionsForBook(id);
+  await deleteStoryEmpathiesForBook(id);
+  await deleteChatRoomsByBookId(id);
 
-    const user = d.users.find((u) => u.id === session.userId);
-    if (user) {
-      const readCount = d.books.filter(
-        (bk) => bk.userId === session.userId && bk.readingProgress >= 100
-      ).length;
-      user.stats.booksRead = readCount;
-    }
-  });
+  await syncBooksReadStat(session.userId, session.firebaseUid);
 
   return NextResponse.json({ ok: true });
 }

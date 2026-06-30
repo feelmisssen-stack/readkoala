@@ -1,0 +1,15 @@
+rules_version = '2';
+
+// 업로드·삭제는 서버(Admin SDK)만 수행합니다. 클라이언트 직접 쓰기는 막습니다.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /memorable-scenes/{folder}/{userId}/{fileName} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /_system/{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

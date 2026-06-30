@@ -1,23 +1,29 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import { readDb, updateDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { rejectInvalidNickname } from "@/lib/content-filter-api";
-import { getDisplayName } from "@/lib/user-display";
+import { isFirebaseAuthEnabled } from "@/lib/firebase/config";
+import { verifyCurrentPassword } from "@/lib/firebase/server-auth";
+import {
+  getFirestoreUser,
+  updateFirestoreUserNickname,
+  updateFirestoreUserPassword,
+} from "@/lib/users/firestore-user";
+import { resolveUserBySession } from "@/lib/users/resolve-user";
+
+const FIREBASE_REQUIRED_MESSAGE =
+  "Firebase 설정이 필요해요. .env.local의 NEXT_PUBLIC_FIREBASE_*와 FIREBASE_ADMIN_*를 확인해 주세요.";
 
 export async function PATCH(request: Request) {
   const session = await getSession();
-  if (!session.userId) {
+  if (!session.firebaseUid) {
     return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
   }
 
-  const { nickname, currentPassword, newPassword } = await request.json();
-  const db = readDb();
-  const user = db.users.find((u) => u.id === session.userId);
-  if (!user) {
-    return NextResponse.json({ error: "회원 정보를 찾을 수 없어요." }, { status: 404 });
+  if (!isFirebaseAuthEnabled()) {
+    return NextResponse.json({ error: FIREBASE_REQUIRED_MESSAGE }, { status: 503 });
   }
 
+  const { nickname, currentPassword, newPassword } = await request.json();
   const hasNickname = typeof nickname === "string";
   const hasPasswordChange = typeof newPassword === "string" && newPassword.length > 0;
 
@@ -38,35 +44,43 @@ export async function PATCH(request: Request) {
     if (!currentPassword) {
       return NextResponse.json({ error: "현재 비밀번호를 입력해 주세요." }, { status: 400 });
     }
-    if (newPassword.length < 4) {
-      return NextResponse.json({ error: "새 비밀번호는 4자 이상이어야 해요." }, { status: 400 });
-    }
-    const valid = await bcrypt.compare(currentPassword, user.passwordHash);
-    if (!valid) {
-      return NextResponse.json({ error: "현재 비밀번호가 틀려요." }, { status: 400 });
+    if (newPassword.length < 6) {
+      return NextResponse.json({ error: "새 비밀번호는 6자 이상이어야 해요." }, { status: 400 });
     }
   }
 
-  updateDb((d) => {
-    const target = d.users.find((u) => u.id === session.userId);
-    if (!target) return;
-    if (hasNickname) {
-      target.nickname = nickname.trim();
-    }
-    if (hasPasswordChange) {
-      target.passwordHash = bcrypt.hashSync(newPassword, 10);
-    }
-  });
+  const profile = await getFirestoreUser(session.firebaseUid);
+  if (!profile) {
+    return NextResponse.json({ error: "회원 정보를 찾을 수 없어요." }, { status: 404 });
+  }
 
-  const updated = readDb().users.find((u) => u.id === session.userId)!;
+  if (hasPasswordChange) {
+    try {
+      await verifyCurrentPassword(profile.username, currentPassword);
+    } catch {
+      return NextResponse.json({ error: "현재 비밀번호가 틀려요." }, { status: 400 });
+    }
+    await updateFirestoreUserPassword(session.firebaseUid, newPassword);
+  }
+
+  if (hasNickname) {
+    await updateFirestoreUserNickname(session.firebaseUid, nickname.trim());
+  }
+
+  const updated = await resolveUserBySession({
+    userId: session.userId,
+    firebaseUid: session.firebaseUid,
+  });
 
   return NextResponse.json({
     ok: true,
-    user: {
-      id: updated.id,
-      username: updated.username,
-      nickname: updated.nickname,
-      displayName: getDisplayName(updated),
-    },
+    user: updated
+      ? {
+          id: updated.id,
+          username: updated.username,
+          nickname: updated.nickname,
+          displayName: updated.displayName,
+        }
+      : null,
   });
 }

@@ -1,7 +1,26 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import { readDb, updateDb } from "@/lib/db";
 import { requireGoogleAdmin } from "@/lib/admin-auth";
+import { isFirebaseAuthEnabled } from "@/lib/firebase/config";
+import { deleteBooksForUser } from "@/lib/repositories/books-repository";
+import { deleteChatDataForUser } from "@/lib/repositories/chat-repository";
+import { deleteReflectionsForUser } from "@/lib/repositories/reflections-repository";
+import { deleteSharedSentencesForUser } from "@/lib/repositories/shared-sentences-repository";
+import { deleteModerationReportsForUser } from "@/lib/repositories/moderation-reports-repository";
+import { deleteAiHelperSessionsForUser } from "@/lib/repositories/ai-helper-sessions-repository";
+import { deleteStoryEmpathiesForUser } from "@/lib/repositories/story-empathies-repository";
+import {
+  deleteFirestoreUser,
+  listFirestoreUsers,
+  updateFirestoreUserPassword,
+} from "@/lib/users/firestore-user";
+
+const FIREBASE_REQUIRED_MESSAGE =
+  "Firebase 설정이 필요해요. .env.local의 NEXT_PUBLIC_FIREBASE_*와 FIREBASE_ADMIN_*를 확인해 주세요.";
+
+async function findFirebaseUserByEffectiveId(id: string) {
+  const profiles = await listFirestoreUsers();
+  return profiles.find((profile) => profile.id === id || profile.legacyDbId === id) ?? null;
+}
 
 export async function PATCH(
   request: Request,
@@ -13,26 +32,24 @@ export async function PATCH(
     return NextResponse.json({ error: "관리자 로그인이 필요해요." }, { status: 401 });
   }
 
+  if (!isFirebaseAuthEnabled()) {
+    return NextResponse.json({ error: FIREBASE_REQUIRED_MESSAGE }, { status: 503 });
+  }
+
   const { id } = await params;
   const { password } = await request.json();
 
-  if (!password || password.length < 4) {
-    return NextResponse.json({ error: "비밀번호는 4자 이상이어야 해요." }, { status: 400 });
+  if (!password || password.length < 6) {
+    return NextResponse.json({ error: "비밀번호는 6자 이상이어야 해요." }, { status: 400 });
   }
 
-  const db = readDb();
-  const user = db.users.find((u) => u.id === id);
-  if (!user) {
+  const profile = await findFirebaseUserByEffectiveId(id);
+  if (!profile) {
     return NextResponse.json({ error: "회원을 찾을 수 없어요." }, { status: 404 });
   }
 
-  const passwordHash = await bcrypt.hash(password, 10);
-  updateDb((d) => {
-    const target = d.users.find((u) => u.id === id);
-    if (target) target.passwordHash = passwordHash;
-  });
-
-  return NextResponse.json({ ok: true, username: user.username });
+  await updateFirestoreUserPassword(profile.id, password);
+  return NextResponse.json({ ok: true, username: profile.username });
 }
 
 export async function DELETE(
@@ -45,24 +62,26 @@ export async function DELETE(
     return NextResponse.json({ error: "관리자 로그인이 필요해요." }, { status: 401 });
   }
 
-  const { id } = await params;
+  if (!isFirebaseAuthEnabled()) {
+    return NextResponse.json({ error: FIREBASE_REQUIRED_MESSAGE }, { status: 503 });
+  }
 
-  updateDb((d) => {
-    d.users = d.users.filter((u) => u.id !== id);
-    d.books = d.books.filter((b) => b.userId !== id);
-    d.reflections = d.reflections.filter((r) => r.userId !== id);
-    d.vocabulary = d.vocabulary.filter((v) => v.userId !== id);
-    d.sharedSentences = d.sharedSentences.filter((s) => s.userId !== id);
-    d.chatMemberships = d.chatMemberships.filter((m) => m.userId !== id);
-    const removedMessageIds = new Set(
-      d.chatMessages.filter((m) => m.userId === id).map((m) => m.id)
-    );
-    d.chatMessages = d.chatMessages.filter((m) => m.userId !== id);
-    d.chatMessageHearts = d.chatMessageHearts.filter(
-      (h) => h.userId !== id && !removedMessageIds.has(h.messageId)
-    );
-    d.chatRooms = d.chatRooms.filter((r) => r.creatorId !== id);
-  });
+  const { id } = await params;
+  const profile = await findFirebaseUserByEffectiveId(id);
+  if (!profile) {
+    return NextResponse.json({ error: "회원을 찾을 수 없어요." }, { status: 404 });
+  }
+
+  const effectiveId = profile.legacyDbId ?? profile.id;
+
+  await deleteFirestoreUser(profile.id);
+  await deleteBooksForUser(effectiveId);
+  await deleteReflectionsForUser(effectiveId);
+  await deleteSharedSentencesForUser(effectiveId);
+  await deleteChatDataForUser(effectiveId);
+  await deleteModerationReportsForUser(effectiveId);
+  await deleteAiHelperSessionsForUser(effectiveId);
+  await deleteStoryEmpathiesForUser(effectiveId);
 
   return NextResponse.json({ ok: true });
 }

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { readDb, updateDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { updateChatRoomStatus } from "@/lib/repositories/chat-repository";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await getSession();
@@ -10,13 +10,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const { id } = await params;
   const { action } = await request.json();
-
-  updateDb((db) => {
-    const room = db.chatRooms.find((r) => r.id === id);
-    if (room) {
-      room.status = action === "approve" ? "approved" : "rejected";
-    }
-  });
+  const status = action === "approve" ? "approved" : "rejected";
+  const updated = await updateChatRoomStatus(id, status);
+  if (!updated) {
+    return NextResponse.json({ error: "방을 찾을 수 없어요." }, { status: 404 });
+  }
 
   return NextResponse.json({ ok: true });
 }

@@ -1,10 +1,18 @@
 import { NextResponse } from "next/server";
 import { v4 as uuid } from "uuid";
-import { readDb, updateDb } from "@/lib/db";
 import { getSession } from "@/lib/session";
 import { rejectInvalidContentForUser } from "@/lib/content-filter-api";
 import { getRoomParticipantNames } from "@/lib/chat";
 import { buildUserDisplayMap } from "@/lib/user-display";
+import { getBookById } from "@/lib/repositories/books-repository";
+import { loadFeedDatabase } from "@/lib/repositories/feed-data";
+import {
+  createChatRoomWithMembership,
+  listChatMemberships,
+  listAllChatMessages,
+  listPendingChatRooms,
+  listVisibleChatRooms,
+} from "@/lib/repositories/chat-repository";
 
 export async function GET() {
   const session = await getSession();
@@ -12,23 +20,25 @@ export async function GET() {
     return NextResponse.json({ error: "로그인이 필요해요." }, { status: 401 });
   }
 
-  const db = readDb();
-  const displayMap = buildUserDisplayMap(db.users);
-  const rooms = db.chatRooms
-    .filter((r) => r.status === "approved" || r.status === "pending")
-    .map((room) => {
-      const membership = db.chatMemberships.find(
-        (m) => m.roomId === room.id && m.userId === session.userId
-      );
-      const participants = getRoomParticipantNames(db.chatMessages, room.id, displayMap);
-      return { ...room, membership, participants };
-    });
+  const [rooms, memberships, messages, feedData] = await Promise.all([
+    listVisibleChatRooms(),
+    listChatMemberships(),
+    listAllChatMessages(),
+    loadFeedDatabase(),
+  ]);
 
-  const pendingRooms = session.isAdmin
-    ? db.chatRooms.filter((r) => r.status === "pending")
-    : [];
+  const displayMap = buildUserDisplayMap(feedData.users);
+  const enrichedRooms = rooms.map((room) => {
+    const membership = memberships.find(
+      (entry) => entry.roomId === room.id && entry.userId === session.userId
+    );
+    const participants = getRoomParticipantNames(messages, room.id, displayMap);
+    return { ...room, membership, participants };
+  });
 
-  return NextResponse.json({ rooms, pendingRooms });
+  const pendingRooms = session.isAdmin ? await listPendingChatRooms() : [];
+
+  return NextResponse.json({ rooms: enrichedRooms, pendingRooms });
 }
 
 export async function POST(request: Request) {
@@ -38,9 +48,8 @@ export async function POST(request: Request) {
   }
 
   const { bookId, name } = await request.json();
+  const book = await getBookById(bookId);
 
-  const db = readDb();
-  const book = db.books.find((b) => b.id === bookId);
   const blocked = rejectInvalidContentForUser([name], {
     userId: session.userId,
     source: "chat_room",
@@ -55,6 +64,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "책을 찾을 수 없어요." }, { status: 400 });
   }
 
+  const now = new Date().toISOString();
   const room = {
     id: uuid(),
     bookId,
@@ -62,18 +72,18 @@ export async function POST(request: Request) {
     creatorId: session.userId,
     name: name || `${book.title} 이야기뜰`,
     status: "approved" as const,
-    createdAt: new Date().toISOString(),
+    createdAt: now,
   };
 
-  updateDb((d) => {
-    d.chatRooms.push(room);
-    d.chatMemberships.push({
+  await createChatRoomWithMembership({
+    room,
+    membership: {
       id: uuid(),
       roomId: room.id,
-      userId: session.userId!,
+      userId: session.userId,
       status: "approved",
-      createdAt: new Date().toISOString(),
-    });
+      createdAt: now,
+    },
   });
 
   return NextResponse.json({ room });

@@ -1,25 +1,25 @@
-import { mkdir, unlink, writeFile } from "fs/promises";
-import path from "path";
 import { NextResponse } from "next/server";
 import { v4 as uuid } from "uuid";
-import { readDb, updateDb } from "@/lib/db";
 import { applyReadingMilestones } from "@/lib/reading-dates";
 import { moderateImageBuffer } from "@/lib/image-moderation";
 import { getSession } from "@/lib/session";
+import { getBookForUser, saveBook } from "@/lib/repositories/books-repository";
+import {
+  createEmptyReflection,
+  getReflectionByUserAndBook,
+  saveReflection,
+} from "@/lib/repositories/reflections-repository";
+import {
+  getSceneMaxUploadBytes,
+  removeSceneImage,
+  saveSceneImage,
+} from "@/lib/memorable-scene-storage";
+import type { Reflection } from "@/lib/types";
 
-const UPLOAD_DIR = path.join(process.cwd(), "public", "uploads", "memorable-scenes");
-const PENDING_DIR = path.join(UPLOAD_DIR, "pending");
-const MAX_BYTES = 5 * 1024 * 1024;
-
-const EXT_BY_MIME: Record<string, string> = {
-  "image/jpeg": ".jpg",
-  "image/png": ".png",
-  "image/webp": ".webp",
-  "image/gif": ".gif",
-};
+const ALLOWED_MIME = new Set(["image/jpeg", "image/jpg", "image/webp", "image/png"]);
 
 function buildReflectionWithScene(
-  existing: ReturnType<typeof readDb>["reflections"][number] | undefined,
+  existing: Reflection | null,
   sessionUserId: string,
   bookId: string,
   now: string,
@@ -44,34 +44,14 @@ function buildReflectionWithScene(
   }
 
   return {
+    ...createEmptyReflection(sessionUserId, bookId, now),
     id: uuid(),
-    userId: sessionUserId,
-    bookId,
-    beforeReading: [],
-    duringReading: [],
-    association: "",
-    favoriteQuote: "",
-    reviewTitle: "",
-    reviewReason: "",
-    reviewContent: "",
-    reviewImpressiveScene: "",
-    reviewThoughts: "",
     memorableSceneImage: scene.memorableSceneImage,
     memorableScenePendingImage: scene.memorableScenePendingImage,
     memorableSceneStatus: scene.memorableSceneStatus,
     memorableScenePendingReason: scene.memorableScenePendingReason,
     memorableScenePendingDetail: scene.memorableScenePendingDetail,
-    createdAt: now,
-    updatedAt: now,
   };
-}
-
-async function removeFileIfExists(filepath: string) {
-  try {
-    await unlink(filepath);
-  } catch {
-    // ignore missing files
-  }
 }
 
 export async function POST(request: Request) {
@@ -91,49 +71,47 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "그림 파일을 선택해 주세요." }, { status: 400 });
   }
 
-  const ext = EXT_BY_MIME[file.type];
-  if (!ext) {
-    return NextResponse.json({ error: "JPG, PNG, WEBP, GIF 파일만 올릴 수 있어요." }, { status: 400 });
-  }
-  if (file.size > MAX_BYTES) {
-    return NextResponse.json({ error: "5MB 이하 그림만 올릴 수 있어요." }, { status: 400 });
+  if (!ALLOWED_MIME.has(file.type)) {
+    return NextResponse.json({ error: "JPG, PNG, WEBP 그림만 올릴 수 있어요." }, { status: 400 });
   }
 
-  const db = readDb();
-  const book = db.books.find((b) => b.id === bookId && b.userId === session.userId);
+  const maxBytes = getSceneMaxUploadBytes();
+  if (file.size > maxBytes) {
+    return NextResponse.json(
+      { error: "그림이 500KB보다 커요. 다시 선택해 주세요." },
+      { status: 400 }
+    );
+  }
+
+  const book = await getBookForUser(bookId, session.userId);
   if (!book) {
     return NextResponse.json({ error: "책을 먼저 등록해 주세요." }, { status: 400 });
   }
 
   const buffer = Buffer.from(await file.arrayBuffer());
-  const moderation = await moderateImageBuffer(buffer, file.type);
+  const moderationMime = file.type === "image/png" ? "image/png" : "image/jpeg";
+  const moderation = await moderateImageBuffer(buffer, moderationMime);
   const approved = moderation.safe;
 
-  const filename = `${session.userId}-${bookId}${ext}`;
-  const approvedPath = path.join(UPLOAD_DIR, filename);
-  const pendingPath = path.join(PENDING_DIR, filename);
-  const approvedUrl = `/uploads/memorable-scenes/${filename}`;
-  const pendingUrl = `/uploads/memorable-scenes/pending/${filename}`;
-
-  await mkdir(approved ? UPLOAD_DIR : PENDING_DIR, { recursive: true });
-  if (approved) {
-    await mkdir(UPLOAD_DIR, { recursive: true });
-    await writeFile(approvedPath, buffer);
-    await removeFileIfExists(pendingPath);
-  } else {
-    await mkdir(PENDING_DIR, { recursive: true });
-    await writeFile(pendingPath, buffer);
-    await removeFileIfExists(approvedPath);
+  const existing = await getReflectionByUserAndBook(session.userId, bookId);
+  if (existing?.memorableSceneImage) {
+    await removeSceneImage(existing.memorableSceneImage);
+  }
+  if (existing?.memorableScenePendingImage) {
+    await removeSceneImage(existing.memorableScenePendingImage);
   }
 
-  const now = new Date().toISOString();
-  const existing = db.reflections.find(
-    (r) => r.userId === session.userId && r.bookId === bookId
-  );
+  const stored = await saveSceneImage({
+    userId: session.userId,
+    bookId,
+    buffer,
+    approved,
+  });
 
+  const now = new Date().toISOString();
   const reflection = buildReflectionWithScene(existing, session.userId, bookId, now, {
-    memorableSceneImage: approved ? approvedUrl : undefined,
-    memorableScenePendingImage: approved ? undefined : pendingUrl,
+    memorableSceneImage: approved ? stored.approvedUrl : undefined,
+    memorableScenePendingImage: approved ? undefined : stored.pendingUrl,
     memorableSceneStatus: approved ? "approved" : "pending",
     memorableScenePendingReason: approved
       ? undefined
@@ -147,20 +125,14 @@ export async function POST(request: Request) {
         : moderation.reason,
   });
 
-  updateDb((d) => {
-    if (existing) {
-      const idx = d.reflections.findIndex((r) => r.id === existing.id);
-      d.reflections[idx] = reflection;
-    } else {
-      d.reflections.push(reflection);
-    }
-    const b = d.books.find((x) => x.id === bookId);
-    if (b && b.readingProgress < 100) {
-      b.readingProgress = Math.max(b.readingProgress, 80);
-      b.updatedAt = now;
-      applyReadingMilestones(b, now);
-    }
-  });
+  await saveReflection(reflection);
+
+  if (book.readingProgress < 100) {
+    book.readingProgress = Math.max(book.readingProgress, 80);
+    book.updatedAt = now;
+    applyReadingMilestones(book, now);
+    await saveBook(book);
+  }
 
   return NextResponse.json({
     status: reflection.memorableSceneStatus,
@@ -182,38 +154,22 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "책 정보가 없어요." }, { status: 400 });
   }
 
-  const db = readDb();
-  const reflection = db.reflections.find(
-    (r) => r.userId === session.userId && r.bookId === bookId
-  );
+  const reflection = await getReflectionByUserAndBook(session.userId, bookId);
   if (!reflection?.memorableSceneImage && !reflection?.memorableScenePendingImage) {
     return NextResponse.json({ ok: true });
   }
 
-  if (reflection.memorableSceneImage) {
-    const imagePath = reflection.memorableSceneImage.replace(/^\//, "");
-    await removeFileIfExists(path.join(process.cwd(), "public", imagePath));
-  }
-  if (reflection.memorableScenePendingImage) {
-    const pendingPath = reflection.memorableScenePendingImage.replace(/^\//, "");
-    await removeFileIfExists(path.join(process.cwd(), "public", pendingPath));
-  }
+  await removeSceneImage(reflection.memorableSceneImage);
+  await removeSceneImage(reflection.memorableScenePendingImage);
 
-  updateDb((d) => {
-    const idx = d.reflections.findIndex(
-      (r) => r.userId === session.userId && r.bookId === bookId
-    );
-    if (idx >= 0) {
-      d.reflections[idx] = {
-        ...d.reflections[idx],
-        memorableSceneImage: undefined,
-        memorableScenePendingImage: undefined,
-        memorableSceneStatus: undefined,
-        memorableScenePendingReason: undefined,
-        memorableScenePendingDetail: undefined,
-        updatedAt: new Date().toISOString(),
-      };
-    }
+  await saveReflection({
+    ...reflection,
+    memorableSceneImage: undefined,
+    memorableScenePendingImage: undefined,
+    memorableSceneStatus: undefined,
+    memorableScenePendingReason: undefined,
+    memorableScenePendingDetail: undefined,
+    updatedAt: new Date().toISOString(),
   });
 
   return NextResponse.json({ ok: true });

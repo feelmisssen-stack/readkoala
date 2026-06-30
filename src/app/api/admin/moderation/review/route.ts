@@ -26,7 +26,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true });
     }
     if (body.reportId && action === "dismiss") {
-      dismissModerationReport(body.reportId);
+      await dismissModerationReport(body.reportId);
       return NextResponse.json({ ok: true });
     }
     return NextResponse.json({ error: "잘못된 요청이에요." }, { status: 400 });
