@@ -4,6 +4,8 @@ import "./globals.css";
 import { NavBar } from "@/components/NavBar";
 import { AuthGate } from "@/components/AuthGate";
 import { ClipboardBlocker } from "@/components/ClipboardBlocker";
+import { SiteFooter } from "@/components/SiteFooter";
+import { EthicsGate } from "@/components/EthicsGate";
 
 const notoSerif = Noto_Serif_KR({
   subsets: ["latin"],
@@ -24,7 +26,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ClipboardBlocker />
         <NavBar />
         <AuthGate>
-          <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+          <EthicsGate>
+            <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
+            <SiteFooter />
+          </EthicsGate>
         </AuthGate>
       </body>
     </html>

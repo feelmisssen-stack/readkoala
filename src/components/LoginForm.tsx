@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { Eye, EyeOff } from "lucide-react";
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -11,6 +12,7 @@ interface LoginFormProps {
 export function LoginForm({ onSuccess, className = "" }: LoginFormProps) {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -64,16 +66,29 @@ export function LoginForm({ onSuccess, className = "" }: LoginFormProps) {
             />
           </div>
           <div>
-            <label className="koala-label">비밀번호</label>
-            <input
-              type="password"
-              className="koala-input"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="비밀번호"
-              required
-              autoComplete="current-password"
-            />
+            <label className="koala-label" htmlFor="login-password">
+              비밀번호
+            </label>
+            <div className="relative">
+              <input
+                id="login-password"
+                type={showPassword ? "text" : "password"}
+                className="koala-input pr-11"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="비밀번호"
+                required
+                autoComplete="current-password"
+              />
+              <button
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-koala-muted hover:text-koala-primary"
+                onClick={() => setShowPassword((prev) => !prev)}
+                aria-label={showPassword ? "비밀번호 숨기기" : "비밀번호 보기"}
+              >
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+              </button>
+            </div>
           </div>
           {error && <p className="text-sm text-red-500">{error}</p>}
           <button type="submit" disabled={loading} className="koala-btn-primary w-full">

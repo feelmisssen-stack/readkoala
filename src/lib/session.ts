@@ -8,6 +8,7 @@ export interface SessionData {
   isAdmin?: boolean;
   googleAdminEmail?: string;
   googleAdminName?: string;
+  ethicsAckedAt?: string;
 }
 
 export const sessionOptions: SessionOptions = {
