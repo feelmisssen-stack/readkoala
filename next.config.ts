@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   serverExternalPackages: ["firebase-admin", "jwks-rsa", "jose"],
+  outputFileTracingIncludes: {
+    "/api/legal/\\[doc\\]": ["./이용약관.md", "./개인정보처리방침.md"],
+  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "covers.openlibrary.org" },
