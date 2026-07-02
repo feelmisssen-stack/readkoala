@@ -116,7 +116,7 @@ export function FriendFeedCarousel() {
   return (
     <section className="relative">
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-lg font-bold text-koala-heading">친구들의 책 이야기</h2>
+        <h2 className="text-lg font-display text-koala-heading">친구들의 책 이야기</h2>
         <div className="flex gap-2">
           <button
             type="button"
@@ -169,13 +169,13 @@ export function FriendFeedCarousel() {
                         />
                       ) : (
                         <div className="flex h-full items-center justify-center p-6 text-center">
-                          <span className="text-2xl font-bold text-koala-heading">{item.bookTitle}</span>
+                          <span className="text-2xl font-display text-koala-heading">{item.bookTitle}</span>
                         </div>
                       )}
                     </div>
                     <div className="border-t border-koala-secondary/20 p-4">
                       <p className="text-xs text-koala-muted">{item.username}</p>
-                      <h3 className="mt-1 font-bold text-koala-heading">{item.bookTitle}</h3>
+                      <h3 className="mt-1 font-display text-koala-heading">{item.bookTitle}</h3>
                       {item.bookAuthor && (
                         <p className="mt-0.5 text-sm text-koala-muted">{item.bookAuthor}</p>
                       )}
@@ -222,13 +222,13 @@ export function FriendFeedCarousel() {
                         />
                       ) : (
                         <div className="flex h-full items-center justify-center p-6 text-center">
-                          <span className="text-xl font-bold text-koala-heading">{item.bookTitle}</span>
+                          <span className="text-xl font-display text-koala-heading">{item.bookTitle}</span>
                         </div>
                       )}
                     </div>
                     <div className="border-t border-koala-secondary/20 p-4">
                       <p className="text-xs text-koala-muted">{item.username}</p>
-                      <h3 className="mt-1 font-bold text-koala-heading">{item.bookTitle}</h3>
+                      <h3 className="mt-1 font-display text-koala-heading">{item.bookTitle}</h3>
                     </div>
                   </>
                 )}

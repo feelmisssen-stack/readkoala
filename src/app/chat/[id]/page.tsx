@@ -225,7 +225,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
           {(roomName || bookTitle) && (
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
               {roomName && (
-                <h1 className="text-base font-bold text-koala-heading sm:text-lg">{roomName}</h1>
+                <h1 className="text-base font-display text-koala-heading sm:text-lg">{roomName}</h1>
               )}
               {roomName && bookTitle && (
                 <span className="text-xs text-koala-muted/60" aria-hidden>

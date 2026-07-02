@@ -1,48 +1,87 @@
 :root {
-  --color-koala-bg: #F9F8F6;
-  --color-koala-card: #F0EBE1;
-  --color-koala-heading: #222222;
-  --color-koala-text: #5C544E;
-  --color-koala-muted: #8A8178;
-  --color-koala-primary: #CE7A63;
-  --color-koala-secondary: #E4DDD3;
-  --color-koala-accent: #CE7A63;
+  --color-koala-bg: #faf9f5;
+  --color-koala-card: #efe9de;
+  --color-koala-heading: #141413;
+  --color-koala-text: #3d3d3a;
+  --color-koala-muted: #6c6a64;
+  --color-koala-muted-soft: #8e8b82;
+  --color-koala-primary: #cc785c;
+  --color-koala-primary-active: #a9583e;
+  --color-koala-primary-disabled: #e6dfd8;
+  --color-koala-secondary: #e6dfd8;
+  --color-koala-surface-soft: #f5f0e8;
+  --color-koala-surface-cream-strong: #e8e0d2;
+  --color-koala-accent: #cc785c;
+  --color-koala-dark: #181715;
+  --color-koala-dark-elevated: #252320;
+  --color-koala-dark-soft: #1f1e1b;
+  --color-koala-on-dark: #faf9f5;
+  --color-koala-on-dark-soft: #a09d96;
+  --color-koala-success: #5db872;
+  --color-koala-error: #c64545;
 
-  --color-koala-bg-rgb: 249 248 246;
-  --color-koala-card-rgb: 240 235 225;
-  --color-koala-heading-rgb: 34 34 34;
-  --color-koala-text-rgb: 92 84 78;
-  --color-koala-muted-rgb: 138 129 120;
-  --color-koala-primary-rgb: 206 122 99;
-  --color-koala-secondary-rgb: 228 221 211;
-  --color-koala-accent-rgb: 206 122 99;
+  --color-koala-bg-rgb: 250 249 245;
+  --color-koala-card-rgb: 239 233 222;
+  --color-koala-heading-rgb: 20 20 19;
+  --color-koala-text-rgb: 61 61 58;
+  --color-koala-muted-rgb: 108 106 100;
+  --color-koala-muted-soft-rgb: 142 139 130;
+  --color-koala-primary-rgb: 204 120 92;
+  --color-koala-primary-active-rgb: 169 88 62;
+  --color-koala-secondary-rgb: 230 223 216;
+  --color-koala-surface-soft-rgb: 245 240 232;
+  --color-koala-surface-cream-strong-rgb: 232 224 210;
+  --color-koala-accent-rgb: 204 120 92;
+  --color-koala-dark-rgb: 24 23 21;
+  --color-koala-dark-elevated-rgb: 37 35 32;
+  --color-koala-on-dark-rgb: 250 249 245;
+  --color-koala-on-dark-soft-rgb: 160 157 150;
 
-  --radius-koala: 16px;
+  --radius-koala: 12px;
   --radius-koala-lg: 16px;
-  --radius-koala-btn: 12px;
-  --radius-koala-pill: 12px;
+  --radius-koala-btn: 8px;
+  --radius-koala-pill: 9999px;
 
+  --font-display: "Noto Serif KR", ui-serif, Georgia, serif;
   --font-reading: "Noto Serif KR", ui-serif, Georgia, serif;
+  --font-ui: "Noto Serif KR", ui-serif, Georgia, serif;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-koala-bg: #1C1917;
-    --color-koala-card: #2A2622;
-    --color-koala-heading: #F5F2ED;
-    --color-koala-text: #C4BBB3;
-    --color-koala-muted: #9A9189;
-    --color-koala-primary: #D4896F;
-    --color-koala-secondary: #3D3834;
-    --color-koala-accent: #D4896F;
+    --color-koala-bg: #181715;
+    --color-koala-card: #252320;
+    --color-koala-heading: #faf9f5;
+    --color-koala-text: #c4bbb3;
+    --color-koala-muted: #a09d96;
+    --color-koala-muted-soft: #8e8b82;
+    --color-koala-primary: #d4896f;
+    --color-koala-primary-active: #cc785c;
+    --color-koala-primary-disabled: #3d3834;
+    --color-koala-secondary: #3d3834;
+    --color-koala-surface-soft: #1f1e1b;
+    --color-koala-surface-cream-strong: #2a2622;
+    --color-koala-accent: #d4896f;
+    --color-koala-dark: #141413;
+    --color-koala-dark-elevated: #1f1e1b;
+    --color-koala-dark-soft: #252320;
+    --color-koala-on-dark: #faf9f5;
+    --color-koala-on-dark-soft: #8e8b82;
 
-    --color-koala-bg-rgb: 28 25 23;
-    --color-koala-card-rgb: 42 38 34;
-    --color-koala-heading-rgb: 245 242 237;
+    --color-koala-bg-rgb: 24 23 21;
+    --color-koala-card-rgb: 37 35 32;
+    --color-koala-heading-rgb: 250 249 245;
     --color-koala-text-rgb: 196 187 179;
-    --color-koala-muted-rgb: 154 145 137;
+    --color-koala-muted-rgb: 160 157 150;
+    --color-koala-muted-soft-rgb: 142 139 130;
     --color-koala-primary-rgb: 212 137 111;
+    --color-koala-primary-active-rgb: 204 120 92;
     --color-koala-secondary-rgb: 61 56 52;
+    --color-koala-surface-soft-rgb: 31 30 27;
     --color-koala-accent-rgb: 212 137 111;
+    --color-koala-dark-rgb: 20 20 19;
+    --color-koala-dark-elevated-rgb: 31 30 27;
+    --color-koala-on-dark-rgb: 250 249 245;
+    --color-koala-on-dark-soft-rgb: 142 139 130;
   }
 }

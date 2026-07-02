@@ -29,15 +29,15 @@ export function SiteFooter() {
 
   return (
     <>
-      <footer className="mt-auto shrink-0 border-t border-koala-secondary/60 bg-koala-card/50">
-        <div className="mx-auto max-w-5xl space-y-2 px-4 py-6 text-center text-xs text-koala-muted">
+      <footer className="mt-auto shrink-0 border-t border-koala-secondary bg-koala-surface-soft">
+        <div className="mx-auto max-w-content space-y-2 px-4 py-8 text-center text-sm text-koala-muted">
           <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
             <span>{LEGAL_FOOTER.copyright}</span>
             <span aria-hidden>|</span>
             <button
               type="button"
               onClick={() => setOpenDocument("terms")}
-              className="underline decoration-koala-primary/40 underline-offset-2 hover:text-koala-primary"
+              className="text-koala-text underline decoration-koala-primary/35 underline-offset-2 hover:text-koala-primary hover:decoration-koala-primary/60"
             >
               이용약관
             </button>
@@ -45,7 +45,7 @@ export function SiteFooter() {
             <button
               type="button"
               onClick={() => setOpenDocument("privacy")}
-              className="underline decoration-koala-primary/40 underline-offset-2 hover:text-koala-primary"
+              className="text-koala-text underline decoration-koala-primary/35 underline-offset-2 hover:text-koala-primary hover:decoration-koala-primary/60"
             >
               개인정보처리방침
             </button>

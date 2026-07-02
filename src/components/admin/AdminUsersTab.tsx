@@ -110,7 +110,7 @@ export function AdminUsersTab() {
       {success && <p className="text-sm text-koala-primary">{success}</p>}
 
       <div className="koala-card p-6">
-        <h2 className="font-bold text-koala-heading">새 계정 만들기</h2>
+        <h2 className="font-display text-koala-heading">새 계정 만들기</h2>
         <p className="mt-1 text-sm text-koala-muted">학생에게 배부할 아이디와 초기 비밀번호를 입력하세요.</p>
         <form
           onSubmit={createUser}

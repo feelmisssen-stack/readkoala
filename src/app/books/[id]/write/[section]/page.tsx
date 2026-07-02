@@ -348,7 +348,7 @@ export default function WriteSectionPage({
             {showSectionIcon && (
               <SectionIcon className={`${iconMd} shrink-0 text-koala-primary`} strokeWidth={1.75} aria-hidden />
             )}
-            <h1 className="text-2xl font-bold text-koala-heading">{SECTION_LABELS[typedSection]}</h1>
+            <h1 className="text-2xl font-display text-koala-heading">{SECTION_LABELS[typedSection]}</h1>
           </div>
           {sectionSubtitle && (
             <span className="text-sm text-koala-muted">{sectionSubtitle}</span>

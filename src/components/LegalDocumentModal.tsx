@@ -69,7 +69,7 @@ export function LegalDocumentModal({ documentId, onClose }: LegalDocumentModalPr
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 border-b border-koala-primary/15 px-5 py-4">
-          <h2 id="legal-document-title" className="text-lg font-bold text-koala-heading">
+          <h2 id="legal-document-title" className="text-lg font-display text-koala-heading">
             {title || "문서"}
           </h2>
           <button

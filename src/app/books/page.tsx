@@ -74,7 +74,7 @@ export default function BooksPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="inline-flex items-center gap-2 text-2xl font-bold text-koala-heading">
+        <h1 className="inline-flex items-center gap-2 text-2xl font-display text-koala-heading">
           <BookOpen className="size-6 shrink-0" strokeWidth={1.75} aria-hidden />
           내 책장
         </h1>

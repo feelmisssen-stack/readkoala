@@ -161,7 +161,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
           <div className="absolute right-0 top-0">
             <StoryEmpathyPanel bookId={id} />
           </div>
-          <h1 className="pr-28 text-2xl font-bold text-koala-heading">{book.title}</h1>
+          <h1 className="pr-28 text-2xl font-display text-koala-heading">{book.title}</h1>
           {book.author && <p className="mt-1 text-koala-muted">{book.author}</p>}
           {book.publisher && <p className="text-sm text-koala-muted">{book.publisher}</p>}
           <div className="mt-4">
@@ -183,7 +183,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
 
       <div>
         <div className="mb-3 flex flex-wrap items-baseline gap-2">
-          <h2 className="text-lg font-bold text-koala-heading">감상 기록하기</h2>
+          <h2 className="text-lg font-display text-koala-heading">감상 기록하기</h2>
           <span className="text-sm text-koala-muted">쓰고 싶은 칸만 쓰세요</span>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">

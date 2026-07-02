@@ -140,7 +140,7 @@ export function BookShelfCard({ book, deleting, onDelete, onBookUpdate }: BookSh
 
         <div className="min-w-0 flex-1 pr-8">
           <Link href={`/books/${book.id}`} className="block hover:opacity-90">
-            <h2 className="truncate font-bold text-koala-heading">{book.title}</h2>
+            <h2 className="truncate font-display text-koala-heading">{book.title}</h2>
             {book.author && <p className="truncate text-sm text-koala-muted">{book.author}</p>}
           </Link>
 

@@ -457,7 +457,7 @@ export default function DictionaryPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="inline-flex items-center gap-2 text-2xl font-bold text-koala-heading">
+      <h1 className="inline-flex items-center gap-2 font-display text-2xl text-koala-heading">
         <BookMarked className="size-6 shrink-0" strokeWidth={1.75} aria-hidden />
         낱말집
       </h1>
@@ -685,7 +685,7 @@ export default function DictionaryPage() {
 
       {lookupMode !== "quiz" && (
       <section className="koala-card p-5">
-        <h2 className="mb-3 font-bold text-koala-heading">내 낱말집</h2>
+        <h2 className="mb-3 font-display text-koala-heading">내 낱말집</h2>
         {vocabulary.length === 0 ? (
           <p className="text-sm text-koala-muted">아직 저장한 단어가 없어요.</p>
         ) : (
@@ -724,7 +724,7 @@ export default function DictionaryPage() {
       )}
 
       <section className="koala-card space-y-4 p-5">
-        <h2 className="font-bold text-koala-heading">낱말 하나, 문장 하나</h2>
+        <h2 className="font-display text-koala-heading">낱말 하나, 문장 하나</h2>
         {vocabulary.length === 0 ? (
           <p className="text-sm text-koala-muted">낱말집에 낱말을 먼저 추가해 주세요.</p>
         ) : (

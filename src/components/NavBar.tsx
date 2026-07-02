@@ -12,6 +12,12 @@ const links = [
   { href: "/dictionary", label: "낱말집" },
 ];
 
+function navLinkClass(active: boolean) {
+  return active
+    ? "koala-tab koala-tab-active"
+    : "koala-tab text-koala-muted hover:text-koala-heading";
+}
+
 export function NavBar() {
   const pathname = usePathname();
   const [user, setUser] = useState<{ username: string; displayName?: string } | null>(null);
@@ -39,10 +45,14 @@ export function NavBar() {
 
   if (pathname === "/admin") return null;
 
+  function isActive(href: string) {
+    return pathname === href || (href !== "/" && pathname.startsWith(href + "/"));
+  }
+
   return (
-    <header className="sticky top-0 z-50 border-b border-koala-secondary/60 bg-koala-bg/95 backdrop-blur-sm">
-      <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
-        <Link href="/" className="flex items-center gap-1.5 text-lg font-bold text-koala-heading">
+    <header className="sticky top-0 z-50 border-b border-koala-secondary bg-koala-bg">
+      <div className="mx-auto flex h-16 max-w-content items-center justify-between gap-4 px-4">
+        <Link href="/" className="flex items-center gap-1.5 font-display text-lg text-koala-heading">
           <Library className="size-5 shrink-0" strokeWidth={1.75} aria-hidden />
           도란서재
         </Link>
@@ -51,27 +61,12 @@ export function NavBar() {
           <>
             <nav className="hidden items-center gap-1 sm:flex">
               {links.map((l) => (
-                <Link
-                  key={l.href}
-                  href={l.href}
-                  className={`rounded-pill px-3 py-1.5 text-sm transition-colors ${
-                    pathname === l.href || (l.href !== "/" && pathname.startsWith(l.href + "/"))
-                      ? "bg-koala-primary text-white"
-                      : "text-koala-muted hover:bg-koala-secondary/50"
-                  }`}
-                >
+                <Link key={l.href} href={l.href} className={navLinkClass(isActive(l.href))}>
                   {l.label}
                 </Link>
               ))}
               {isGoogleAdmin && (
-                <Link
-                  href="/admin"
-                  className={`rounded-pill px-3 py-1.5 text-sm transition-colors ${
-                    pathname === "/admin"
-                      ? "bg-koala-primary text-white"
-                      : "text-koala-muted hover:bg-koala-secondary/50"
-                  }`}
-                >
+                <Link href="/admin" className={navLinkClass(isActive("/admin"))}>
                   관리자
                 </Link>
               )}
@@ -81,7 +76,7 @@ export function NavBar() {
                 href="/settings"
                 title="회원 정보"
                 aria-label="회원 정보 수정"
-                className="inline-flex items-center gap-1.5 rounded-pill px-2.5 py-1 text-sm text-koala-muted transition-opacity hover:opacity-80"
+                className="inline-flex items-center gap-1.5 rounded-koala-btn px-2.5 py-1 text-sm text-koala-muted hover:text-koala-heading"
               >
                 <User className="size-3.5 shrink-0" strokeWidth={2} aria-hidden />
                 <span>{(user.displayName || user.username) + "님"}</span>
@@ -104,25 +99,12 @@ export function NavBar() {
       {user && (
         <nav className="flex gap-1 overflow-x-auto px-4 pb-2 sm:hidden">
           {links.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className={`shrink-0 rounded-pill px-3 py-1 text-xs ${
-                pathname === l.href || (l.href !== "/" && pathname.startsWith(l.href + "/"))
-                  ? "bg-koala-primary text-white"
-                  : "bg-koala-secondary/30"
-              }`}
-            >
+            <Link key={l.href} href={l.href} className={`shrink-0 ${navLinkClass(isActive(l.href))}`}>
               {l.label}
             </Link>
           ))}
           {isGoogleAdmin && (
-            <Link
-              href="/admin"
-              className={`shrink-0 rounded-pill px-3 py-1 text-xs ${
-                pathname === "/admin" ? "bg-koala-primary text-white" : "bg-koala-secondary/30"
-              }`}
-            >
+            <Link href="/admin" className={`shrink-0 ${navLinkClass(isActive("/admin"))}`}>
               관리자
             </Link>
           )}

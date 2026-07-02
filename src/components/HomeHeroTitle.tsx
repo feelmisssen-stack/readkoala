@@ -40,7 +40,7 @@ export function HomeHeroTitle() {
     <div ref={containerRef} className="w-full overflow-hidden">
       <h1
         ref={titleRef}
-        className="whitespace-nowrap text-center font-bold tracking-tight text-koala-heading"
+        className="whitespace-nowrap text-center font-display tracking-tight text-koala-heading"
       >
         작은 호기심이 자라나, 우리의 깊은 감상이 되는 곳
       </h1>

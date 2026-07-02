@@ -29,7 +29,7 @@ export default function NewReflectionPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-koala-heading">감상 쓰기</h1>
+      <h1 className="text-2xl font-display text-koala-heading">감상 쓰기</h1>
       <p className="text-koala-muted">어떤 책에 대한 감상을 쓸까요?</p>
 
       {books.length === 0 ? (
@@ -47,7 +47,7 @@ export default function NewReflectionPage() {
               href={`/books/${book.id}/write/before_reading`}
               className="koala-card block p-4 transition hover:bg-koala-secondary/30"
             >
-              <h2 className="font-bold text-koala-heading">{book.title}</h2>
+              <h2 className="font-display text-koala-heading">{book.title}</h2>
               {book.author && <p className="text-sm text-koala-muted">{book.author}</p>}
             </Link>
           ))}

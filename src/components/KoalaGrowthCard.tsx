@@ -23,7 +23,7 @@ export function KoalaGrowthCard({ growth }: KoalaGrowthCardProps) {
             <p className="text-[11px] font-semibold leading-snug text-koala-accent">
               Lv. {growth.stageLevel}
             </p>
-            <h2 className="truncate font-bold text-koala-heading">{growth.stageName}</h2>
+            <h2 className="truncate font-display text-koala-heading">{growth.stageName}</h2>
             <div className="mt-0.5 text-[11px] leading-snug text-koala-muted">
               {splitStageDescription(growth.stageDescription).map((line, index) => (
                 <p key={index} className={index > 0 ? "mt-0.5" : undefined}>

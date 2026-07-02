@@ -47,7 +47,7 @@ export function BookStoryView({ storyId, bookId, username, book, sections }: Boo
             <StoryEmpathyPanel bookId={bookId} storyId={storyId} />
           </div>
           <p className="pr-28 text-sm text-koala-muted">{username}</p>
-          <h1 className="mt-1 pr-4 text-2xl font-bold text-koala-heading">{book.title}</h1>
+          <h1 className="mt-1 pr-4 text-2xl font-display text-koala-heading">{book.title}</h1>
           {book.author && <p className="mt-1 text-koala-muted">{book.author}</p>}
           {book.publisher && <p className="text-sm text-koala-muted">{book.publisher}</p>}
           <div className="mt-4">
@@ -64,7 +64,7 @@ export function BookStoryView({ storyId, bookId, username, book, sections }: Boo
       </div>
 
       <section className="space-y-4">
-        <h2 className="text-lg font-bold text-koala-heading">독서 기록</h2>
+        <h2 className="text-lg font-display text-koala-heading">독서 기록</h2>
         {sections.length === 0 ? (
           <div className="koala-card p-6 text-sm text-koala-muted">
             아직 공유할 독서 기록이 없어요.
@@ -76,7 +76,7 @@ export function BookStoryView({ storyId, bookId, username, book, sections }: Boo
               <article key={section.section} className="koala-card space-y-3 p-5">
                 <div className="flex items-center gap-2">
                   <Icon className={`${iconMd} shrink-0 text-koala-primary`} strokeWidth={1.75} aria-hidden />
-                  <h3 className="font-bold text-koala-heading">{section.title}</h3>
+                  <h3 className="font-display text-koala-heading">{section.title}</h3>
                 </div>
 
                 {section.readingQuestions && (

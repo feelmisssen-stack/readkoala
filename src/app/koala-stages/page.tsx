@@ -5,7 +5,7 @@ export default function KoalaStagesPreviewPage() {
   return (
     <div className="space-y-8">
       <div className="text-center">
-        <h1 className="text-2xl font-bold text-koala-heading">코알라 10단계 일러스트</h1>
+        <h1 className="text-2xl font-display text-koala-heading">코알라 10단계 일러스트</h1>
         <p className="mt-2 text-sm text-koala-muted">
           이미지 파일: <code className="text-koala-primary">public/images/koala-stages/</code>
         </p>
@@ -18,7 +18,7 @@ export default function KoalaStagesPreviewPage() {
               <KoalaGrowthIllustration visualTier={index} />
             </div>
             <p className="mt-3 text-xs font-semibold text-koala-accent">Lv. {stage.level}</p>
-            <h2 className="mt-1 text-sm font-bold text-koala-heading">{stage.name}</h2>
+            <h2 className="mt-1 text-sm font-display text-koala-heading">{stage.name}</h2>
             <div className="mt-2 text-xs leading-relaxed text-koala-muted">
               {splitStageDescription(stage.description).map((line, lineIndex) => (
                 <p key={lineIndex} className={lineIndex > 0 ? "mt-1" : undefined}>
