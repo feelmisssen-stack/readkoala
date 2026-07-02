@@ -69,12 +69,11 @@ async function startScanner(
   };
 
   const mobileVideo = {
-    facingMode: { ideal: "environment" as const },
+    facingMode: { ideal: "environment" },
     width: { min: 640, ideal: 1920 },
     height: { min: 480, ideal: 1080 },
-    // @ts-expect-error focusMode is supported on many mobile browsers
     focusMode: { ideal: "continuous" },
-  };
+  } as MediaTrackConstraints;
 
   const attempts: Array<() => Promise<{ stop: () => void }>> = [
     async () => {
