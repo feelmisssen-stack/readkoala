@@ -47,12 +47,16 @@
     background-color: rgb(var(--color-koala-surface-cream-strong-rgb) / 1);
   }
   .koala-card-status {
-    @apply rounded-koala;
-    background-color: rgb(var(--color-koala-surface-soft-rgb));
-    border: 1px solid rgb(var(--color-koala-secondary-rgb));
+    @apply rounded-koala p-2 sm:p-2.5;
+    background-color: rgb(var(--color-koala-primary-rgb));
+    border: 1px solid rgb(var(--color-koala-primary-active-rgb) / 0.45);
   }
   .koala-card-status:hover {
-    background-color: rgb(var(--color-koala-card-rgb));
+    border-color: rgb(var(--color-koala-primary-active-rgb) / 0.65);
+  }
+  .koala-card-status-inner {
+    @apply h-full min-w-0 rounded-koala p-3 sm:p-4;
+    background-color: rgb(var(--color-koala-bg-rgb) / 0.7);
   }
   .koala-btn {
     @apply inline-flex h-10 items-center justify-center gap-2 rounded-koala-btn px-5 text-sm font-medium transition-colors;

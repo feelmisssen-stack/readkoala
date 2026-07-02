@@ -73,8 +73,8 @@ export default function BooksPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="inline-flex items-center gap-2 text-2xl font-display text-koala-heading">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="inline-flex items-center gap-2 text-xl font-display text-koala-heading sm:text-2xl">
           <BookOpen className="size-6 shrink-0" strokeWidth={1.75} aria-hidden />
           내 책장
         </h1>
@@ -88,7 +88,7 @@ export default function BooksPage() {
         내가 쓴 감상기록으로 잎새는 진해지고 코알라는 자라나요.
       </p>
 
-      <div className="grid items-stretch gap-4 sm:grid-cols-2">
+      <div className="grid min-w-0 grid-cols-1 items-stretch gap-3 md:grid-cols-2 md:gap-4 [@media(max-height:500px)_and_(orientation:landscape)]:grid-cols-1">
         <KoalaGrowthCard growth={writingGrowth} />
 
         {books.length === 0 ? (

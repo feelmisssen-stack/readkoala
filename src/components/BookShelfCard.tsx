@@ -115,7 +115,7 @@ export function BookShelfCard({ book, deleting, onDelete, onBookUpdate }: BookSh
   }, [book.id, book.isbn, book.totalPages, patchBook]);
 
   return (
-    <div className="koala-card relative flex h-full flex-col p-4 transition hover:bg-koala-secondary/30">
+    <div className="koala-card relative flex h-full min-w-0 flex-col overflow-hidden p-3 transition hover:bg-koala-secondary/30 sm:p-4">
       <button
         type="button"
         onClick={onDelete}
@@ -126,10 +126,10 @@ export function BookShelfCard({ book, deleting, onDelete, onBookUpdate }: BookSh
         {deleting ? "삭제 중..." : "삭제"}
       </button>
 
-      <div className="flex gap-3">
+      <div className="flex min-w-0 gap-2 sm:gap-3">
         <Link
           href={`/books/${book.id}`}
-          className="relative h-28 w-20 shrink-0 overflow-hidden rounded-koala bg-koala-secondary/20"
+          className="relative h-24 w-[4.5rem] shrink-0 overflow-hidden rounded-koala bg-koala-secondary/20 sm:h-28 sm:w-20"
         >
           {book.coverUrl ? (
             <Image src={book.coverUrl} alt={book.title} fill className="object-cover" unoptimized />
@@ -138,7 +138,7 @@ export function BookShelfCard({ book, deleting, onDelete, onBookUpdate }: BookSh
           )}
         </Link>
 
-        <div className="min-w-0 flex-1 pr-8">
+        <div className="min-w-0 flex-1 pr-6 sm:pr-8">
           <Link href={`/books/${book.id}`} className="block hover:opacity-90">
             <h2 className="truncate font-display text-koala-heading">{book.title}</h2>
             {book.author && <p className="truncate text-sm text-koala-muted">{book.author}</p>}

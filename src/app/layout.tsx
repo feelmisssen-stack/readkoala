@@ -26,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <NavBar />
         <AuthGate>
           <div className="flex flex-1 flex-col">
-            <main className="mx-auto flex w-full max-w-content flex-1 flex-col px-4 py-8">
+            <main className="mx-auto flex w-full min-w-0 max-w-content flex-1 flex-col overflow-x-hidden px-3 py-6 sm:px-4 sm:py-8">
               {children}
             </main>
             <SiteFooter />

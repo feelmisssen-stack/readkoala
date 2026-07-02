@@ -22,6 +22,10 @@ const config: Config = {
           "dark-elevated": "rgb(var(--color-koala-dark-elevated-rgb) / <alpha-value>)",
           "on-dark": "rgb(var(--color-koala-on-dark-rgb) / <alpha-value>)",
           "on-dark-soft": "rgb(var(--color-koala-on-dark-soft-rgb) / <alpha-value>)",
+          growth: "rgb(var(--color-koala-growth-rgb) / <alpha-value>)",
+          "growth-active": "rgb(var(--color-koala-growth-active-rgb) / <alpha-value>)",
+          "growth-text": "rgb(var(--color-koala-growth-text-rgb) / <alpha-value>)",
+          "growth-progress": "rgb(var(--color-koala-growth-progress-rgb) / <alpha-value>)",
         },
       },
       borderRadius: {

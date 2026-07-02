@@ -17,6 +17,10 @@
   --color-koala-dark-soft: #1f1e1b;
   --color-koala-on-dark: #faf9f5;
   --color-koala-on-dark-soft: #a09d96;
+  --color-koala-growth: #8fb47a;
+  --color-koala-growth-active: #7fa56b;
+  --color-koala-growth-text: #5c544e;
+  --color-koala-growth-progress: #ce7a63;
   --color-koala-success: #5db872;
   --color-koala-error: #c64545;
 
@@ -36,6 +40,10 @@
   --color-koala-dark-elevated-rgb: 37 35 32;
   --color-koala-on-dark-rgb: 250 249 245;
   --color-koala-on-dark-soft-rgb: 160 157 150;
+  --color-koala-growth-rgb: 143 180 122;
+  --color-koala-growth-active-rgb: 127 165 107;
+  --color-koala-growth-text-rgb: 92 84 78;
+  --color-koala-growth-progress-rgb: 206 122 99;
 
   --radius-koala: 12px;
   --radius-koala-lg: 16px;
@@ -67,6 +75,10 @@
     --color-koala-dark-soft: #252320;
     --color-koala-on-dark: #faf9f5;
     --color-koala-on-dark-soft: #8e8b82;
+    --color-koala-growth: #8fb47a;
+    --color-koala-growth-active: #7fa56b;
+    --color-koala-growth-text: #5c544e;
+    --color-koala-growth-progress: #ce7a63;
 
     --color-koala-bg-rgb: 24 23 21;
     --color-koala-card-rgb: 37 35 32;
@@ -83,5 +95,9 @@
     --color-koala-dark-elevated-rgb: 31 30 27;
     --color-koala-on-dark-rgb: 250 249 245;
     --color-koala-on-dark-soft-rgb: 142 139 130;
+    --color-koala-growth-rgb: 143 180 122;
+    --color-koala-growth-active-rgb: 127 165 107;
+    --color-koala-growth-text-rgb: 92 84 78;
+    --color-koala-growth-progress-rgb: 206 122 99;
   }
 }
