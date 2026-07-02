@@ -61,7 +61,7 @@ export default function NewBookPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <h1 className="text-2xl font-bold text-koala-primary">책 등록하기</h1>
+      <h1 className="text-2xl font-bold text-koala-heading">책 등록하기</h1>
 
       <div className="koala-card space-y-4 p-5">
         <div>
@@ -107,7 +107,7 @@ export default function NewBookPage() {
                 )}
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="font-bold text-koala-primary">{book.title}</h3>
+                <h3 className="font-bold text-koala-heading">{book.title}</h3>
                 {book.author && <p className="text-sm text-koala-muted">{book.author}</p>}
                 {book.publisher && <p className="text-xs text-koala-muted">{book.publisher}</p>}
                 <button

@@ -1,38 +1,48 @@
 :root {
-  --color-koala-bg: #F7F6F2;
-  --color-koala-card: #FFFFFF;
-  --color-koala-text: #2C3327;
-  --color-koala-muted: #717D6A;
-  --color-koala-primary: #4E6A53;
-  --color-koala-secondary: #A3B899;
-  --color-koala-accent: #E6A15C;
+  --color-koala-bg: #F9F8F6;
+  --color-koala-card: #F0EBE1;
+  --color-koala-heading: #222222;
+  --color-koala-text: #5C544E;
+  --color-koala-muted: #8A8178;
+  --color-koala-primary: #CE7A63;
+  --color-koala-secondary: #E4DDD3;
+  --color-koala-accent: #CE7A63;
 
-  /* Tailwind opacity (/30 등) 지원용 RGB 채널 */
-  --color-koala-bg-rgb: 247 246 242;
-  --color-koala-card-rgb: 255 255 255;
-  --color-koala-text-rgb: 44 51 39;
-  --color-koala-muted-rgb: 113 125 106;
-  --color-koala-primary-rgb: 78 106 83;
-  --color-koala-secondary-rgb: 163 184 153;
-  --color-koala-accent-rgb: 230 161 92;
+  --color-koala-bg-rgb: 249 248 246;
+  --color-koala-card-rgb: 240 235 225;
+  --color-koala-heading-rgb: 34 34 34;
+  --color-koala-text-rgb: 92 84 78;
+  --color-koala-muted-rgb: 138 129 120;
+  --color-koala-primary-rgb: 206 122 99;
+  --color-koala-secondary-rgb: 228 221 211;
+  --color-koala-accent-rgb: 206 122 99;
 
   --radius-koala: 16px;
-  --radius-koala-lg: 24px;
-  --radius-koala-pill: 9999px;
+  --radius-koala-lg: 16px;
+  --radius-koala-btn: 12px;
+  --radius-koala-pill: 12px;
 
   --font-reading: "Noto Serif KR", ui-serif, Georgia, serif;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --color-koala-bg: #1A2319;
-    --color-koala-card: #242F23;
-    --color-koala-text: #E3E8E2;
-    --color-koala-muted: #8AA085;
+    --color-koala-bg: #1C1917;
+    --color-koala-card: #2A2622;
+    --color-koala-heading: #F5F2ED;
+    --color-koala-text: #C4BBB3;
+    --color-koala-muted: #9A9189;
+    --color-koala-primary: #D4896F;
+    --color-koala-secondary: #3D3834;
+    --color-koala-accent: #D4896F;
 
-    --color-koala-bg-rgb: 26 35 25;
-    --color-koala-card-rgb: 36 47 35;
-    --color-koala-text-rgb: 227 232 226;
-    --color-koala-muted-rgb: 138 160 133;
+    --color-koala-bg-rgb: 28 25 23;
+    --color-koala-card-rgb: 42 38 34;
+    --color-koala-heading-rgb: 245 242 237;
+    --color-koala-text-rgb: 196 187 179;
+    --color-koala-muted-rgb: 154 145 137;
+    --color-koala-primary-rgb: 212 137 111;
+    --color-koala-secondary-rgb: 61 56 52;
+    --color-koala-accent-rgb: 212 137 111;
   }
 }

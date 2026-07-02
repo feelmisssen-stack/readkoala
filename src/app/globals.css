@@ -10,53 +10,70 @@
   }
 
   body {
-    @apply bg-koala-bg text-koala-text font-reading antialiased;
+    @apply bg-koala-bg font-reading text-koala-text antialiased;
+    font-weight: 400;
+    line-height: 1.7;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-bold text-koala-heading;
+    letter-spacing: -0.02em;
+    line-height: 1.35;
+  }
+
+  p {
+    line-height: 1.7;
   }
 }
 
 @layer components {
   .koala-card {
-    @apply rounded-koala-lg bg-koala-card shadow-sm;
-    border: 1px solid rgb(var(--color-koala-secondary-rgb) / 0.3);
+    @apply rounded-koala bg-koala-card;
+    border: 1px solid rgb(var(--color-koala-secondary-rgb) / 0.55);
   }
   .koala-card-recorded {
-    background-color: rgb(var(--color-koala-secondary-rgb) / 0.24);
-    border-color: rgb(var(--color-koala-primary-rgb) / 0.22);
+    background-color: rgb(var(--color-koala-secondary-rgb) / 0.45);
+    border-color: rgb(var(--color-koala-secondary-rgb) / 0.7);
   }
   .koala-card-recorded:hover {
-    background-color: rgb(var(--color-koala-secondary-rgb) / 0.34);
+    background-color: rgb(var(--color-koala-secondary-rgb) / 0.6);
   }
   .koala-card-status {
-    @apply rounded-koala-lg shadow-sm;
-    background-color: rgb(var(--color-koala-secondary-rgb) / 0.18);
-    border: 1px solid rgb(var(--color-koala-primary-rgb) / 0.25);
+    @apply rounded-koala;
+    background-color: rgb(var(--color-koala-secondary-rgb) / 0.35);
+    border: 1px solid rgb(var(--color-koala-secondary-rgb) / 0.65);
   }
   .koala-card-status:hover {
-    background-color: rgb(var(--color-koala-secondary-rgb) / 0.26);
+    background-color: rgb(var(--color-koala-secondary-rgb) / 0.5);
   }
   .koala-btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-pill px-5 py-2.5 font-medium transition-all;
+    @apply inline-flex items-center justify-center gap-2 rounded-koala-btn px-5 py-2.5 font-medium transition-colors;
   }
   .koala-btn-primary {
     @apply koala-btn bg-koala-primary text-white hover:opacity-90;
   }
   .koala-btn-secondary {
     @apply koala-btn text-koala-text;
-    background-color: rgb(var(--color-koala-secondary-rgb) / 0.4);
+    background-color: rgb(var(--color-koala-secondary-rgb) / 0.65);
   }
   .koala-btn-secondary:hover {
-    background-color: rgb(var(--color-koala-secondary-rgb) / 0.6);
+    background-color: rgb(var(--color-koala-secondary-rgb) / 0.85);
   }
   .koala-btn-accent {
     @apply koala-btn bg-koala-accent text-white hover:opacity-90;
   }
   .koala-input {
-    @apply w-full rounded-koala bg-koala-card px-4 py-3 text-koala-text placeholder:text-koala-muted focus:outline-none;
-    border: 1px solid rgb(var(--color-koala-secondary-rgb) / 0.5);
+    @apply w-full rounded-koala bg-koala-bg px-4 py-3 text-koala-text placeholder:text-koala-muted focus:outline-none;
+    border: 1px solid rgb(var(--color-koala-secondary-rgb) / 0.85);
   }
   .koala-input:focus {
-    border-color: rgb(var(--color-koala-primary-rgb) / 1);
-    box-shadow: 0 0 0 2px rgb(var(--color-koala-primary-rgb) / 0.2);
+    border-color: rgb(var(--color-koala-primary-rgb) / 0.75);
+    box-shadow: 0 0 0 2px rgb(var(--color-koala-primary-rgb) / 0.15);
   }
   .koala-label {
     @apply mb-1.5 block text-sm font-medium text-koala-muted;
@@ -71,14 +88,14 @@
   .koala-scrollbar {
     scrollbar-width: thin;
     scrollbar-color: rgb(var(--color-koala-primary-rgb) / 0.45)
-      rgb(var(--color-koala-secondary-rgb) / 0.15);
+      rgb(var(--color-koala-secondary-rgb) / 0.25);
     scrollbar-gutter: stable;
   }
   .koala-scrollbar::-webkit-scrollbar {
     width: 10px;
   }
   .koala-scrollbar::-webkit-scrollbar-track {
-    background: rgb(var(--color-koala-secondary-rgb) / 0.15);
+    background: rgb(var(--color-koala-secondary-rgb) / 0.25);
     border-radius: 999px;
   }
   .koala-scrollbar::-webkit-scrollbar-thumb {

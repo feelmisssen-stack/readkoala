@@ -40,9 +40,9 @@ export function NavBar() {
   if (pathname === "/admin") return null;
 
   return (
-    <header className="sticky top-0 z-50 border-b border-koala-secondary/30 bg-koala-card/90 backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-koala-secondary/60 bg-koala-bg/95 backdrop-blur-sm">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
-        <Link href="/" className="flex items-center gap-1.5 text-lg font-bold text-koala-primary">
+        <Link href="/" className="flex items-center gap-1.5 text-lg font-bold text-koala-heading">
           <Library className="size-5 shrink-0" strokeWidth={1.75} aria-hidden />
           도란서재
         </Link>
@@ -57,7 +57,7 @@ export function NavBar() {
                   className={`rounded-pill px-3 py-1.5 text-sm transition-colors ${
                     pathname === l.href || (l.href !== "/" && pathname.startsWith(l.href + "/"))
                       ? "bg-koala-primary text-white"
-                      : "text-koala-muted hover:bg-koala-secondary/30"
+                      : "text-koala-muted hover:bg-koala-secondary/50"
                   }`}
                 >
                   {l.label}
@@ -69,7 +69,7 @@ export function NavBar() {
                   className={`rounded-pill px-3 py-1.5 text-sm transition-colors ${
                     pathname === "/admin"
                       ? "bg-koala-primary text-white"
-                      : "text-koala-muted hover:bg-koala-secondary/30"
+                      : "text-koala-muted hover:bg-koala-secondary/50"
                   }`}
                 >
                   관리자

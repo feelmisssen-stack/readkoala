@@ -115,12 +115,12 @@ export function BookShelfCard({ book, deleting, onDelete, onBookUpdate }: BookSh
   }, [book.id, book.isbn, book.totalPages, patchBook]);
 
   return (
-    <div className="koala-card relative flex h-full flex-col p-4 transition hover:shadow-md">
+    <div className="koala-card relative flex h-full flex-col p-4 transition hover:bg-koala-secondary/30">
       <button
         type="button"
         onClick={onDelete}
         disabled={deleting}
-        className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-pill bg-koala-card/90 px-2 py-0.5 text-xs text-red-500 shadow-sm hover:bg-red-50 disabled:opacity-50"
+        className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-pill bg-koala-card/90 px-2 py-0.5 text-xs text-red-500 hover:bg-red-50 disabled:opacity-50"
       >
         <Trash2 className="size-3" aria-hidden />
         {deleting ? "삭제 중..." : "삭제"}
@@ -140,7 +140,7 @@ export function BookShelfCard({ book, deleting, onDelete, onBookUpdate }: BookSh
 
         <div className="min-w-0 flex-1 pr-8">
           <Link href={`/books/${book.id}`} className="block hover:opacity-90">
-            <h2 className="truncate font-bold text-koala-primary">{book.title}</h2>
+            <h2 className="truncate font-bold text-koala-heading">{book.title}</h2>
             {book.author && <p className="truncate text-sm text-koala-muted">{book.author}</p>}
           </Link>
 

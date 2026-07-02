@@ -84,7 +84,7 @@ export function LegalMarkdown({ content }: { content: string }) {
 
     if (line.startsWith("### ")) {
       blocks.push(
-        <h3 key={index} className="mt-5 text-base font-bold text-koala-primary">
+        <h3 key={index} className="mt-5 text-base font-bold text-koala-heading">
           {formatInline(line.slice(4))}
         </h3>
       );
@@ -94,7 +94,7 @@ export function LegalMarkdown({ content }: { content: string }) {
 
     if (line.startsWith("## ")) {
       blocks.push(
-        <h2 key={index} className="mt-6 text-lg font-bold text-koala-primary">
+        <h2 key={index} className="mt-6 text-lg font-bold text-koala-heading">
           {formatInline(line.slice(3))}
         </h2>
       );
@@ -104,7 +104,7 @@ export function LegalMarkdown({ content }: { content: string }) {
 
     if (line.startsWith("# ")) {
       blocks.push(
-        <h1 key={index} className="text-xl font-bold text-koala-primary">
+        <h1 key={index} className="text-xl font-bold text-koala-heading">
           {formatInline(line.slice(2))}
         </h1>
       );

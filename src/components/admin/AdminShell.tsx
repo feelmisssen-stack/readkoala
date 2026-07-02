@@ -29,7 +29,7 @@ export function AdminShell({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-koala-primary">도란서재 관리자</h1>
+          <h1 className="text-2xl font-bold text-koala-heading">도란서재 관리자</h1>
           <p className="mt-1 text-sm text-koala-muted">
             {admin.name || admin.email} ({admin.email})
           </p>
@@ -52,7 +52,7 @@ export function AdminShell({
             onClick={() => onTabChange(tab.id)}
             className={`rounded-koala py-2.5 text-sm font-medium transition ${
               activeTab === tab.id
-                ? "bg-koala-card text-koala-primary shadow-sm"
+                ? "bg-koala-bg text-koala-heading"
                 : "text-koala-muted hover:text-koala-primary"
             }`}
           >
@@ -75,7 +75,7 @@ export function AdminLoginGate({
 }) {
   return (
     <div className="mx-auto max-w-md space-y-6">
-      <h1 className="text-2xl font-bold text-koala-primary">관리자</h1>
+      <h1 className="text-2xl font-bold text-koala-heading">관리자</h1>
       <div className="koala-card p-8 text-center">
         <p className="text-sm text-koala-muted">허용된 Google 계정으로 관리자 로그인</p>
         {(urlError || error) && (

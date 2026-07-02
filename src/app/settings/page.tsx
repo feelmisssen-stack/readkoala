@@ -93,7 +93,7 @@ export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-md space-y-6">
       <BackLink href="/">홈으로</BackLink>
-      <h1 className="text-2xl font-bold text-koala-primary">회원 정보</h1>
+      <h1 className="text-2xl font-bold text-koala-heading">회원 정보</h1>
 
       {error && <p className="text-sm text-red-500">{error}</p>}
       {success && <p className="text-sm text-koala-primary">{success}</p>}
@@ -106,7 +106,7 @@ export default function SettingsPage() {
         </div>
 
         <form onSubmit={saveNickname} className="space-y-3 border-t border-koala-secondary/20 pt-4">
-          <h2 className="font-bold text-koala-primary">닉네임</h2>
+          <h2 className="font-bold text-koala-heading">닉네임</h2>
           <p className="text-xs text-koala-muted">도란서재에서 보이는 이름이에요.</p>
           <input
             className="koala-input"
@@ -124,7 +124,7 @@ export default function SettingsPage() {
 
       <div className="koala-card p-6">
         <form onSubmit={savePassword} className="space-y-3">
-          <h2 className="font-bold text-koala-primary">비밀번호 변경</h2>
+          <h2 className="font-bold text-koala-heading">비밀번호 변경</h2>
           <div>
             <label className="koala-label">현재 비밀번호</label>
             <input

@@ -75,7 +75,7 @@ export function AdminSafetyReviewTab() {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="font-bold text-koala-primary">안전 검토</h2>
+        <h2 className="font-bold text-koala-heading">안전 검토</h2>
         <p className="mt-1 text-sm text-koala-muted">
           부적절한 그림이나 내용이 감지되면 여기에 모여요. 승인하거나 거절할 수 있어요.
         </p>

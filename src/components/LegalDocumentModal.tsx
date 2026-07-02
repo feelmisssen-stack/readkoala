@@ -65,11 +65,11 @@ export function LegalDocumentModal({ documentId, onClose }: LegalDocumentModalPr
       onClick={onClose}
     >
       <div
-        className="koala-card flex max-h-[85vh] w-full max-w-2xl flex-col shadow-lg"
+        className="koala-card flex max-h-[85vh] w-full max-w-2xl flex-col"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 border-b border-koala-primary/15 px-5 py-4">
-          <h2 id="legal-document-title" className="text-lg font-bold text-koala-primary">
+          <h2 id="legal-document-title" className="text-lg font-bold text-koala-heading">
             {title || "문서"}
           </h2>
           <button

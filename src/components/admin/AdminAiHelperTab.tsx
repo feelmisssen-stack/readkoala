@@ -48,7 +48,7 @@ export function AdminAiHelperTab() {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="font-bold text-koala-primary">감상문 도우미 기록</h2>
+        <h2 className="font-bold text-koala-heading">감상문 도우미 기록</h2>
         <p className="mt-1 text-sm text-koala-muted">
           학생과 감상문 도우미의 대화 기록을 확인할 수 있어요.
         </p>

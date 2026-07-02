@@ -140,7 +140,7 @@ export function MemorableSceneMenuCard({
           <div className="flex items-center gap-3">
             <Icon className={`${iconMd} shrink-0 text-koala-primary`} strokeWidth={1.75} aria-hidden />
             <div>
-              <h3 className="font-medium text-koala-primary">{SECTION_LABELS.memorable_scene}</h3>
+              <h3 className="font-medium text-koala-heading">{SECTION_LABELS.memorable_scene}</h3>
               <p className="mt-0.5 text-xs text-koala-muted">기억에 남는 장면을 그려서 올려봅시다</p>
             </div>
           </div>
@@ -212,7 +212,7 @@ export function MemorableSceneMenuCard({
       >
         <Icon className={`${iconMd} shrink-0 text-koala-primary`} strokeWidth={1.75} aria-hidden />
         <div className="min-w-0 flex-1">
-          <h3 className="font-medium text-koala-primary">{SECTION_LABELS.memorable_scene}</h3>
+          <h3 className="font-medium text-koala-heading">{SECTION_LABELS.memorable_scene}</h3>
           <p className="mt-0.5 text-xs text-koala-muted">
             {isPending ? "선생님 확인 중이에요" : "기억에 남는 장면을 그려서 올려봅시다"}
           </p>
@@ -232,7 +232,7 @@ export function MemorableSceneMenuCard({
             type="button"
             onClick={handleDelete}
             disabled={deleting}
-            className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-koala-card text-koala-muted shadow-sm ring-1 ring-koala-secondary/40 hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
+            className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-koala-card text-koala-muted ring-1 ring-koala-secondary/40 hover:bg-red-50 hover:text-red-500 disabled:opacity-50"
             aria-label="그림 삭제"
           >
             <X className="size-3" strokeWidth={2.5} />

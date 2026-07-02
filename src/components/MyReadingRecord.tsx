@@ -73,7 +73,7 @@ export function MyReadingRecord() {
   return (
     <section className="koala-card p-4">
       <div className="mb-2 flex items-center justify-between">
-        <h2 className="text-sm font-bold text-koala-primary">
+        <h2 className="text-sm font-bold text-koala-heading">
           {username ? `${username}의 기록` : "나의 기록"}
         </h2>
         <Link href="/books" className="text-xs text-koala-muted underline hover:text-koala-primary">

@@ -51,7 +51,7 @@ export function LoginForm({ onSuccess, className = "" }: LoginFormProps) {
     <div className={`mx-auto w-full max-w-md ${className}`}>
       <div className="koala-card p-8">
         <div className="mb-6 text-center">
-          <h2 className="text-xl font-bold text-koala-primary">도란서재 로그인</h2>
+          <h2 className="text-xl font-bold text-koala-heading">도란서재 로그인</h2>
         </div>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

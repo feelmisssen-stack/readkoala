@@ -197,7 +197,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
           aria-modal="true"
           aria-labelledby="chat-notice-title"
         >
-          <div className="koala-card w-full max-w-sm p-6 shadow-lg">
+          <div className="koala-card w-full max-w-sm p-6">
             <p id="chat-notice-title" className="text-sm leading-relaxed text-koala-text">
               {notice}
             </p>
@@ -225,7 +225,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
           {(roomName || bookTitle) && (
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
               {roomName && (
-                <h1 className="text-base font-bold text-koala-primary sm:text-lg">{roomName}</h1>
+                <h1 className="text-base font-bold text-koala-heading sm:text-lg">{roomName}</h1>
               )}
               {roomName && bookTitle && (
                 <span className="text-xs text-koala-muted/60" aria-hidden>
@@ -250,7 +250,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
             {messages.map((m) =>
               isMyMessage(m) ? (
                 <div key={m.id} className="w-full">
-                  <div className="ml-auto max-w-[85%] w-fit rounded-koala rounded-br-sm bg-koala-primary px-3 py-2 text-sm text-white whitespace-pre-wrap shadow-sm">
+                  <div className="ml-auto max-w-[85%] w-fit rounded-koala rounded-br-sm bg-koala-primary px-3 py-2 text-sm text-white whitespace-pre-wrap">
                     {m.content}
                   </div>
                 </div>
@@ -258,7 +258,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
                 <div key={m.id} className="w-full">
                   <p className="mb-1 px-1 text-xs font-medium text-koala-primary">{m.username}</p>
                   <div className="flex max-w-[85%] items-end gap-1.5">
-                    <div className="max-w-full w-fit rounded-koala rounded-bl-sm bg-koala-card px-3 py-2 text-sm text-koala-text whitespace-pre-wrap shadow-sm ring-1 ring-koala-secondary/30">
+                    <div className="max-w-full w-fit rounded-koala rounded-bl-sm bg-koala-bg px-3 py-2 text-sm text-koala-text whitespace-pre-wrap ring-1 ring-koala-secondary/50">
                       {m.content}
                     </div>
                     {!m.id.startsWith("temp-") && (

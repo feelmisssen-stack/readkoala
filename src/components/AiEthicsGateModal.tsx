@@ -80,7 +80,7 @@ export function AiEthicsGateModal({
       aria-modal="true"
       aria-labelledby="ai-ethics-gate-title"
     >
-      <div className="w-full max-w-md rounded-koala-lg bg-white p-4 shadow-xl sm:p-5">
+      <div className="w-full max-w-md rounded-koala-lg bg-koala-card p-4 sm:p-5">
         <AiEthicsCompactPanel
           copyMode={copyMode}
           answers={answers}

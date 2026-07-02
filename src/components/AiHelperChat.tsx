@@ -175,7 +175,7 @@ export function AiHelperChat({ bookId, bookTitle, reviewDraft }: AiHelperChatPro
         type="button"
         onClick={tryOpenChat}
         disabled={openingChat}
-        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-koala-accent text-white shadow-lg transition hover:scale-105 disabled:opacity-70"
+        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-koala-accent text-white transition hover:scale-105 disabled:opacity-70"
         title="감상문 도우미"
       >
         <MessageCircle className={iconMd} aria-hidden />
@@ -191,7 +191,7 @@ export function AiHelperChat({ bookId, bookTitle, reviewDraft }: AiHelperChatPro
       )}
 
       {open && (
-        <div className="fixed bottom-24 right-6 z-50 flex h-96 w-80 flex-col overflow-hidden rounded-koala-lg border border-koala-secondary/50 bg-koala-card shadow-xl">
+        <div className="fixed bottom-24 right-6 z-50 flex h-96 w-80 flex-col overflow-hidden rounded-koala-lg border border-koala-secondary/60 bg-koala-card">
           <div className="flex items-center justify-between bg-koala-primary px-4 py-3 text-white">
             <span className="inline-flex items-center gap-2 font-medium">
               <MessageCircle className={iconSm} aria-hidden />
@@ -214,14 +214,14 @@ export function AiHelperChat({ bookId, bookTitle, reviewDraft }: AiHelperChatPro
               {messages.map((m, i) =>
                 m.role === "user" ? (
                   <div key={i} className="w-full">
-                    <div className="ml-auto max-w-[88%] w-fit rounded-koala rounded-br-sm bg-koala-primary px-3 py-2 text-sm text-white whitespace-pre-wrap shadow-sm">
+                    <div className="ml-auto max-w-[88%] w-fit rounded-koala rounded-br-sm bg-koala-primary px-3 py-2 text-sm text-white whitespace-pre-wrap">
                       {m.text}
                     </div>
                   </div>
                 ) : (
                   <div key={i} className="w-full">
                     <p className="mb-1 px-1 text-xs font-medium text-koala-primary">감상문 도우미</p>
-                    <div className="max-w-[88%] w-fit rounded-koala rounded-bl-sm bg-koala-card px-3 py-2 text-sm text-koala-text whitespace-pre-wrap shadow-sm ring-1 ring-koala-secondary/30">
+                    <div className="max-w-[88%] w-fit rounded-koala rounded-bl-sm bg-koala-bg px-3 py-2 text-sm text-koala-text whitespace-pre-wrap ring-1 ring-koala-secondary/50">
                       {m.text}
                     </div>
                   </div>
@@ -230,7 +230,7 @@ export function AiHelperChat({ bookId, bookTitle, reviewDraft }: AiHelperChatPro
               {loading && (
                 <div className="w-full">
                   <p className="mb-1 px-1 text-xs font-medium text-koala-primary">감상문 도우미</p>
-                  <div className="max-w-[88%] w-fit rounded-koala rounded-bl-sm bg-koala-card px-3 py-2 text-sm text-koala-muted shadow-sm ring-1 ring-koala-secondary/30">
+                  <div className="max-w-[88%] w-fit rounded-koala rounded-bl-sm bg-koala-bg px-3 py-2 text-sm text-koala-muted ring-1 ring-koala-secondary/50">
                     생각 중...
                   </div>
                 </div>

@@ -457,7 +457,7 @@ export default function DictionaryPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="inline-flex items-center gap-2 text-2xl font-bold text-koala-primary">
+      <h1 className="inline-flex items-center gap-2 text-2xl font-bold text-koala-heading">
         <BookMarked className="size-6 shrink-0" strokeWidth={1.75} aria-hidden />
         낱말집
       </h1>
@@ -503,7 +503,7 @@ export default function DictionaryPage() {
             onClick={() => setLookupMode("search")}
             className={`rounded-koala py-2 text-sm font-medium transition ${
               lookupMode === "search"
-                ? "bg-koala-card text-koala-primary shadow-sm"
+                ? "bg-koala-bg text-koala-heading"
                 : "text-koala-muted hover:text-koala-primary"
             }`}
           >
@@ -514,7 +514,7 @@ export default function DictionaryPage() {
             onClick={switchToQuiz}
             className={`rounded-koala py-2 text-sm font-medium transition ${
               lookupMode === "quiz"
-                ? "bg-koala-card text-koala-primary shadow-sm"
+                ? "bg-koala-bg text-koala-heading"
                 : "text-koala-muted hover:text-koala-primary"
             }`}
           >
@@ -601,7 +601,7 @@ export default function DictionaryPage() {
             )}
             {quiz && (
               <div className="flex items-stretch gap-3 sm:gap-4">
-                <div className="min-w-0 flex-1 rounded-koala-lg border border-koala-secondary/40 bg-gradient-to-b from-koala-card to-koala-secondary/10 p-4 shadow-sm sm:p-5">
+                <div className="min-w-0 flex-1 rounded-koala-lg border border-koala-secondary/50 bg-koala-card p-4 sm:p-5">
                   <p className="whitespace-pre-line text-center text-sm leading-relaxed text-koala-text">
                     {quiz.definition}
                   </p>
@@ -685,7 +685,7 @@ export default function DictionaryPage() {
 
       {lookupMode !== "quiz" && (
       <section className="koala-card p-5">
-        <h2 className="mb-3 font-bold text-koala-primary">내 낱말집</h2>
+        <h2 className="mb-3 font-bold text-koala-heading">내 낱말집</h2>
         {vocabulary.length === 0 ? (
           <p className="text-sm text-koala-muted">아직 저장한 단어가 없어요.</p>
         ) : (
@@ -724,7 +724,7 @@ export default function DictionaryPage() {
       )}
 
       <section className="koala-card space-y-4 p-5">
-        <h2 className="font-bold text-koala-primary">낱말 하나, 문장 하나</h2>
+        <h2 className="font-bold text-koala-heading">낱말 하나, 문장 하나</h2>
         {vocabulary.length === 0 ? (
           <p className="text-sm text-koala-muted">낱말집에 낱말을 먼저 추가해 주세요.</p>
         ) : (

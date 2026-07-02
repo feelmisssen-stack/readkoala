@@ -290,18 +290,14 @@ export function FriendFeedMosaic() {
                   <div
                     className={`absolute inset-0 overflow-hidden border transition-all duration-500 ${
                       isFocused
-                        ? "border-koala-primary/40 shadow-lg"
+                        ? "border-koala-primary/40"
                         : state.mode === "moment"
-                          ? "border-transparent shadow-md"
-                          : "border-koala-secondary/25 shadow-sm"
+                          ? "border-transparent"
+                          : "border-koala-secondary/25"
                     }`}
                     style={{
                       borderRadius: radius,
                       backgroundColor: momentBg,
-                      boxShadow:
-                        state.mode === "moment"
-                          ? "2px 6px 18px rgba(44, 51, 39, 0.12)"
-                          : undefined,
                     }}
                   >
                     {state.mode === "cover" ? (

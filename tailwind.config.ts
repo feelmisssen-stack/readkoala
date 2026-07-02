@@ -9,6 +9,7 @@ const config: Config = {
         koala: {
           bg: "rgb(var(--color-koala-bg-rgb) / <alpha-value>)",
           card: "rgb(var(--color-koala-card-rgb) / <alpha-value>)",
+          heading: "rgb(var(--color-koala-heading-rgb) / <alpha-value>)",
           text: "rgb(var(--color-koala-text-rgb) / <alpha-value>)",
           muted: "rgb(var(--color-koala-muted-rgb) / <alpha-value>)",
           primary: "rgb(var(--color-koala-primary-rgb) / <alpha-value>)",
@@ -19,6 +20,7 @@ const config: Config = {
       borderRadius: {
         koala: "var(--radius-koala)",
         "koala-lg": "var(--radius-koala-lg)",
+        "koala-btn": "var(--radius-koala-btn)",
         pill: "var(--radius-koala-pill)",
       },
       fontFamily: {

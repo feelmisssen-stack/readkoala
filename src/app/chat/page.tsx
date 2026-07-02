@@ -68,7 +68,7 @@ export default function ChatPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-koala-primary">도란뜰</h1>
+        <h1 className="text-2xl font-bold text-koala-heading">도란뜰</h1>
         <button type="button" onClick={() => setShowCreate(!showCreate)} className="koala-btn-primary inline-flex items-center gap-1.5 text-sm">
           <Plus className={iconSm} aria-hidden />
           이야기뜰 만들기
@@ -111,9 +111,9 @@ export default function ChatPage() {
             <Link
               key={room.id}
               href={`/chat/${room.id}`}
-              className="koala-card block p-4 transition hover:shadow-md"
+              className="koala-card block p-4 transition hover:bg-koala-secondary/30"
             >
-              <h2 className="font-bold text-koala-primary">{room.name}</h2>
+              <h2 className="font-bold text-koala-heading">{room.name}</h2>
               <p className="inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-koala-muted">
                 <span className="inline-flex items-center gap-1">
                   <BookOpen className={iconSm} aria-hidden />

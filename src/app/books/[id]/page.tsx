@@ -161,7 +161,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
           <div className="absolute right-0 top-0">
             <StoryEmpathyPanel bookId={id} />
           </div>
-          <h1 className="pr-28 text-2xl font-bold text-koala-primary">{book.title}</h1>
+          <h1 className="pr-28 text-2xl font-bold text-koala-heading">{book.title}</h1>
           {book.author && <p className="mt-1 text-koala-muted">{book.author}</p>}
           {book.publisher && <p className="text-sm text-koala-muted">{book.publisher}</p>}
           <div className="mt-4">
@@ -183,7 +183,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
 
       <div>
         <div className="mb-3 flex flex-wrap items-baseline gap-2">
-          <h2 className="text-lg font-bold text-koala-primary">감상 기록하기</h2>
+          <h2 className="text-lg font-bold text-koala-heading">감상 기록하기</h2>
           <span className="text-sm text-koala-muted">쓰고 싶은 칸만 쓰세요</span>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -236,7 +236,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
               >
                 <Icon className={`${iconMd} shrink-0 text-koala-primary`} strokeWidth={1.75} aria-hidden />
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-medium text-koala-primary">{SECTION_LABELS[section]}</h3>
+                  <h3 className="font-medium text-koala-heading">{SECTION_LABELS[section]}</h3>
                   {section === "review" && (
                     <p className="mt-0.5 text-xs text-koala-muted">한 편의 멋진 감상문을 써 봅시다!</p>
                   )}
