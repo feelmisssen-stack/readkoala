@@ -178,21 +178,25 @@ export function IsbnScanner({ onScan }: IsbnScannerProps) {
 
   return (
     <div className="space-y-2">
-      <div className="relative aspect-[5/2] w-full max-w-xl overflow-hidden rounded-koala border border-koala-secondary bg-black">
+      <div className="relative aspect-[4/5] w-full max-w-sm overflow-hidden rounded-koala border border-koala-secondary bg-black sm:aspect-[5/2] sm:max-w-xl">
         <video
           ref={videoRef}
-          className="absolute inset-0 h-full w-full object-contain"
+          className="absolute inset-0 h-full w-full object-cover"
           muted
           playsInline
           autoPlay
         />
         <div
-          className="pointer-events-none absolute inset-3 rounded-koala border border-koala-primary/70"
+          className="pointer-events-none absolute inset-x-5 top-1/2 h-[4.5rem] -translate-y-1/2 rounded-koala border-2 border-koala-primary/75 sm:hidden"
+          aria-hidden
+        />
+        <div
+          className="pointer-events-none absolute inset-3 hidden rounded-koala border border-koala-primary/70 sm:block"
           aria-hidden
         />
       </div>
       <p className="text-xs text-koala-muted">
-        책 뒷면 바코드를 가로로 화면 안에 맞춰 주세요. 밝은 곳에서 10~15cm 거리가 좋아요.
+        책 뒷면 바코드를 주황색 가이드 안에 가로로 맞춰 주세요. 밝은 곳에서 10~15cm 거리가 좋아요.
       </p>
       {error && <p className="text-sm text-red-500">{error}</p>}
       <button type="button" onClick={() => setActive(false)} className="koala-btn-secondary text-sm">
