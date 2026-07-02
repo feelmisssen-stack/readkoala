@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { MessageCircle, Send, X } from "lucide-react";
+import { AiEthicsGateModal } from "@/components/AiEthicsGateModal";
 import { iconMd, iconSm } from "@/lib/icon-styles";
+import type { EthicsGateMode } from "@/lib/ai-ethics-content";
 import type { ReviewDraft } from "@/lib/ai-helper";
 import {
   AI_HELPER_FAREWELL_MESSAGE,
@@ -26,6 +28,8 @@ export function AiHelperChat({ bookId, bookTitle, reviewDraft }: AiHelperChatPro
   const [open, setOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
+  const [ethicsGate, setEthicsGate] = useState<{ mode: EthicsGateMode } | null>(null);
+  const [openingChat, setOpeningChat] = useState(false);
   const [messages, setMessages] = useState<UiMessage[]>([]);
   const [input, setInput] = useState("");
   const [inputError, setInputError] = useState("");
@@ -58,6 +62,36 @@ export function AiHelperChat({ bookId, bookTitle, reviewDraft }: AiHelperChatPro
     if (limitReached) {
       setHidden(true);
     }
+  }
+
+  async function tryOpenChat() {
+    if (openingChat) return;
+    setOpeningChat(true);
+
+    try {
+      const res = await fetch("/api/ethics/gate", { cache: "no-store" });
+      const data = await res.json();
+
+      if (data.required && data.mode) {
+        setEthicsGate({ mode: data.mode });
+        return;
+      }
+
+      setOpen(true);
+    } catch {
+      setEthicsGate({ mode: "copy" });
+    } finally {
+      setOpeningChat(false);
+    }
+  }
+
+  function handleEthicsAcknowledged() {
+    setEthicsGate(null);
+    setOpen(true);
+  }
+
+  function handleEthicsClose() {
+    setEthicsGate(null);
   }
 
   function toApiMessages(history: UiMessage[]) {
@@ -139,12 +173,22 @@ export function AiHelperChat({ bookId, bookTitle, reviewDraft }: AiHelperChatPro
     <>
       <button
         type="button"
-        onClick={() => setOpen(true)}
-        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-koala-accent text-white shadow-lg transition hover:scale-105"
+        onClick={tryOpenChat}
+        disabled={openingChat}
+        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-koala-accent text-white shadow-lg transition hover:scale-105 disabled:opacity-70"
         title="감상문 도우미"
       >
         <MessageCircle className={iconMd} aria-hidden />
       </button>
+
+      {ethicsGate && (
+        <AiEthicsGateModal
+          open
+          mode={ethicsGate.mode}
+          onAcknowledged={handleEthicsAcknowledged}
+          onClose={handleEthicsClose}
+        />
+      )}
 
       {open && (
         <div className="fixed bottom-24 right-6 z-50 flex h-96 w-80 flex-col overflow-hidden rounded-koala-lg border border-koala-secondary/50 bg-koala-card shadow-xl">

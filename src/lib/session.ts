@@ -8,7 +8,8 @@ export interface SessionData {
   isAdmin?: boolean;
   googleAdminEmail?: string;
   googleAdminName?: string;
-  ethicsAckedAt?: string;
+  /** 이번 로그인 세션에서 감상문 도우미 윤리 안내를 완료했는지 */
+  aiHelperEthicsAckedAt?: string;
 }
 
 export const sessionOptions: SessionOptions = {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getEthicsGateMode } from "@/lib/ai-ethics-content";
-import { getUserEthicsState, recordEthicsSkippedLogin } from "@/lib/ethics-user";
+import { getUserEthicsState, recordEthicsSkippedUse } from "@/lib/ethics-user";
 import { getSession } from "@/lib/session";
 
 export const runtime = "nodejs";
@@ -19,28 +19,27 @@ export async function GET() {
     return NextResponse.json({ required: false });
   }
 
-  if (session.ethicsAckedAt) {
+  if (session.aiHelperEthicsAckedAt) {
     return NextResponse.json({ required: false, acked: true });
   }
 
   const ethicsState = await getUserEthicsState(session.firebaseUid);
-  if (!ethicsState) {
-    return NextResponse.json({ error: "회원 정보를 찾을 수 없어요." }, { status: 404 });
-  }
-
-  const nextLoginNumber = ethicsState.lifetimeLoginCount + 1;
-  const mode = getEthicsGateMode(nextLoginNumber, session.firebaseUid);
+  const aiHelperAckCount = ethicsState?.aiHelperAckCount ?? 0;
+  const nextUseNumber = aiHelperAckCount + 1;
+  const mode = getEthicsGateMode(nextUseNumber, session.firebaseUid);
 
   if (!mode) {
-    await recordEthicsSkippedLogin(session.firebaseUid);
-    session.ethicsAckedAt = new Date().toISOString();
+    if (ethicsState) {
+      await recordEthicsSkippedUse(session.firebaseUid);
+    }
+    session.aiHelperEthicsAckedAt = new Date().toISOString();
     await session.save();
-    return NextResponse.json({ required: false, skipped: true, loginNumber: nextLoginNumber });
+    return NextResponse.json({ required: false, skipped: true, useNumber: nextUseNumber });
   }
 
   return NextResponse.json({
     required: true,
     mode,
-    loginNumber: nextLoginNumber,
+    useNumber: nextUseNumber,
   });
 }

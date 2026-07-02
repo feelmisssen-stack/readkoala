@@ -16,16 +16,10 @@ import {
   resolveVocabSense,
 } from "@/lib/vocabulary-display";
 import { alertContentFilterApiError, warnIfInvalidContent } from "@/lib/content-filter-client";
+import { readLocalVocabulary } from "@/lib/dictionary/local-vocabulary";
 import {
-  addLocalVocabularyEntry,
-  deleteLocalVocabularyEntry,
-  importLegacyVocabulary,
-  readLocalVocabulary,
-} from "@/lib/dictionary/local-vocabulary";
-import {
-  clearQuizSolvedIds,
+  clearLocalQuizSolvedIds,
   readQuizSolvedIds,
-  writeQuizSolvedIds,
 } from "@/lib/dictionary/quiz-progress";
 import { checkQuizAnswer, pickVocabQuiz, type VocabQuiz } from "@/lib/dictionary/quiz";
 
@@ -83,6 +77,58 @@ export default function DictionaryPage() {
   const [sentencePage, setSentencePage] = useState(1);
   const [pageReady, setPageReady] = useState(false);
   const quizProgressHydrated = useRef(false);
+  const quizSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  async function loadQuizProgress(userId: string) {
+    const res = await fetch("/api/dictionary/quiz-progress", { cache: "no-store" });
+    if (!res.ok) return new Set<string>();
+    const data = await res.json();
+    return new Set<string>((data.solvedIds || []) as string[]);
+  }
+
+  async function migrateLocalQuizProgress(userId: string) {
+    const localIds = [...readQuizSolvedIds(userId)];
+    if (localIds.length === 0) return false;
+
+    const res = await fetch("/api/dictionary/quiz-progress", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ solvedIds: localIds }),
+    });
+    if (!res.ok) return false;
+
+    clearLocalQuizSolvedIds(userId);
+    return true;
+  }
+
+  async function initQuizProgress(userId: string) {
+    let solved = await loadQuizProgress(userId);
+    if (solved.size === 0) {
+      const migrated = await migrateLocalQuizProgress(userId);
+      if (migrated) {
+        solved = await loadQuizProgress(userId);
+      }
+    }
+    setSolvedQuizIds(solved);
+    quizProgressHydrated.current = true;
+  }
+
+  async function persistQuizProgress(userId: string, solvedIds: Set<string>) {
+    await fetch("/api/dictionary/quiz-progress", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ solvedIds: [...solvedIds] }),
+    });
+  }
+
+  async function clearQuizProgress(userId: string) {
+    await fetch("/api/dictionary/quiz-progress", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ solvedIds: [] }),
+    });
+    clearLocalQuizSolvedIds(userId);
+  }
 
   const vocabPagination = useMemo(
     () => paginateList(vocabulary, vocabPage),
@@ -106,25 +152,61 @@ export default function DictionaryPage() {
     }
   }, [sentencePage, sentencePagination.totalPages]);
 
-  function refreshVocabulary(userId: string) {
-    setVocabulary(readLocalVocabulary(userId));
+  function setVocabularyFromApi(entries: VocabEntry[]) {
+    setVocabulary(entries);
+  }
+
+  async function loadVocabulary(userId: string) {
+    const res = await fetch("/api/dictionary/vocabulary", { cache: "no-store" });
+    if (!res.ok) return [];
+    const data = await res.json();
+    const entries = (data.vocabulary || []) as VocabEntry[];
+    setVocabularyFromApi(entries);
+    return entries;
+  }
+
+  async function migrateLocalVocabulary(userId: string) {
+    const localEntries = readLocalVocabulary(userId);
+    if (localEntries.length === 0) return false;
+
+    const res = await fetch("/api/dictionary/vocabulary/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ entries: localEntries }),
+    });
+    if (!res.ok) return false;
+
+    try {
+      localStorage.removeItem(`readkoala:vocabulary:${userId}`);
+    } catch {
+      // ignore
+    }
+    return true;
   }
 
   async function initVocabulary(userId: string) {
     try {
-      if (readLocalVocabulary(userId).length === 0) {
-        const res = await fetch("/api/dictionary/vocabulary/legacy");
-        if (res.ok) {
-          const data = await res.json();
-          importLegacyVocabulary(userId, data.vocabulary || []);
+      let entries = await loadVocabulary(userId);
+
+      if (entries.length === 0) {
+        const migrated = await migrateLocalVocabulary(userId);
+        if (migrated) {
+          entries = await loadVocabulary(userId);
         }
       }
-      refreshVocabulary(userId);
-      setSolvedQuizIds(readQuizSolvedIds(userId));
-      quizProgressHydrated.current = true;
+
+      if (entries.length === 0) {
+        const legacyRes = await fetch("/api/dictionary/vocabulary/legacy", { cache: "no-store" });
+        if (legacyRes.ok) {
+          const legacyData = await legacyRes.json();
+          setVocabularyFromApi(legacyData.vocabulary || []);
+        }
+      }
+
+      await initQuizProgress(userId);
     } catch {
-      refreshVocabulary(userId);
-      quizProgressHydrated.current = true;
+      await loadVocabulary(userId);
+      await initQuizProgress(userId);
     } finally {
       setPageReady(true);
     }
@@ -166,7 +248,20 @@ export default function DictionaryPage() {
 
   useEffect(() => {
     if (!currentUserId || !quizProgressHydrated.current) return;
-    writeQuizSolvedIds(currentUserId, solvedQuizIds);
+
+    if (quizSaveTimerRef.current) {
+      clearTimeout(quizSaveTimerRef.current);
+    }
+
+    quizSaveTimerRef.current = setTimeout(() => {
+      void persistQuizProgress(currentUserId, solvedQuizIds);
+    }, 400);
+
+    return () => {
+      if (quizSaveTimerRef.current) {
+        clearTimeout(quizSaveTimerRef.current);
+      }
+    };
   }, [currentUserId, solvedQuizIds]);
 
   async function saveApiKey() {
@@ -205,17 +300,26 @@ export default function DictionaryPage() {
   async function addToVocab(sense: DictSense) {
     if (!result || !currentUserId) return;
     const definition = formatSenseDefinition(sense);
-    try {
-      addLocalVocabularyEntry(currentUserId, {
+    const res = await fetch("/api/dictionary/vocabulary", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         word: result.word,
         definition,
         ...(sense.senseNo ? { senseNo: sense.senseNo } : {}),
-      });
-      refreshVocabulary(currentUserId);
-      setVocabPage(1);
-    } catch (error) {
-      alert(error instanceof Error ? error.message : "낱말집에 넣지 못했어요.");
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      if (res.status === 409) {
+        alert(data.error || "이미 낱말집에 있는 뜻이에요.");
+        return;
+      }
+      alertContentFilterApiError(res, data);
+      return;
     }
+    await loadVocabulary(currentUserId);
+    setVocabPage(1);
   }
 
   function startQuiz(resetRound = false) {
@@ -238,7 +342,7 @@ export default function DictionaryPage() {
 
     if (resetRound) {
       if (currentUserId) {
-        clearQuizSolvedIds(currentUserId);
+        void clearQuizProgress(currentUserId);
         quizProgressHydrated.current = true;
       }
       setSolvedQuizIds(new Set());
@@ -330,8 +434,9 @@ export default function DictionaryPage() {
     if (!confirm("이 낱말을 낱말집에서 지울까요?")) return;
     setDeletingVocabId(id);
     try {
-      if (deleteLocalVocabularyEntry(currentUserId, id)) {
-        refreshVocabulary(currentUserId);
+      const res = await fetch(`/api/dictionary/vocabulary/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        await loadVocabulary(currentUserId);
         if (quiz?.id === id) {
           setQuiz(null);
           setQuizMessage("낱말집에 단어를 먼저 추가해 주세요.");

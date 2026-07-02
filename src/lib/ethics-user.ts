@@ -2,7 +2,7 @@ import { getAdminFirestore } from "@/lib/firebase/admin";
 import { USERS_COLLECTION } from "@/lib/users/firestore-user";
 
 export interface UserEthicsState {
-  lifetimeLoginCount: number;
+  aiHelperAckCount: number;
   firstCopyCompletedAt?: string;
   lastAckAt?: string;
 }
@@ -10,7 +10,7 @@ export interface UserEthicsState {
 function parseEthicsState(data: Record<string, unknown> | undefined): UserEthicsState {
   const ethics = data?.ethics as Record<string, unknown> | undefined;
   return {
-    lifetimeLoginCount: Number(ethics?.lifetimeLoginCount ?? 0),
+    aiHelperAckCount: Number(ethics?.aiHelperAckCount ?? 0),
     firstCopyCompletedAt: ethics?.firstCopyCompletedAt
       ? String(ethics.firstCopyCompletedAt)
       : undefined,
@@ -36,11 +36,11 @@ export async function recordEthicsAcknowledgement(
 
   const current = parseEthicsState(doc.data());
   const now = new Date().toISOString();
-  const nextCount = current.lifetimeLoginCount + 1;
+  const nextCount = current.aiHelperAckCount + 1;
 
   await ref.update({
     ethics: {
-      lifetimeLoginCount: nextCount,
+      aiHelperAckCount: nextCount,
       lastAckAt: now,
       ...(input.mode === "copy"
         ? { firstCopyCompletedAt: now }
@@ -51,12 +51,12 @@ export async function recordEthicsAcknowledgement(
   });
 
   return {
-    lifetimeLoginCount: nextCount,
+    aiHelperAckCount: nextCount,
     lastAckAt: now,
   };
 }
 
-export async function recordEthicsSkippedLogin(firebaseUid: string) {
+export async function recordEthicsSkippedUse(firebaseUid: string) {
   const ref = getAdminFirestore().collection(USERS_COLLECTION).doc(firebaseUid);
   const doc = await ref.get();
   if (!doc.exists) {
@@ -65,11 +65,11 @@ export async function recordEthicsSkippedLogin(firebaseUid: string) {
 
   const current = parseEthicsState(doc.data());
   const now = new Date().toISOString();
-  const nextCount = current.lifetimeLoginCount + 1;
+  const nextCount = current.aiHelperAckCount + 1;
 
   await ref.update({
     ethics: {
-      lifetimeLoginCount: nextCount,
+      aiHelperAckCount: nextCount,
       lastAckAt: now,
       ...(current.firstCopyCompletedAt ? { firstCopyCompletedAt: current.firstCopyCompletedAt } : {}),
     },

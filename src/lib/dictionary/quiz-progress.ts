@@ -4,6 +4,7 @@ function storageKey(userId: string) {
   return `${STORAGE_PREFIX}${userId}`;
 }
 
+/** @deprecated Firestore 이전 시 1회 마이그레이션용 */
 export function readQuizSolvedIds(userId: string): Set<string> {
   if (typeof window === "undefined") return new Set();
   try {
@@ -17,6 +18,7 @@ export function readQuizSolvedIds(userId: string): Set<string> {
   }
 }
 
+/** @deprecated Firestore 이전 후 사용하지 않음 */
 export function writeQuizSolvedIds(userId: string, solvedIds: Set<string>) {
   try {
     localStorage.setItem(storageKey(userId), JSON.stringify([...solvedIds]));
@@ -25,10 +27,15 @@ export function writeQuizSolvedIds(userId: string, solvedIds: Set<string>) {
   }
 }
 
+/** @deprecated Firestore 이전 후 사용하지 않음 */
 export function clearQuizSolvedIds(userId: string) {
   try {
     localStorage.removeItem(storageKey(userId));
   } catch {
     // ignore
   }
+}
+
+export function clearLocalQuizSolvedIds(userId: string) {
+  clearQuizSolvedIds(userId);
 }

@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "권한이 없어요." }, { status: 403 });
   }
 
-  if (session.ethicsAckedAt) {
+  if (session.aiHelperEthicsAckedAt) {
     return NextResponse.json({ ok: true, alreadyAcked: true });
   }
 
@@ -46,14 +46,14 @@ export async function POST(request: Request) {
 
     if (!allCorrect) {
       return NextResponse.json(
-        { error: "노란색으로 칠한 글자를 정확히 따라 써 주세요." },
+        { error: "빈칸에 안내 글씨를 정확히 따라 써 주세요." },
         { status: 400 }
       );
     }
   }
 
   await recordEthicsAcknowledgement(session.firebaseUid, { mode });
-  session.ethicsAckedAt = new Date().toISOString();
+  session.aiHelperEthicsAckedAt = new Date().toISOString();
   await session.save();
 
   return NextResponse.json({ ok: true });

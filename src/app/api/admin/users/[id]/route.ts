@@ -4,6 +4,8 @@ import { isFirebaseAuthEnabled } from "@/lib/firebase/config";
 import { deleteBooksForUser } from "@/lib/repositories/books-repository";
 import { deleteChatDataForUser } from "@/lib/repositories/chat-repository";
 import { deleteReflectionsForUser } from "@/lib/repositories/reflections-repository";
+import { deleteQuizProgressForUser } from "@/lib/repositories/vocabulary-quiz-progress-repository";
+import { deleteVocabularyForUser } from "@/lib/repositories/vocabulary-repository";
 import { deleteSharedSentencesForUser } from "@/lib/repositories/shared-sentences-repository";
 import { deleteModerationReportsForUser } from "@/lib/repositories/moderation-reports-repository";
 import { deleteAiHelperSessionsForUser } from "@/lib/repositories/ai-helper-sessions-repository";
@@ -77,6 +79,8 @@ export async function DELETE(
   await deleteFirestoreUser(profile.id);
   await deleteBooksForUser(effectiveId);
   await deleteReflectionsForUser(effectiveId);
+  await deleteVocabularyForUser(effectiveId);
+  await deleteQuizProgressForUser(effectiveId);
   await deleteSharedSentencesForUser(effectiveId);
   await deleteChatDataForUser(effectiveId);
   await deleteModerationReportsForUser(effectiveId);

@@ -340,7 +340,7 @@ export default function WriteSectionPage({
         : null;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 pb-24">
+    <div className="space-y-6 pb-24">
       <div>
         <BackLink href={`/books/${bookId}`}>감상 기록 전체 화면으로 돌아가기</BackLink>
         <div className="mt-2 flex flex-wrap items-baseline gap-2">

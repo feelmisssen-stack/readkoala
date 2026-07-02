@@ -29,7 +29,7 @@ export function SiteFooter() {
 
   return (
     <>
-      <footer className="mt-10 border-t border-koala-primary/15 bg-koala-secondary/10">
+      <footer className="mt-auto shrink-0 border-t border-koala-primary/15 bg-koala-secondary/10">
         <div className="mx-auto max-w-5xl space-y-2 px-4 py-6 text-center text-xs text-koala-muted">
           <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
             <span>{LEGAL_FOOTER.copyright}</span>

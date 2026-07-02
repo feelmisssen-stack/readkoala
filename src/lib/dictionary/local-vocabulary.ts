@@ -1,5 +1,7 @@
 import type { VocabularyEntry } from "@/lib/types";
 
+/** @deprecated 브라우저 localStorage → Firestore 이전 시 1회 마이그레이션용 */
+
 const STORAGE_PREFIX = "readkoala:vocabulary:";
 
 function storageKey(userId: string) {
