@@ -127,6 +127,60 @@ export function ReadingProgress({
     }
   }
 
+  const pageInputClass = compact
+    ? "h-7 w-11 rounded-koala-btn border border-koala-secondary bg-koala-bg px-1.5 text-center text-xs text-koala-heading focus:outline-none focus:border-koala-primary"
+    : "koala-input w-full py-2 text-sm";
+
+  const compactPageControls = (
+    <div className="flex shrink-0 items-center gap-1 text-xs">
+      {fetchingTotalPages ? (
+        <span className="text-koala-muted">불러오는 중...</span>
+      ) : (
+        <>
+          <input
+            type="number"
+            min={0}
+            max={hasTotal ? totalPages : undefined}
+            value={currentDraft}
+            placeholder="0"
+            aria-label="읽은 페이지"
+            onChange={(e) => {
+              currentDirtyRef.current = true;
+              setCurrentDraft(e.target.value);
+            }}
+            onBlur={commitCurrentPage}
+            onKeyDown={(e) => handleKeyDown(e, commitCurrentPage)}
+            className={pageInputClass}
+          />
+          {hasTotal ? (
+            <span className="font-medium text-koala-primary">/ {totalPages}쪽</span>
+          ) : onTotalPagesCommit ? (
+            <>
+              <span className="text-koala-muted">/</span>
+              <input
+                type="number"
+                min={1}
+                value={totalDraft}
+                placeholder="총"
+                aria-label="총 페이지"
+                onChange={(e) => {
+                  totalDirtyRef.current = true;
+                  setTotalDraft(e.target.value);
+                }}
+                onBlur={commitTotalPages}
+                onKeyDown={(e) => handleKeyDown(e, commitTotalPages)}
+                className={pageInputClass}
+              />
+              <span className="text-koala-muted">쪽</span>
+            </>
+          ) : (
+            <span className="text-koala-muted">쪽</span>
+          )}
+        </>
+      )}
+    </div>
+  );
+
   return (
     <div className={`w-full ${compact ? "space-y-2" : "space-y-3"}`}>
       <div className="flex items-start justify-between gap-2">
@@ -139,14 +193,14 @@ export function ReadingProgress({
           <span className="font-medium text-koala-primary">{display.label}</span>
           {display.suffix && <span className="text-koala-muted">{display.suffix}</span>}
         </div>
-        {hasTotal && (
-          <span
-            className={`shrink-0 font-medium text-koala-primary ${
-              compact ? "text-xs" : "text-xs"
-            }`}
-          >
-            {Math.min(currentPage, totalPages!)} / {totalPages}쪽
-          </span>
+        {compact ? (
+          compactPageControls
+        ) : (
+          hasTotal && (
+            <span className="shrink-0 text-xs font-medium text-koala-primary">
+              {Math.min(currentPage, totalPages!)} / {totalPages}쪽
+            </span>
+          )
         )}
       </div>
 
@@ -161,59 +215,53 @@ export function ReadingProgress({
         />
       </div>
 
-      <div className={`flex flex-wrap items-end ${compact ? "gap-2" : "gap-3"}`}>
-        <div className={compact ? "min-w-0 flex-1" : "min-w-[120px] flex-1"}>
-          {!compact && <label className="koala-label text-xs">읽은 페이지</label>}
-          <input
-            type="number"
-            min={0}
-            max={hasTotal ? totalPages : undefined}
-            value={currentDraft}
-            placeholder={compact ? "읽은 쪽" : "0"}
-            onChange={(e) => {
-              currentDirtyRef.current = true;
-              setCurrentDraft(e.target.value);
-            }}
-            onBlur={commitCurrentPage}
-            onKeyDown={(e) => handleKeyDown(e, commitCurrentPage)}
-            className={`koala-input w-full ${compact ? "py-1.5 text-xs" : "py-2 text-sm"}`}
-          />
-        </div>
-
-        {fetchingTotalPages ? (
-          <p className={`text-koala-muted ${compact ? "pb-1 text-[10px]" : "pb-2 text-xs"}`}>
-            불러오는 중...
-          </p>
-        ) : hasTotal ? (
-          <p className={`text-koala-muted ${compact ? "pb-1 text-[10px]" : "pb-2 text-xs"}`}>
-            총 {totalPages}쪽
-          </p>
-        ) : onTotalPagesCommit ? (
-          <div className={compact ? "min-w-0 flex-1" : "min-w-[120px] flex-1"}>
-            {!compact && <label className="koala-label text-xs">총 페이지 (직접 입력)</label>}
+      {!compact && (
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="min-w-[120px] flex-1">
+            <label className="koala-label text-xs">읽은 페이지</label>
             <input
               type="number"
-              min={1}
-              value={totalDraft}
-              placeholder={compact ? "총 쪽" : "예: 120"}
+              min={0}
+              max={hasTotal ? totalPages : undefined}
+              value={currentDraft}
+              placeholder="0"
               onChange={(e) => {
-                totalDirtyRef.current = true;
-                setTotalDraft(e.target.value);
+                currentDirtyRef.current = true;
+                setCurrentDraft(e.target.value);
               }}
-              onBlur={commitTotalPages}
-              onKeyDown={(e) => handleKeyDown(e, commitTotalPages)}
-              className={`koala-input w-full ${compact ? "py-1.5 text-xs" : "py-2 text-sm"}`}
+              onBlur={commitCurrentPage}
+              onKeyDown={(e) => handleKeyDown(e, commitCurrentPage)}
+              className={pageInputClass}
             />
-            {!compact && (
-              <p className="mt-1 text-xs text-koala-muted">Enter 또는 다른 곳을 누르면 저장돼요</p>
-            )}
           </div>
-        ) : (
-          <p className={`text-koala-muted ${compact ? "pb-1 text-[10px]" : "pb-2 text-xs"}`}>
-            총 페이지 없음
-          </p>
-        )}
-      </div>
+
+          {fetchingTotalPages ? (
+            <p className="pb-2 text-xs text-koala-muted">불러오는 중...</p>
+          ) : hasTotal ? (
+            <p className="pb-2 text-xs text-koala-muted">총 {totalPages}쪽</p>
+          ) : onTotalPagesCommit ? (
+            <div className="min-w-[120px] flex-1">
+              <label className="koala-label text-xs">총 페이지 (직접 입력)</label>
+              <input
+                type="number"
+                min={1}
+                value={totalDraft}
+                placeholder="예: 120"
+                onChange={(e) => {
+                  totalDirtyRef.current = true;
+                  setTotalDraft(e.target.value);
+                }}
+                onBlur={commitTotalPages}
+                onKeyDown={(e) => handleKeyDown(e, commitTotalPages)}
+                className={pageInputClass}
+              />
+              <p className="mt-1 text-xs text-koala-muted">Enter 또는 다른 곳을 누르면 저장돼요</p>
+            </div>
+          ) : (
+            <p className="pb-2 text-xs text-koala-muted">총 페이지 없음</p>
+          )}
+        </div>
+      )}
 
       {hasTotal && currentPage > 0 && (
         <p className={`text-koala-muted ${compact ? "text-[10px]" : "text-xs"}`}>

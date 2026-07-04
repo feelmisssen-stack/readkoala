@@ -25,12 +25,10 @@ export function SiteFooter() {
 
   if (!isLoggedIn) return null;
 
-  const { privacyOfficer } = LEGAL_FOOTER;
-
   return (
     <>
       <footer className="mt-auto shrink-0 border-t border-koala-secondary bg-koala-surface-soft">
-        <div className="mx-auto max-w-content space-y-1 px-4 py-4 text-center text-sm text-koala-muted">
+        <div className="mx-auto max-w-content px-4 py-4 text-center text-sm text-koala-muted">
           <p className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
             <span>{LEGAL_FOOTER.copyright}</span>
             <span aria-hidden>|</span>
@@ -49,10 +47,6 @@ export function SiteFooter() {
             >
               개인정보처리방침
             </button>
-          </p>
-          <p>
-            개인정보책임자: {privacyOfficer.role} {privacyOfficer.name} ({privacyOfficer.school}) |
-            문의: {privacyOfficer.phone}
           </p>
         </div>
       </footer>
