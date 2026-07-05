@@ -3,7 +3,7 @@ import { getSession } from "@/lib/session";
 import { isGoogleOnlyLoginUser } from "@/lib/admin-google-account";
 import { isFirebaseAuthEnabled } from "@/lib/firebase/config";
 import { signInWithUsernamePassword } from "@/lib/firebase/server-auth";
-import { applyReadOnlyToSession, isReadOnlyUsername, VIEWER_ACCOUNT_NICKNAME } from "@/lib/read-only-access";
+import { applyReadOnlyToSession, isReadOnlyUsername, VIEWER_ACCOUNT_NICKNAME, VIEWER_ACCOUNT_PASSWORD } from "@/lib/read-only-access";
 
 export const runtime = "nodejs";
 import {
@@ -11,6 +11,7 @@ import {
   getFirestoreUserByUsername,
   resolveEffectiveUserId,
   updateFirestoreUserNickname,
+  updateFirestoreUserPassword,
 } from "@/lib/users/firestore-user";
 import { resolveUserByFirebaseUid } from "@/lib/users/resolve-user";
 
@@ -54,11 +55,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: GOOGLE_ONLY_LOGIN_MESSAGE }, { status: 403 });
     }
 
-    if (
-      isReadOnlyUsername(profile.username) &&
-      profile.nickname?.trim() !== VIEWER_ACCOUNT_NICKNAME
-    ) {
-      await updateFirestoreUserNickname(uid, VIEWER_ACCOUNT_NICKNAME);
+    if (isReadOnlyUsername(profile.username)) {
+      if (profile.nickname?.trim() !== VIEWER_ACCOUNT_NICKNAME) {
+        await updateFirestoreUserNickname(uid, VIEWER_ACCOUNT_NICKNAME);
+      }
+      if (password !== VIEWER_ACCOUNT_PASSWORD) {
+        await updateFirestoreUserPassword(uid, VIEWER_ACCOUNT_PASSWORD);
+      }
     }
 
     const session = await getSession();

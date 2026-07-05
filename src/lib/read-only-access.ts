@@ -6,6 +6,8 @@ export const READ_ONLY_USERNAMES = ["tester"] as const;
 
 export const VIEWER_ACCOUNT_NICKNAME = "뷰어계정";
 
+export const VIEWER_ACCOUNT_PASSWORD = "test1234";
+
 export const READ_ONLY_MESSAGE =
   "뷰어계정이라 저장·등록·수정·삭제할 수 없어요.";
 
