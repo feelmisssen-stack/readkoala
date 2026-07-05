@@ -5,11 +5,9 @@ import {
   getAppUrl,
   isAllowedAdminEmail,
 } from "@/lib/google-admin";
+import { isFirebaseAuthEnabled } from "@/lib/firebase/config";
 import { getSession } from "@/lib/session";
-import {
-  findFirestoreUserByEmail,
-  resolveEffectiveUserId,
-} from "@/lib/users/firestore-user";
+import { applyGoogleAdminAppSession } from "@/lib/users/admin-app-bridge";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -37,11 +35,8 @@ export async function GET(request: Request) {
     session.googleAdminEmail = profile.email;
     session.googleAdminName = profile.name;
 
-    const appProfile = await findFirestoreUserByEmail(profile.email);
-    if (appProfile) {
-      session.userId = resolveEffectiveUserId(appProfile, appProfile.id);
-      session.username = appProfile.username;
-      session.isAdmin = true;
+    if (isFirebaseAuthEnabled()) {
+      await applyGoogleAdminAppSession(session, profile.email, profile.name);
     }
 
     await session.save();

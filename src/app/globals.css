@@ -39,12 +39,20 @@
     @apply rounded-koala bg-koala-card;
     border: 1px solid rgb(var(--color-koala-secondary-rgb));
   }
-  .koala-card-recorded {
+  .koala-card-section-empty {
     background-color: rgb(var(--color-koala-surface-soft-rgb));
-    border-color: rgb(var(--color-koala-secondary-rgb));
+    border-color: rgb(var(--color-koala-secondary-rgb) / 0.55);
+  }
+  .koala-card-section-empty:hover {
+    background-color: rgb(var(--color-koala-secondary-rgb) / 0.28);
+  }
+  .koala-card-recorded {
+    background-color: rgb(var(--color-koala-card-rgb));
+    border-color: rgb(var(--color-koala-primary-rgb) / 0.45);
   }
   .koala-card-recorded:hover {
-    background-color: rgb(var(--color-koala-surface-cream-strong-rgb) / 1);
+    background-color: rgb(var(--color-koala-surface-cream-strong-rgb));
+    border-color: rgb(var(--color-koala-primary-rgb) / 0.55);
   }
   .koala-card-status {
     @apply rounded-koala p-2 sm:p-2.5;
@@ -118,5 +126,61 @@
   }
   .koala-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgb(var(--color-koala-primary-rgb) / 0.6);
+  }
+
+  .floating-book-grid-tile .floating-book-stage .floating-book-cover {
+    animation: floatingBookFade 7s ease-in-out infinite;
+    animation-delay: var(--book-anim-delay, 0s);
+  }
+
+  .floating-book-grid-tile .floating-book-stage .floating-book-wash {
+    animation: floatingBookWhiteWash 7s ease-in-out infinite;
+    animation-delay: var(--book-anim-delay, 0s);
+  }
+
+  .floating-book-grid-tile .floating-book-stage .floating-book-caption {
+    animation: floatingBookCaption 7s ease-in-out infinite;
+    animation-delay: var(--book-anim-delay, 0s);
+  }
+}
+
+/* 7s = 1s 대기 + 4s 하얗게 + 2s 선명하게 */
+@keyframes floatingBookFade {
+  0%,
+  14.3% {
+    opacity: 1;
+  }
+  71.4% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes floatingBookWhiteWash {
+  0%,
+  14.3% {
+    opacity: 0;
+  }
+  71.4% {
+    opacity: 0.78;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes floatingBookCaption {
+  0%,
+  14.3% {
+    opacity: 0;
+  }
+  45%,
+  71.4% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
   }
 }

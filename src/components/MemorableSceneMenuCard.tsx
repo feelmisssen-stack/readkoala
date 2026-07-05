@@ -202,7 +202,7 @@ export function MemorableSceneMenuCard({
   return (
     <div
       className={`relative koala-card flex w-full items-center gap-3 p-4 transition ${
-        hasScene ? "koala-card-recorded" : "hover:bg-koala-secondary/10"
+        hasScene ? "koala-card-recorded" : "koala-card-section-empty"
       }`}
     >
       <button

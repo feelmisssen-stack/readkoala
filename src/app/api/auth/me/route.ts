@@ -5,6 +5,19 @@ export const runtime = "nodejs";
 
 export async function GET() {
   const session = await getSession();
+
+  if (session.googleAdminEmail && !session.userId) {
+    const { applyGoogleAdminAppSession } = await import("@/lib/users/admin-app-bridge");
+    const linked = await applyGoogleAdminAppSession(
+      session,
+      session.googleAdminEmail,
+      session.googleAdminName
+    );
+    if (linked) {
+      await session.save();
+    }
+  }
+
   if (!session.userId && !session.firebaseUid) {
     return NextResponse.json({ user: null });
   }
@@ -19,6 +32,15 @@ export async function GET() {
     return NextResponse.json({ user: null });
   }
 
+  const { loadWritingGrowthDatabase } = await import("@/lib/repositories/feed-data");
+  const { getUserWritingGrowthFromEntries } = await import("@/lib/writing-growth");
+  const growthData = await loadWritingGrowthDatabase(user.id);
+  const writingGrowth = getUserWritingGrowthFromEntries(
+    growthData.reflections,
+    growthData.sharedSentences,
+    user.id
+  );
+
   return NextResponse.json({
     user: {
       id: user.id,
@@ -27,6 +49,7 @@ export async function GET() {
       displayName: user.displayName,
       isAdmin: user.isAdmin,
       stats: user.stats,
+      stageLevel: writingGrowth.stageLevel,
     },
   });
 }

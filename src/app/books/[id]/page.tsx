@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useState, use, useCallback } from "react";
+import { useEffect, useState, use, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { AiHelperChat, type AiHelperChatHandle } from "@/components/AiHelperChat";
 import { MemorableSceneMenuCard } from "@/components/MemorableSceneMenuCard";
 import { ReadingProgress } from "@/components/ReadingProgress";
 import { StoryEmpathyPanel } from "@/components/StoryEmpathyPanel";
 import { BookCoverPlaceholder } from "@/components/BookCoverPlaceholder";
-import { iconMd } from "@/lib/icon-styles";
+import { MessageCircle } from "lucide-react";
+import { iconMd, iconSm } from "@/lib/icon-styles";
 import { hasReflectionSectionContent } from "@/lib/gamification";
 import { SECTION_LABELS, SECTION_ORDER, type ReflectionSection } from "@/lib/reflection-templates";
 import { SECTION_ICONS } from "@/lib/section-icons";
@@ -22,6 +24,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
   const [saving, setSaving] = useState(false);
   const [fetchingTotalPages, setFetchingTotalPages] = useState(false);
   const [reflection, setReflection] = useState<Reflection | null>(null);
+  const aiHelperRef = useRef<AiHelperChatHandle>(null);
 
   const patchBook = useCallback(
     async (body: Record<string, number | undefined>) => {
@@ -166,6 +169,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
           {book.publisher && <p className="text-sm text-koala-muted">{book.publisher}</p>}
           <div className="mt-4">
             <ReadingProgress
+              compact
               readingProgress={readingProgress}
               currentPage={currentPage}
               totalPages={totalPages}
@@ -226,26 +230,69 @@ export default function BookDetailPage({ params }: { params: Promise<{ id: strin
 
             const Icon = SECTION_ICONS[section];
             const recorded = hasReflectionSectionContent(reflection, section);
+
+            if (section === "review") {
+              return (
+                <div
+                  key={section}
+                  className={`koala-card flex items-center gap-3 p-4 transition ${
+                    recorded ? "koala-card-recorded" : "koala-card-section-empty"
+                  }`}
+                >
+                  <Link
+                    href={`/books/${id}/write/${section}`}
+                    className="flex min-w-0 flex-1 items-center gap-3"
+                  >
+                    <Icon className={`${iconMd} shrink-0 text-koala-primary`} strokeWidth={1.75} aria-hidden />
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-medium text-koala-heading">{SECTION_LABELS[section]}</h3>
+                      <p className="mt-0.5 text-xs text-koala-muted">한 편의 멋진 감상문을 써 봅시다!</p>
+                    </div>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => void aiHelperRef.current?.open()}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-koala-accent text-white transition hover:scale-105"
+                    title="감상문 도우미"
+                    aria-label="감상문 도우미 열기"
+                  >
+                    <MessageCircle className={iconSm} strokeWidth={2} aria-hidden />
+                  </button>
+                </div>
+              );
+            }
+
             return (
               <Link
                 key={section}
                 href={`/books/${id}/write/${section}`}
                 className={`koala-card flex items-center gap-3 p-4 transition ${
-                  recorded ? "koala-card-recorded" : "hover:bg-koala-secondary/10"
+                  recorded ? "koala-card-recorded" : "koala-card-section-empty"
                 }`}
               >
                 <Icon className={`${iconMd} shrink-0 text-koala-primary`} strokeWidth={1.75} aria-hidden />
                 <div className="min-w-0 flex-1">
                   <h3 className="font-medium text-koala-heading">{SECTION_LABELS[section]}</h3>
-                  {section === "review" && (
-                    <p className="mt-0.5 text-xs text-koala-muted">한 편의 멋진 감상문을 써 봅시다!</p>
-                  )}
                 </div>
               </Link>
             );
           })}
         </div>
       </div>
+
+      <AiHelperChat
+        ref={aiHelperRef}
+        bookId={id}
+        bookTitle={book.title}
+        showFloatingLauncher={false}
+        reviewDraft={{
+          reviewTitle: reflection?.reviewTitle,
+          reviewReason: reflection?.reviewReason,
+          reviewContent: reflection?.reviewContent,
+          reviewImpressiveScene: reflection?.reviewImpressiveScene,
+          reviewThoughts: reflection?.reviewThoughts,
+        }}
+      />
     </div>
   );
 }

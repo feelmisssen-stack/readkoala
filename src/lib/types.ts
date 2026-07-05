@@ -233,6 +233,7 @@ export interface CarouselFeedItem {
   bookTitle: string;
   bookAuthor?: string;
   coverUrl?: string;
+  updatedAt: string;
   moments: CarouselMoment[];
 }
 

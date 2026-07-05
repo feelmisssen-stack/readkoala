@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { MessageCircle, Send, X } from "lucide-react";
 import { AiEthicsGateModal } from "@/components/AiEthicsGateModal";
 import { iconMd, iconSm } from "@/lib/icon-styles";
@@ -18,13 +18,21 @@ interface AiHelperChatProps {
   bookId?: string;
   bookTitle?: string;
   reviewDraft: Omit<ReviewDraft, "bookTitle">;
+  showFloatingLauncher?: boolean;
+}
+
+export interface AiHelperChatHandle {
+  open: () => Promise<void>;
 }
 
 function countUserMessages(history: UiMessage[]) {
   return history.filter((message) => message.role === "user").length;
 }
 
-export function AiHelperChat({ bookId, bookTitle, reviewDraft }: AiHelperChatProps) {
+export const AiHelperChat = forwardRef<AiHelperChatHandle, AiHelperChatProps>(function AiHelperChat(
+  { bookId, bookTitle, reviewDraft, showFloatingLauncher = true },
+  ref
+) {
   const [open, setOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [limitReached, setLimitReached] = useState(false);
@@ -64,7 +72,7 @@ export function AiHelperChat({ bookId, bookTitle, reviewDraft }: AiHelperChatPro
     }
   }
 
-  async function tryOpenChat() {
+  const tryOpenChat = useCallback(async () => {
     if (openingChat) return;
     setOpeningChat(true);
 
@@ -83,7 +91,9 @@ export function AiHelperChat({ bookId, bookTitle, reviewDraft }: AiHelperChatPro
     } finally {
       setOpeningChat(false);
     }
-  }
+  }, [openingChat]);
+
+  useImperativeHandle(ref, () => ({ open: tryOpenChat }), [tryOpenChat]);
 
   function handleEthicsAcknowledged() {
     setEthicsGate(null);
@@ -171,15 +181,17 @@ export function AiHelperChat({ bookId, bookTitle, reviewDraft }: AiHelperChatPro
 
   return (
     <>
-      <button
-        type="button"
-        onClick={tryOpenChat}
-        disabled={openingChat}
-        className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-koala-accent text-white transition hover:scale-105 disabled:opacity-70"
-        title="감상문 도우미"
-      >
-        <MessageCircle className={iconMd} aria-hidden />
-      </button>
+      {showFloatingLauncher && (
+        <button
+          type="button"
+          onClick={() => void tryOpenChat()}
+          disabled={openingChat}
+          className="fixed bottom-6 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-koala-accent text-white transition hover:scale-105 disabled:opacity-70"
+          title="감상문 도우미"
+        >
+          <MessageCircle className={iconMd} aria-hidden />
+        </button>
+      )}
 
       {ethicsGate && (
         <AiEthicsGateModal
@@ -266,4 +278,4 @@ export function AiHelperChat({ bookId, bookTitle, reviewDraft }: AiHelperChatPro
       )}
     </>
   );
-}
+});

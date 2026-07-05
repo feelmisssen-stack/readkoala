@@ -192,6 +192,7 @@ export function buildCarouselFeed(db: Database, excludeUserId?: string): Carouse
       bookTitle: book?.title || "책",
       bookAuthor: book?.author,
       coverUrl: book?.coverUrl,
+      updatedAt: reflection.updatedAt,
       moments,
     });
   }
@@ -211,11 +212,14 @@ export function buildCarouselFeed(db: Database, excludeUserId?: string): Carouse
       bookTitle: book.title,
       bookAuthor: book.author,
       coverUrl: book.coverUrl,
+      updatedAt: book.updatedAt,
       moments: [],
     });
   }
 
-  return items;
+  return items.sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  );
 }
 
 export function buildPersonalMoments(db: Database, userId: string): CarouselMoment[] {

@@ -116,35 +116,36 @@ export function BookShelfCard({ book, deleting, onDelete, onBookUpdate }: BookSh
 
   return (
     <div className="koala-card relative flex h-full min-w-0 flex-col overflow-hidden p-3 transition hover:bg-koala-secondary/30 sm:p-4">
+      <Link
+        href={`/books/${book.id}`}
+        className="absolute inset-0 z-0 rounded-koala"
+        aria-label={`${book.title} 감상 기록하기`}
+      />
+
       <button
         type="button"
         onClick={onDelete}
         disabled={deleting}
-        className="absolute right-3 top-3 z-10 inline-flex items-center gap-1 rounded-pill bg-koala-card/90 px-2 py-0.5 text-xs text-red-500 hover:bg-red-50 disabled:opacity-50"
+        aria-label={deleting ? "삭제 중" : "책 삭제"}
+        className="absolute right-3 top-3 z-10 inline-flex items-center justify-center rounded-pill bg-koala-card/90 p-1.5 text-red-500 hover:bg-red-50 disabled:opacity-50"
       >
-        <Trash2 className="size-3" aria-hidden />
-        {deleting ? "삭제 중..." : "삭제"}
+        <Trash2 className="size-3.5" aria-hidden />
       </button>
 
-      <div className="flex min-w-0 gap-2 sm:gap-3">
-        <Link
-          href={`/books/${book.id}`}
-          className="relative h-24 w-[4.5rem] shrink-0 overflow-hidden rounded-koala bg-koala-secondary/20 sm:h-28 sm:w-20"
-        >
+      <div className="pointer-events-none relative z-[1] flex min-w-0 gap-2 sm:gap-3">
+        <div className="relative h-24 w-[4.5rem] shrink-0 overflow-hidden rounded-koala bg-koala-secondary/20 sm:h-28 sm:w-20">
           {book.coverUrl ? (
             <Image src={book.coverUrl} alt={book.title} fill className="object-cover" unoptimized />
           ) : (
             <BookCoverPlaceholder />
           )}
-        </Link>
+        </div>
 
         <div className="min-w-0 flex-1 pr-6 sm:pr-8">
-          <Link href={`/books/${book.id}`} className="block hover:opacity-90">
-            <h2 className="truncate font-display text-koala-heading">{book.title}</h2>
-            {book.author && <p className="truncate text-sm text-koala-muted">{book.author}</p>}
-          </Link>
+          <h2 className="truncate font-display text-koala-heading">{book.title}</h2>
+          {book.author && <p className="truncate text-sm text-koala-muted">{book.author}</p>}
 
-          <div className="mt-2">
+          <div className="pointer-events-auto mt-2">
             <ReadingProgress
               compact
               readingProgress={readingProgress}
@@ -165,7 +166,7 @@ export function BookShelfCard({ book, deleting, onDelete, onBookUpdate }: BookSh
       {book.recordLevel != null && book.recordLevel > 0 && (
         <ReadingRecordLeafStamp
           level={book.recordLevel}
-          className="absolute bottom-3 right-3 z-10"
+          className="pointer-events-none absolute bottom-3 right-3 z-[1]"
         />
       )}
     </div>

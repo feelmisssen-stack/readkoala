@@ -19,7 +19,7 @@ export function KoalaGrowthIllustration({ visualTier, className = "" }: KoalaGro
         alt={stageInfo.name}
         fill
         unoptimized
-        className="object-contain object-center scale-[1.66]"
+        className="object-contain object-center scale-[1.04]"
         sizes="112px"
         priority={stage <= 1}
       />

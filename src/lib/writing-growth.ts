@@ -72,7 +72,7 @@ export const KOALA_STAGE_IMAGES = [
 ] as const;
 
 /** 이미지 교체 시 숫자를 올리면 브라우저·Next 캐시를 갱신합니다 */
-export const KOALA_STAGE_IMAGE_VERSION = "3";
+export const KOALA_STAGE_IMAGE_VERSION = "5";
 
 export function getKoalaStageImage(stageIndex: number): string {
   const index = Math.max(0, Math.min(stageIndex, KOALA_STAGE_IMAGES.length - 1));

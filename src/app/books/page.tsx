@@ -74,19 +74,20 @@ export default function BooksPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="inline-flex items-center gap-2 text-xl font-display text-koala-heading sm:text-2xl">
-          <BookOpen className="size-6 shrink-0" strokeWidth={1.75} aria-hidden />
-          내 책장
-        </h1>
+        <div className="flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
+          <h1 className="inline-flex shrink-0 items-baseline gap-2 text-xl font-display text-koala-heading sm:text-2xl">
+            <BookOpen className="size-6 shrink-0" strokeWidth={1.75} aria-hidden />
+            내 책장
+          </h1>
+          <p className="text-sm text-koala-muted">
+            내가 쓴 감상기록으로 잎새는 진해지고 코알라는 자라나요.
+          </p>
+        </div>
         <Link href="/books/new" className="koala-btn-primary inline-flex items-center gap-1.5 text-sm">
           <Plus className={iconSm} aria-hidden />
           책 추가
         </Link>
       </div>
-
-      <p className="rounded-koala bg-koala-secondary/15 px-4 py-3 text-sm text-koala-muted">
-        내가 쓴 감상기록으로 잎새는 진해지고 코알라는 자라나요.
-      </p>
 
       <div className="grid min-w-0 grid-cols-1 items-stretch gap-3 md:grid-cols-2 md:gap-4 [@media(max-height:500px)_and_(orientation:landscape)]:grid-cols-1">
         <KoalaGrowthCard growth={writingGrowth} />

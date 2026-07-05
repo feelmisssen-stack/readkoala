@@ -128,7 +128,7 @@ export function ReadingProgress({
   }
 
   const pageInputClass = compact
-    ? "h-7 w-11 rounded-koala-btn border border-koala-secondary bg-koala-bg px-1.5 text-center text-xs text-koala-heading focus:outline-none focus:border-koala-primary"
+    ? "h-7 w-[3.25rem] rounded-koala-btn border border-koala-secondary bg-koala-bg pl-1.5 pr-2 text-right text-xs text-koala-heading focus:outline-none focus:border-koala-primary"
     : "koala-input w-full py-2 text-sm";
 
   const compactPageControls = (

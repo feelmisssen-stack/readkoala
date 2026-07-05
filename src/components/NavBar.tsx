@@ -20,7 +20,7 @@ function navLinkClass(active: boolean) {
 
 export function NavBar() {
   const pathname = usePathname();
-  const [user, setUser] = useState<{ username: string; displayName?: string } | null>(null);
+  const [user, setUser] = useState<{ username: string; displayName?: string; stageLevel?: number } | null>(null);
   const [isGoogleAdmin, setIsGoogleAdmin] = useState(false);
 
   useEffect(() => {
@@ -78,6 +78,7 @@ export function NavBar() {
                 aria-label="회원 정보 수정"
                 className="inline-flex items-center gap-1.5 rounded-koala-btn px-2.5 py-1 text-sm text-koala-muted hover:text-koala-heading"
               >
+                <span className="shrink-0">Lv. {user.stageLevel ?? 1}</span>
                 <User className="size-3.5 shrink-0" strokeWidth={2} aria-hidden />
                 <span>{(user.displayName || user.username) + "님"}</span>
               </Link>
