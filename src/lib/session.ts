@@ -6,6 +6,8 @@ export interface SessionData {
   firebaseUid?: string;
   username?: string;
   isAdmin?: boolean;
+  /** 뷰어계정: 화면 탐색은 가능, 데이터 저장·수정 불가 */
+  readOnly?: boolean;
   googleAdminEmail?: string;
   googleAdminName?: string;
   /** 이번 로그인 세션에서 감상문 도우미 윤리 안내를 완료했는지 */

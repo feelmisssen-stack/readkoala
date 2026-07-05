@@ -143,5 +143,7 @@ export async function applyGoogleAdminAppSession(
   session.firebaseUid = profile.id;
   session.username = profile.username;
   session.isAdmin = true;
+  const { applyReadOnlyToSession } = await import("@/lib/read-only-access");
+  applyReadOnlyToSession(session, profile);
   return profile;
 }

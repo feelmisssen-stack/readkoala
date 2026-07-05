@@ -7,6 +7,8 @@ export interface FirestoreUserProfile {
   nickname?: string;
   email: string;
   isAdmin: boolean;
+  /** 뷰어계정: 탐색·작성 화면 접근 가능, 저장·수정·삭제 불가 */
+  readOnly?: boolean;
   createdAt: string;
   stats: UserStats;
   legacyDbId?: string;
@@ -22,6 +24,7 @@ function docToProfile(uid: string, data: Record<string, unknown>): FirestoreUser
     nickname: data.nickname ? String(data.nickname) : undefined,
     email: String(data.email),
     isAdmin: Boolean(data.isAdmin),
+    readOnly: Boolean(data.readOnly),
     createdAt: String(data.createdAt),
     stats: data.stats as UserStats,
     legacyDbId: data.legacyDbId ? String(data.legacyDbId) : undefined,

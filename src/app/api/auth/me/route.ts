@@ -32,6 +32,16 @@ export async function GET() {
     return NextResponse.json({ user: null });
   }
 
+  const { applyReadOnlyToSession } = await import("@/lib/read-only-access");
+  const { getFirestoreUser } = await import("@/lib/users/firestore-user");
+  if (session.firebaseUid) {
+    const profile = await getFirestoreUser(session.firebaseUid);
+    if (profile) {
+      applyReadOnlyToSession(session, profile);
+      await session.save();
+    }
+  }
+
   const { loadWritingGrowthDatabase } = await import("@/lib/repositories/feed-data");
   const { getUserWritingGrowthFromEntries } = await import("@/lib/writing-growth");
   const growthData = await loadWritingGrowthDatabase(user.id);
@@ -48,6 +58,7 @@ export async function GET() {
       nickname: user.nickname,
       displayName: user.displayName,
       isAdmin: user.isAdmin,
+      readOnly: session.readOnly ?? false,
       stats: user.stats,
       stageLevel: writingGrowth.stageLevel,
     },

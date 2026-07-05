@@ -3,6 +3,7 @@ import { getSession } from "@/lib/session";
 import { isGoogleOnlyLoginUser } from "@/lib/admin-google-account";
 import { isFirebaseAuthEnabled } from "@/lib/firebase/config";
 import { signInWithUsernamePassword } from "@/lib/firebase/server-auth";
+import { applyReadOnlyToSession } from "@/lib/read-only-access";
 
 export const runtime = "nodejs";
 import {
@@ -57,6 +58,7 @@ export async function POST(request: Request) {
     session.userId = resolveEffectiveUserId(profile, uid);
     session.username = profile.username;
     session.isAdmin = profile.isAdmin;
+    applyReadOnlyToSession(session, profile);
     await session.save();
 
     const user = await resolveUserByFirebaseUid(uid);

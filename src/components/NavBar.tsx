@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Library, LogOut, User } from "lucide-react";
 import { iconSm } from "@/lib/icon-styles";
+import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 
 const links = [
   { href: "/", label: "홈" },
@@ -21,7 +22,12 @@ function navLinkClass(active: boolean) {
 
 export function NavBar() {
   const pathname = usePathname();
-  const [user, setUser] = useState<{ username: string; displayName?: string; stageLevel?: number } | null>(null);
+  const [user, setUser] = useState<{
+    username: string;
+    displayName?: string;
+    stageLevel?: number;
+    readOnly?: boolean;
+  } | null>(null);
   const [isGoogleAdmin, setIsGoogleAdmin] = useState(false);
 
   useEffect(() => {
@@ -52,6 +58,7 @@ export function NavBar() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-koala-secondary bg-koala-bg">
+      {user?.readOnly && <ReadOnlyBanner />}
       <div className="mx-auto flex h-16 max-w-content items-center justify-between gap-2 px-4 sm:gap-4">
         <Link
           href="/"
