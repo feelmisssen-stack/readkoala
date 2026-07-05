@@ -5,6 +5,7 @@ import {
   listVocabularyByUserId,
 } from "@/lib/repositories/vocabulary-repository";
 import { getSession } from "@/lib/session";
+import { normalizeDisplayWord } from "@/lib/vocabulary-display";
 
 export const runtime = "nodejs";
 
@@ -25,7 +26,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const word = typeof body.word === "string" ? body.word.trim() : "";
+  const word = normalizeDisplayWord(typeof body.word === "string" ? body.word.trim() : "");
   const definition = typeof body.definition === "string" ? body.definition : "";
   const parsedSenseNo = Number(body.senseNo);
 

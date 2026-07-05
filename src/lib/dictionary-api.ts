@@ -62,6 +62,7 @@ interface StdictResponse {
 }
 
 import { getStdictApiKey, isDictionaryApiConfigured } from "./dictionary-config";
+import { normalizeDisplayWord } from "@/lib/vocabulary-display";
 
 export { isDictionaryApiConfigured };
 
@@ -126,7 +127,7 @@ function toDictResult(items: StdictItem[], query: string): DictResult | null {
           .join("\n");
 
   return {
-    word: sorted[0]?.word || query,
+    word: normalizeDisplayWord(sorted[0]?.word || query),
     definition,
     senses,
     source: "api",

@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Library, User } from "lucide-react";
+import { Library, LogOut, User } from "lucide-react";
+import { iconSm } from "@/lib/icon-styles";
 
 const links = [
   { href: "/", label: "홈" },
@@ -51,8 +52,11 @@ export function NavBar() {
 
   return (
     <header className="sticky top-0 z-50 border-b border-koala-secondary bg-koala-bg">
-      <div className="mx-auto flex h-16 max-w-content items-center justify-between gap-4 px-4">
-        <Link href="/" className="flex items-center gap-1.5 font-display text-lg text-koala-heading">
+      <div className="mx-auto flex h-16 max-w-content items-center justify-between gap-2 px-4 sm:gap-4">
+        <Link
+          href="/"
+          className="flex shrink-0 items-center gap-1.5 font-display text-lg text-koala-heading"
+        >
           <Library className="size-5 shrink-0" strokeWidth={1.75} aria-hidden />
           도란서재
         </Link>
@@ -71,26 +75,29 @@ export function NavBar() {
                 </Link>
               )}
             </nav>
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               <Link
                 href="/settings"
                 title="회원 정보"
                 aria-label="회원 정보 수정"
-                className="inline-flex items-center gap-1.5 rounded-koala-btn px-2.5 py-1 text-sm text-koala-muted hover:text-koala-heading"
+                className="inline-flex min-w-0 max-w-[9.5rem] items-center gap-1.5 whitespace-nowrap rounded-koala-btn px-2 py-1 text-sm text-koala-muted hover:text-koala-heading sm:max-w-none sm:px-2.5"
               >
                 <span className="shrink-0">Lv. {user.stageLevel ?? 1}</span>
                 <User className="size-3.5 shrink-0" strokeWidth={2} aria-hidden />
-                <span>{(user.displayName || user.username) + "님"}</span>
+                <span className="truncate">{(user.displayName || user.username) + "님"}</span>
               </Link>
               <button
+                type="button"
                 onClick={async () => {
                   await fetch("/api/auth/logout", { method: "POST" });
                   window.dispatchEvent(new Event("auth-changed"));
                   window.location.href = "/";
                 }}
-                className="koala-btn-secondary text-sm"
+                aria-label="로그아웃"
+                title="로그아웃"
+                className="koala-btn-secondary inline-flex shrink-0 items-center justify-center p-2"
               >
-                로그아웃
+                <LogOut className={iconSm} strokeWidth={2} aria-hidden />
               </button>
             </div>
           </>

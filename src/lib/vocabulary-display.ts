@@ -1,7 +1,7 @@
 import type { DictSense } from "@/lib/dictionary-api";
 
 export function normalizeDisplayWord(input: string): string {
-  return input.replaceAll("-", "");
+  return input.replaceAll("-", "").replaceAll("^", "");
 }
 
 export function formatSenseDefinition(sense: { definition: string; pos?: string }): string {

@@ -12,6 +12,7 @@ export function normalizeQuizWord(input: unknown): string {
   return String(input ?? "")
     .trim()
     .replaceAll("-", "")
+    .replaceAll("^", "")
     .replaceAll(" ", "");
 }
 
