@@ -3,13 +3,14 @@ import { getSession } from "@/lib/session";
 import { isGoogleOnlyLoginUser } from "@/lib/admin-google-account";
 import { isFirebaseAuthEnabled } from "@/lib/firebase/config";
 import { signInWithUsernamePassword } from "@/lib/firebase/server-auth";
-import { applyReadOnlyToSession } from "@/lib/read-only-access";
+import { applyReadOnlyToSession, isReadOnlyUsername, VIEWER_ACCOUNT_NICKNAME } from "@/lib/read-only-access";
 
 export const runtime = "nodejs";
 import {
   getFirestoreUser,
   getFirestoreUserByUsername,
   resolveEffectiveUserId,
+  updateFirestoreUserNickname,
 } from "@/lib/users/firestore-user";
 import { resolveUserByFirebaseUid } from "@/lib/users/resolve-user";
 
@@ -51,6 +52,13 @@ export async function POST(request: Request) {
 
     if (isGoogleOnlyLoginUser({ email: profile.email, googleOnly: profile.googleOnly })) {
       return NextResponse.json({ error: GOOGLE_ONLY_LOGIN_MESSAGE }, { status: 403 });
+    }
+
+    if (
+      isReadOnlyUsername(profile.username) &&
+      profile.nickname?.trim() !== VIEWER_ACCOUNT_NICKNAME
+    ) {
+      await updateFirestoreUserNickname(uid, VIEWER_ACCOUNT_NICKNAME);
     }
 
     const session = await getSession();

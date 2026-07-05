@@ -4,6 +4,8 @@ import type { FirestoreUserProfile } from "@/lib/users/firestore-user";
 /** Firestore `readOnly` 없이도 뷰어계정으로 취급할 아이디 */
 export const READ_ONLY_USERNAMES = ["tester"] as const;
 
+export const VIEWER_ACCOUNT_NICKNAME = "뷰어계정";
+
 export const READ_ONLY_MESSAGE =
   "뷰어계정이라 저장·등록·수정·삭제할 수 없어요.";
 

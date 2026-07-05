@@ -1,6 +1,10 @@
 import type { User } from "./types";
+import { isReadOnlyUsername, VIEWER_ACCOUNT_NICKNAME } from "./read-only-access";
 
 export function getDisplayName(user: Pick<User, "username" | "nickname">): string {
+  if (isReadOnlyUsername(user.username)) {
+    return VIEWER_ACCOUNT_NICKNAME;
+  }
   const nick = user.nickname?.trim();
   return nick || user.username;
 }
