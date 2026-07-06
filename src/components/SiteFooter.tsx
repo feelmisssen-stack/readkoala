@@ -1,29 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { useState } from "react";
+import { useAuth } from "@/contexts/auth";
 import { LegalDocumentModal } from "@/components/LegalDocumentModal";
 import { LEGAL_FOOTER, type LegalDocumentId } from "@/lib/site-legal";
 
 export function SiteFooter() {
-  const pathname = usePathname();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { user } = useAuth();
   const [openDocument, setOpenDocument] = useState<LegalDocumentId | null>(null);
 
-  useEffect(() => {
-    function loadUser() {
-      fetch("/api/auth/me")
-        .then((res) => res.json())
-        .then((data) => setIsLoggedIn(Boolean(data.user)))
-        .catch(() => setIsLoggedIn(false));
-    }
-
-    loadUser();
-    window.addEventListener("auth-changed", loadUser);
-    return () => window.removeEventListener("auth-changed", loadUser);
-  }, [pathname]);
-
-  if (!isLoggedIn) return null;
+  if (!user) return null;
 
   return (
     <>

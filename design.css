@@ -50,9 +50,9 @@
   --radius-koala-btn: 8px;
   --radius-koala-pill: 9999px;
 
-  --font-display: "Noto Serif KR", ui-serif, Georgia, serif;
-  --font-reading: "Noto Serif KR", ui-serif, Georgia, serif;
-  --font-ui: "Noto Serif KR", ui-serif, Georgia, serif;
+  --font-display: var(--font-noto-serif-kr), "Noto Serif KR", ui-serif, Georgia, serif;
+  --font-reading: var(--font-noto-serif-kr), "Noto Serif KR", ui-serif, Georgia, serif;
+  --font-ui: var(--font-noto-serif-kr), "Noto Serif KR", ui-serif, Georgia, serif;
 }
 
 @media (prefers-color-scheme: dark) {

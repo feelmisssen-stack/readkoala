@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { BookOpen } from "lucide-react";
+import { useAuth } from "@/contexts/auth";
 import { LoginForm } from "@/components/LoginForm";
 import { iconLg } from "@/lib/icon-styles";
 import type { CarouselFeedItem, CarouselMoment } from "@/lib/types";
@@ -221,7 +222,7 @@ function FeedBookTile({
 
 export function FriendFeedMosaic() {
   const router = useRouter();
-  const [user, setUser] = useState<{ id: string } | null | undefined>(undefined);
+  const { user, isLoading: authLoading, refresh } = useAuth();
   const [items, setItems] = useState<CarouselFeedItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -246,48 +247,21 @@ export function FriendFeedMosaic() {
   }, []);
 
   useEffect(() => {
-    function loadUser() {
-      fetch("/api/auth/me")
-        .then((r) => r.json())
-        .then((d) => {
-          const nextUser = d.user || null;
-          setUser(nextUser);
-          if (!nextUser) {
-            setItems([]);
-            setLoading(false);
-          }
-        })
-        .catch(() => {
-          setUser(null);
-          setItems([]);
-          setLoading(false);
-        });
-    }
-
-    loadUser();
-    window.addEventListener("auth-changed", loadUser);
-    return () => window.removeEventListener("auth-changed", loadUser);
-  }, []);
-
-  useEffect(() => {
+    if (authLoading) return;
     if (!user) {
+      setItems([]);
       setLoading(false);
       return;
     }
     loadFeed();
-  }, [user, loadFeed]);
+  }, [user, authLoading, loadFeed]);
 
-  const handleLoginSuccess = useCallback(() => {
-    fetch("/api/auth/me")
-      .then((r) => r.json())
-      .then((d) => {
-        setUser(d.user || null);
-        window.dispatchEvent(new Event("auth-changed"));
-        router.refresh();
-      });
-  }, [router]);
+  const handleLoginSuccess = useCallback(async () => {
+    await refresh();
+    router.refresh();
+  }, [refresh, router]);
 
-  if (user === undefined) {
+  if (authLoading) {
     return (
       <div className="flex h-40 items-center justify-center">
         <p className="text-sm text-koala-muted">불러오는 중...</p>

@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
 import { Library, LogOut, User } from "lucide-react";
+import { useAuth } from "@/contexts/auth";
 import { iconSm } from "@/lib/icon-styles";
 import { ReadOnlyBanner } from "@/components/ReadOnlyBanner";
 
@@ -22,33 +22,7 @@ function navLinkClass(active: boolean) {
 
 export function NavBar() {
   const pathname = usePathname();
-  const [user, setUser] = useState<{
-    username: string;
-    displayName?: string;
-    stageLevel?: number;
-    readOnly?: boolean;
-  } | null>(null);
-  const [isGoogleAdmin, setIsGoogleAdmin] = useState(false);
-
-  useEffect(() => {
-    function loadUser() {
-      fetch("/api/auth/me")
-        .then((r) => r.json())
-        .then((d) => setUser(d.user || null))
-        .catch(() => setUser(null));
-    }
-
-    loadUser();
-    window.addEventListener("auth-changed", loadUser);
-    return () => window.removeEventListener("auth-changed", loadUser);
-  }, [pathname]);
-
-  useEffect(() => {
-    fetch("/api/admin/me")
-      .then((r) => r.json())
-      .then((d) => setIsGoogleAdmin(!!d.admin))
-      .catch(() => setIsGoogleAdmin(false));
-  }, [pathname]);
+  const { user, isGoogleAdmin } = useAuth();
 
   if (pathname === "/admin") return null;
 
