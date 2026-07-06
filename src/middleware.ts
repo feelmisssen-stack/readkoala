@@ -5,9 +5,12 @@ import {
   READ_ONLY_MESSAGE,
 } from "@/lib/read-only-access";
 import type { SessionData } from "@/lib/session";
-import { sessionOptions } from "@/lib/session";
+import { sessionOptions } from "@/lib/session-options";
 
 const PUBLIC_PATHS = new Set(["/", "/login", "/admin"]);
+
+/** Google 관리자 OAuth·API — 라우트에서 googleAdminEmail로 검증 */
+const ADMIN_API_PREFIX = "/api/admin/";
 
 const WRITE_METHODS = new Set(["POST", "PATCH", "PUT", "DELETE"]);
 
@@ -36,6 +39,10 @@ export async function middleware(request: NextRequest) {
   }
 
   if (PUBLIC_PATHS.has(pathname)) {
+    return response;
+  }
+
+  if (pathname.startsWith(ADMIN_API_PREFIX)) {
     return response;
   }
 

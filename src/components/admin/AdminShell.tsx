@@ -11,7 +11,7 @@ const TABS: { id: AdminTab; label: string }[] = [
 ];
 
 interface AdminShellProps {
-  admin: { email: string; name?: string };
+  admin: { email: string; name?: string; username?: string };
   activeTab: AdminTab;
   onTabChange: (tab: AdminTab) => void;
   onLogout: () => void;
@@ -31,7 +31,7 @@ export function AdminShell({
         <div>
           <h1 className="text-2xl font-display text-koala-heading">도란서재 관리자</h1>
           <p className="mt-1 text-sm text-koala-muted">
-            {admin.name || admin.email} ({admin.email})
+            {admin.username || admin.name || admin.email} ({admin.email})
           </p>
         </div>
         <div className="flex gap-2">

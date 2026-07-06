@@ -1,5 +1,6 @@
 import crypto from "crypto";
 import { readDb } from "@/lib/db";
+import { GOOGLE_ADMIN_USERNAME } from "@/lib/admin-google-account";
 import { isAllowedAdminEmail } from "@/lib/google-admin";
 import { isFirebaseAuthEnabled } from "@/lib/firebase/config";
 import { getAdminAuth, getAdminFirestore } from "@/lib/firebase/admin";
@@ -13,8 +14,8 @@ import {
   type FirestoreUserProfile,
 } from "@/lib/users/firestore-user";
 
-function deriveUsernameFromGoogleEmail(email: string): string {
-  return email.split("@")[0]?.trim().toLowerCase() ?? "admin";
+function deriveUsernameFromGoogleEmail(_email: string): string {
+  return GOOGLE_ADMIN_USERNAME;
 }
 
 export async function resolveAdminAppProfile(googleEmail: string) {
@@ -46,6 +47,9 @@ async function linkProfileToGoogleAdmin(
   }
   if (!profile.isAdmin) {
     updates.isAdmin = true;
+  }
+  if (profile.username !== GOOGLE_ADMIN_USERNAME) {
+    updates.username = GOOGLE_ADMIN_USERNAME;
   }
 
   if (Object.keys(updates).length === 0) {
@@ -94,7 +98,7 @@ async function createGoogleAdminAppProfile(
   }
 
   const profile: FirestoreUserProfile = {
-    username: legacyUser?.username ?? username,
+    username: GOOGLE_ADMIN_USERNAME,
     ...(legacyUser?.nickname || googleName?.trim()
       ? { nickname: legacyUser?.nickname ?? googleName?.trim() }
       : {}),
@@ -141,7 +145,7 @@ export async function applyGoogleAdminAppSession(
   const profile = await ensureGoogleAdminAppProfile(googleEmail, googleName);
   session.userId = resolveEffectiveUserId(profile, profile.id);
   session.firebaseUid = profile.id;
-  session.username = profile.username;
+  session.username = GOOGLE_ADMIN_USERNAME;
   session.isAdmin = true;
   const { applyReadOnlyToSession } = await import("@/lib/read-only-access");
   applyReadOnlyToSession(session, profile);

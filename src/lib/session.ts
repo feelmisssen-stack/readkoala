@@ -1,5 +1,10 @@
-import { getIronSession, SessionOptions } from "iron-session";
+import { getIronSession } from "iron-session";
 import { cookies } from "next/headers";
+import type { NextResponse } from "next/server";
+import { sessionOptions } from "@/lib/session-options";
+
+export type { SessionOptions } from "iron-session";
+export { sessionOptions } from "@/lib/session-options";
 
 export interface SessionData {
   userId?: string;
@@ -14,19 +19,13 @@ export interface SessionData {
   aiHelperEthicsAckedAt?: string;
 }
 
-export const sessionOptions: SessionOptions = {
-  password: process.env.SESSION_SECRET || "readkoala-dev-secret-key-32chars!!",
-  cookieName: "readkoala_session",
-  cookieOptions: {
-    secure: process.env.NODE_ENV === "production",
-    httpOnly: true,
-    sameSite: "lax",
-    maxAge: 60 * 60 * 24 * 30,
-  },
-};
-
 export async function getSession() {
   return getIronSession<SessionData>(await cookies(), sessionOptions);
+}
+
+/** OAuth 리다이렉트 등 응답 객체에 세션 쿠키를 직접 싣을 때 사용 */
+export async function getSessionForResponse(request: Request, response: NextResponse) {
+  return getIronSession<SessionData>(request, response, sessionOptions);
 }
 
 export async function requireAuth() {

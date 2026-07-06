@@ -7,14 +7,23 @@ export async function GET() {
   const session = await getSession();
 
   if (session.googleAdminEmail && !session.userId) {
-    const { applyGoogleAdminAppSession } = await import("@/lib/users/admin-app-bridge");
-    const linked = await applyGoogleAdminAppSession(
-      session,
-      session.googleAdminEmail,
-      session.googleAdminName
-    );
-    if (linked) {
-      await session.save();
+    try {
+      const { applyGoogleAdminAppSession } = await import("@/lib/users/admin-app-bridge");
+      const linked = await Promise.race([
+        applyGoogleAdminAppSession(
+          session,
+          session.googleAdminEmail,
+          session.googleAdminName
+        ),
+        new Promise<null>((resolve) => {
+          setTimeout(() => resolve(null), 8000);
+        }),
+      ]);
+      if (linked) {
+        await session.save();
+      }
+    } catch {
+      // 관리자 Google 세션은 /api/admin/me 에서 별도 확인
     }
   }
 
