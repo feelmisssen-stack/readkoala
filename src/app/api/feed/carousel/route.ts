@@ -1,19 +1,30 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { buildCarouselFeed, buildPersonalMoments } from "@/lib/feed";
-import { loadFeedDatabase } from "@/lib/repositories/feed-data";
+import {
+  CAROUSEL_FEED_LIMIT,
+  loadCarouselFeedDatabase,
+  loadPersonalCarouselDatabase,
+} from "@/lib/repositories/feed-data";
 import type { Database } from "@/lib/types";
 
-export async function GET() {
-  const db = (await loadFeedDatabase()) as Database;
-  const session = await getSession();
-  const excludeUserId = session.userId || undefined;
+export const runtime = "nodejs";
 
-  let items = buildCarouselFeed(db, excludeUserId);
-  if (items.length === 0 && excludeUserId) {
+export async function GET() {
+  const session = await getSession();
+  const userId = session.userId || undefined;
+
+  const db = (await loadCarouselFeedDatabase(userId)) as Database;
+
+  let items = buildCarouselFeed(db, userId);
+  if (items.length === 0 && userId) {
     items = buildCarouselFeed(db);
   }
-  const personalMoments = session.userId ? buildPersonalMoments(db, session.userId) : [];
+  items = items.slice(0, CAROUSEL_FEED_LIMIT);
+
+  const personalMoments = userId
+    ? buildPersonalMoments((await loadPersonalCarouselDatabase(userId)) as Database, userId)
+    : [];
 
   return NextResponse.json({ items, personalMoments });
 }

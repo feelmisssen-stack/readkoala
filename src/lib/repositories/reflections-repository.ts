@@ -31,6 +31,16 @@ export async function listAllReflections(): Promise<Reflection[]> {
   return snapshot.docs.map((doc) => ({ id: doc.id, ...(doc.data() as Omit<Reflection, "id">) }));
 }
 
+export async function listRecentReflections(limit: number): Promise<Reflection[]> {
+  const snapshot = await getAdminFirestore()
+    .collection(COLLECTION)
+    .orderBy("updatedAt", "desc")
+    .limit(limit)
+    .get();
+
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...(doc.data() as Omit<Reflection, "id">) }));
+}
+
 export async function getReflectionById(reflectionId: string): Promise<Reflection | null> {
   const doc = await getAdminFirestore().collection(COLLECTION).doc(reflectionId).get();
   if (!doc.exists) return null;

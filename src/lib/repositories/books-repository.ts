@@ -27,6 +27,36 @@ export async function listAllBooks(): Promise<Book[]> {
   return snapshot.docs.map((doc) => ({ id: doc.id, ...(doc.data() as Omit<Book, "id">) }));
 }
 
+export async function listRecentBooks(limit: number): Promise<Book[]> {
+  const snapshot = await getAdminFirestore()
+    .collection(COLLECTION)
+    .orderBy("updatedAt", "desc")
+    .limit(limit)
+    .get();
+
+  return snapshot.docs.map((doc) => ({ id: doc.id, ...(doc.data() as Omit<Book, "id">) }));
+}
+
+export async function getBooksByIds(bookIds: string[]): Promise<Book[]> {
+  const unique = [...new Set(bookIds.filter(Boolean))];
+  if (unique.length === 0) return [];
+
+  const db = getAdminFirestore();
+  const books: Book[] = [];
+
+  for (let i = 0; i < unique.length; i += 10) {
+    const chunk = unique.slice(i, i + 10);
+    const refs = chunk.map((id) => db.collection(COLLECTION).doc(id));
+    const docs = await db.getAll(...refs);
+    for (const doc of docs) {
+      if (!doc.exists) continue;
+      books.push({ id: doc.id, ...(doc.data() as Omit<Book, "id">) });
+    }
+  }
+
+  return sortByUpdatedAt(books);
+}
+
 export async function getBookById(bookId: string): Promise<Book | null> {
   const doc = await getAdminFirestore().collection(COLLECTION).doc(bookId).get();
   if (!doc.exists) return null;
