@@ -8,11 +8,18 @@ export async function requireGoogleAdmin() {
   return session;
 }
 
-export async function getGoogleAdmin() {
-  const session = await getSession();
+export function getGoogleAdminFromSession(session: {
+  googleAdminEmail?: string;
+  googleAdminName?: string;
+}) {
   if (!session.googleAdminEmail) return null;
   return {
     email: session.googleAdminEmail,
     name: session.googleAdminName,
   };
+}
+
+export async function getGoogleAdmin() {
+  const session = await getSession();
+  return getGoogleAdminFromSession(session);
 }

@@ -151,3 +151,29 @@ export async function applyGoogleAdminAppSession(
   applyReadOnlyToSession(session, profile);
   return profile;
 }
+
+type PersistableSession = SessionData & { save: () => Promise<void> };
+
+/** Google 관리자 OAuth 후 앱 userId 세션을 연결·저장 (관리자·메인 앱 공통) */
+export async function ensureGoogleAdminLinkedInSession(session: PersistableSession): Promise<boolean> {
+  if (!session.googleAdminEmail || session.userId) {
+    return Boolean(session.userId);
+  }
+  if (!isFirebaseAuthEnabled()) {
+    return false;
+  }
+
+  try {
+    const profile = await applyGoogleAdminAppSession(
+      session,
+      session.googleAdminEmail,
+      session.googleAdminName
+    );
+    if (!profile) return false;
+    await session.save();
+    return true;
+  } catch (error) {
+    console.error("[ensureGoogleAdminLinkedInSession]", error);
+    return false;
+  }
+}
