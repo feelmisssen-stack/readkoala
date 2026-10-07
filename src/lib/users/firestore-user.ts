@@ -13,9 +13,13 @@ export interface FirestoreUserProfile {
   stats: UserStats;
   legacyDbId?: string;
   googleOnly?: boolean;
+  lastSeenAt?: string;
 }
 
 export const USERS_COLLECTION = "users";
+
+/** 최근 접속 기록을 이 간격보다 자주 쓰지 않음 (Firestore 쓰기 절약) */
+const LAST_SEEN_WRITE_INTERVAL_MS = 10 * 60 * 1000;
 
 function docToProfile(uid: string, data: Record<string, unknown>): FirestoreUserProfile & { id: string } {
   return {
@@ -29,6 +33,7 @@ function docToProfile(uid: string, data: Record<string, unknown>): FirestoreUser
     stats: data.stats as UserStats,
     legacyDbId: data.legacyDbId ? String(data.legacyDbId) : undefined,
     googleOnly: Boolean(data.googleOnly),
+    lastSeenAt: data.lastSeenAt ? String(data.lastSeenAt) : undefined,
   };
 }
 
@@ -39,6 +44,27 @@ export function resolveEffectiveUserId(profile: Pick<FirestoreUserProfile, "lega
 export async function listFirestoreUsers() {
   const snapshot = await getAdminFirestore().collection(USERS_COLLECTION).get();
   return snapshot.docs.map((doc) => docToProfile(doc.id, doc.data()));
+}
+
+/** 관리자 화면 등에서 쓰는 id(legacyDbId 또는 Firebase uid)로 회원 찾기 */
+export async function findFirestoreUserByEffectiveId(id: string) {
+  const profiles = await listFirestoreUsers();
+  return profiles.find((profile) => profile.id === id || profile.legacyDbId === id) ?? null;
+}
+
+export async function touchFirestoreUserLastSeen(
+  uid: string,
+  previousLastSeenAt: string | undefined
+) {
+  const now = Date.now();
+  if (previousLastSeenAt) {
+    const previous = new Date(previousLastSeenAt).getTime();
+    if (Number.isFinite(previous) && now - previous < LAST_SEEN_WRITE_INTERVAL_MS) return;
+  }
+  await getAdminFirestore()
+    .collection(USERS_COLLECTION)
+    .doc(uid)
+    .update({ lastSeenAt: new Date(now).toISOString() });
 }
 
 export async function getFirestoreUser(uid: string) {

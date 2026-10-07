@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { AdminUserBookshelf } from "@/components/admin/AdminUserBookshelf";
 import {
   alertContentFilterApiError,
   warnIfInvalidContent,
@@ -12,14 +14,70 @@ interface AdminUser {
   username: string;
   nickname?: string;
   isAdmin: boolean;
-  createdAt: string;
+  lastActivityAt: string | null;
   bookCount: number;
   reflectionCount: number;
-  stats: { booksRead: number; totalChars: number; level: number };
+  leafCount: number;
+  stageLevel: number;
+}
+
+type SortKey =
+  | "username"
+  | "nickname"
+  | "lastActivityAt"
+  | "bookCount"
+  | "reflectionCount"
+  | "leafCount"
+  | "stageLevel";
+type SortDirection = "asc" | "desc";
+
+const SORT_COLUMNS: { key: SortKey; label: string; defaultDirection: SortDirection }[] = [
+  { key: "username", label: "아이디", defaultDirection: "asc" },
+  { key: "nickname", label: "닉네임", defaultDirection: "asc" },
+  { key: "lastActivityAt", label: "최근 활동", defaultDirection: "desc" },
+  { key: "bookCount", label: "책", defaultDirection: "desc" },
+  { key: "reflectionCount", label: "감상", defaultDirection: "desc" },
+  { key: "leafCount", label: "잎새", defaultDirection: "desc" },
+  { key: "stageLevel", label: "Lv.", defaultDirection: "desc" },
+];
+
+function formatActivityDate(value: string | null) {
+  if (!value) return "기록 없음";
+  return new Date(value).toLocaleString("ko-KR", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
+
+/** 빈 값(닉네임 없음, 활동 기록 없음)은 정렬 방향과 상관없이 맨 아래로 */
+function compareUsers(a: AdminUser, b: AdminUser, key: SortKey, direction: SortDirection) {
+  const sign = direction === "asc" ? 1 : -1;
+
+  if (key === "bookCount" || key === "reflectionCount" || key === "leafCount" || key === "stageLevel") {
+    return (a[key] - b[key]) * sign;
+  }
+
+  const left = key === "lastActivityAt" ? a.lastActivityAt : key === "nickname" ? a.nickname?.trim() : a.username;
+  const right = key === "lastActivityAt" ? b.lastActivityAt : key === "nickname" ? b.nickname?.trim() : b.username;
+  if (!left && !right) return 0;
+  if (!left) return 1;
+  if (!right) return -1;
+
+  if (key === "lastActivityAt") {
+    return (new Date(left).getTime() - new Date(right).getTime()) * sign;
+  }
+  return left.localeCompare(right, "ko", { numeric: true }) * sign;
 }
 
 export function AdminUsersTab() {
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [sortKey, setSortKey] = useState<SortKey>("username");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+  const [shelfUser, setShelfUser] = useState<AdminUser | null>(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [newUsername, setNewUsername] = useState("");
@@ -39,6 +97,20 @@ export function AdminUsersTab() {
   useEffect(() => {
     void loadUsers();
   }, []);
+
+  const sortedUsers = useMemo(
+    () => [...users].sort((a, b) => compareUsers(a, b, sortKey, sortDirection)),
+    [users, sortKey, sortDirection]
+  );
+
+  function changeSort(key: SortKey) {
+    if (key === sortKey) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"));
+      return;
+    }
+    setSortKey(key);
+    setSortDirection(SORT_COLUMNS.find((column) => column.key === key)?.defaultDirection ?? "asc");
+  }
 
   async function createUser(e: React.FormEvent) {
     e.preventDefault();
@@ -104,6 +176,20 @@ export function AdminUsersTab() {
     }
   }
 
+  if (shelfUser) {
+    return (
+      <AdminUserBookshelf
+        userId={shelfUser.id}
+        label={
+          shelfUser.nickname?.trim()
+            ? `${shelfUser.nickname} (${shelfUser.username})`
+            : shelfUser.username
+        }
+        onBack={() => setShelfUser(null)}
+      />
+    );
+  }
+
   return (
     <div className="space-y-6">
       {error && <p className="text-sm text-red-500">{error}</p>}
@@ -154,19 +240,36 @@ export function AdminUsersTab() {
       </div>
 
       <div className="koala-card overflow-x-auto">
-        <table className="w-full min-w-[760px] text-left text-sm">
+        <table className="w-full min-w-[880px] text-left text-sm">
           <thead>
             <tr className="border-b border-koala-secondary/30 text-koala-muted">
-              <th className="p-3">아이디</th>
-              <th className="p-3">닉네임</th>
-              <th className="p-3">가입일</th>
-              <th className="p-3">책</th>
-              <th className="p-3">감상</th>
+              {SORT_COLUMNS.map((column) => {
+                const active = column.key === sortKey;
+                const SortIcon = !active ? ArrowUpDown : sortDirection === "asc" ? ArrowUp : ArrowDown;
+                return (
+                  <th
+                    key={column.key}
+                    className="p-3"
+                    aria-sort={active ? (sortDirection === "asc" ? "ascending" : "descending") : "none"}
+                  >
+                    <button
+                      type="button"
+                      onClick={() => changeSort(column.key)}
+                      className={`inline-flex items-center gap-1 hover:text-koala-heading ${
+                        active ? "text-koala-heading" : ""
+                      }`}
+                    >
+                      {column.label}
+                      <SortIcon className={`size-3.5 ${active ? "" : "opacity-40"}`} aria-hidden />
+                    </button>
+                  </th>
+                );
+              })}
               <th className="p-3">관리</th>
             </tr>
           </thead>
           <tbody>
-            {users.map((u) => (
+            {sortedUsers.map((u) => (
               <tr key={u.id} className="border-b border-koala-secondary/15">
                 <td className="p-3 font-medium">
                   {u.username}
@@ -177,11 +280,29 @@ export function AdminUsersTab() {
                   )}
                 </td>
                 <td className="p-3 text-koala-muted">{u.nickname || "—"}</td>
-                <td className="p-3 text-koala-muted">
-                  {new Date(u.createdAt).toLocaleDateString("ko-KR")}
+                <td className="p-3 whitespace-nowrap text-koala-muted">{formatActivityDate(u.lastActivityAt)}</td>
+                <td className="p-3">
+                  <button
+                    type="button"
+                    onClick={() => setShelfUser(u)}
+                    title={`${u.username}의 책장 보기`}
+                    className="text-koala-primary underline underline-offset-2 hover:opacity-80"
+                  >
+                    {u.bookCount}
+                  </button>
                 </td>
-                <td className="p-3">{u.bookCount}</td>
-                <td className="p-3">{u.reflectionCount}</td>
+                <td className="p-3">
+                  <button
+                    type="button"
+                    onClick={() => setShelfUser(u)}
+                    title={`${u.username}의 책장 보기`}
+                    className="text-koala-primary underline underline-offset-2 hover:opacity-80"
+                  >
+                    {u.reflectionCount}
+                  </button>
+                </td>
+                <td className="p-3">{u.leafCount}</td>
+                <td className="p-3 whitespace-nowrap">Lv.{u.stageLevel}</td>
                 <td className="p-3">
                   <div className="flex flex-wrap gap-2">
                     <button

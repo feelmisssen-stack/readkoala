@@ -1,11 +1,13 @@
 import { copyFile, mkdir, unlink } from "fs/promises";
 import path from "path";
-import type { ModerationReportSource } from "@/lib/types";
+import type { ModerationReport, ModerationReportSource, Reflection } from "@/lib/types";
 import { buildUserDisplayMap } from "@/lib/user-display";
 import { loadFeedDatabase } from "@/lib/repositories/feed-data";
+import { getBookById } from "@/lib/repositories/books-repository";
 import {
   dismissModerationReport as dismissModerationReportInStore,
-  listPendingModerationReports,
+  listModerationReports,
+  recordSceneImageReview,
 } from "@/lib/repositories/moderation-reports-repository";
 import { getReflectionById, saveReflection } from "@/lib/repositories/reflections-repository";
 import {
@@ -21,7 +23,10 @@ export interface AdminSafetyReviewItem {
   id: string;
   kind: "scene_image" | "text_report";
   kindLabel: string;
-  status: "pending";
+  status: "pending" | "done";
+  /** 완료 항목의 처리 결과 (승인 / 거절 / 확인) */
+  resultLabel?: string;
+  reviewedAt?: string;
   userId: string;
   username: string;
   nickname: string;
@@ -52,11 +57,20 @@ export function getSourceLabel(source: ModerationReportSource): string {
   return SOURCE_LABELS[source];
 }
 
+function textReasonLabel(reason: ModerationReport["reason"]) {
+  if (reason === "pii") return "개인정보 포함";
+  if (reason === "profanity") return "부적절한 표현";
+  return "내용 검토 필요";
+}
+
+const RESULT_LABELS: Record<Exclude<ModerationReport["status"], "pending">, string> = {
+  approved: "승인함",
+  rejected: "거절함",
+  dismissed: "확인함",
+};
+
 export async function listSafetyReviewItems(): Promise<AdminSafetyReviewItem[]> {
-  const [feedData, pendingReports] = await Promise.all([
-    loadFeedDatabase(),
-    listPendingModerationReports(),
-  ]);
+  const [feedData, reports] = await Promise.all([loadFeedDatabase(), listModerationReports()]);
   const displayMap = buildUserDisplayMap(feedData.users);
   const items: AdminSafetyReviewItem[] = [];
 
@@ -81,44 +95,89 @@ export async function listSafetyReviewItems(): Promise<AdminSafetyReviewItem[]> 
       bookTitle: book?.title,
       createdAt: reflection.updatedAt,
       imageUrl: reflection.memorableScenePendingImage,
-      reason:
-        reflection.memorableScenePendingReason === "api_unavailable"
-          ? "자동 검사를 진행하지 못했어요"
-          : reflection.memorableScenePendingDetail || "부적절한 그림",
+      reason: sceneReviewDetail(reflection),
       reflectionId: reflection.id,
     });
   }
 
-  for (const report of pendingReports) {
+  for (const report of reports) {
     const user = feedData.users.find((entry) => entry.id === report.userId);
-    items.push({
-      id: `report-${report.id}`,
-      kind: "text_report",
-      kindLabel: "부적절한 내용",
-      status: "pending",
+    const done = report.status !== "pending";
+    const common = {
+      status: done ? ("done" as const) : ("pending" as const),
+      resultLabel: report.status === "pending" ? undefined : RESULT_LABELS[report.status],
+      reviewedAt: report.reviewedAt,
       userId: report.userId,
       username: user?.username || "알 수 없음",
       nickname: displayMap.get(report.userId) || user?.username || "친구",
       bookId: report.bookId,
       bookTitle: report.bookTitle,
       createdAt: report.createdAt,
+      reportId: report.id,
+    };
+
+    if (report.kind === "scene_image") {
+      items.push({
+        ...common,
+        id: `report-${report.id}`,
+        kind: "scene_image",
+        kindLabel: "이미지 검토",
+        imageUrl: report.imageUrl,
+        reason: report.detail,
+        fieldLabel: report.fieldLabel,
+        reflectionId: report.reflectionId,
+      });
+      continue;
+    }
+
+    items.push({
+      ...common,
+      id: `report-${report.id}`,
+      kind: "text_report",
+      kindLabel: "부적절한 내용",
       textPreview: report.preview,
-      reason:
-        report.reason === "pii"
-          ? "개인정보 포함"
-          : report.reason === "profanity"
-            ? "부적절한 표현"
-            : "내용 검토 필요",
+      reason: textReasonLabel(report.reason),
       source: report.source,
       sourceLabel: getSourceLabel(report.source),
       fieldLabel: report.fieldLabel,
-      reportId: report.id,
     });
   }
 
-  return items.sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
+  const time = (item: AdminSafetyReviewItem) =>
+    new Date(item.status === "done" ? item.reviewedAt ?? item.createdAt : item.createdAt).getTime();
+
+  return items.sort((a, b) => {
+    if (a.status !== b.status) return a.status === "pending" ? -1 : 1;
+    return time(b) - time(a);
+  });
+}
+
+function sceneReviewDetail(reflection: Reflection) {
+  return reflection.memorableScenePendingReason === "api_unavailable"
+    ? "자동 검사를 진행하지 못했어요"
+    : reflection.memorableScenePendingDetail || "부적절한 그림";
+}
+
+async function logSceneReview(
+  reflection: Reflection,
+  status: "approved" | "rejected",
+  imageUrl?: string
+) {
+  try {
+    const book = await getBookById(reflection.bookId);
+    await recordSceneImageReview({
+      userId: reflection.userId,
+      reflectionId: reflection.id,
+      bookId: reflection.bookId,
+      bookTitle: book?.title,
+      submittedAt: reflection.updatedAt,
+      status,
+      imageUrl,
+      detail: sceneReviewDetail(reflection),
+    });
+  } catch (error) {
+    console.error("[admin-moderation] scene review log failed:", error);
+  }
 }
 
 async function removeFileIfExists(filepath: string) {
@@ -169,6 +228,7 @@ export async function approveMemorableScene(reflectionId: string) {
     memorableScenePendingDetail: undefined,
     updatedAt: now,
   });
+  await logSceneReview(reflection, "approved", approvedUrl);
 }
 
 export async function rejectMemorableScene(reflectionId: string) {
@@ -189,6 +249,7 @@ export async function rejectMemorableScene(reflectionId: string) {
     memorableScenePendingDetail: undefined,
     updatedAt: now,
   });
+  await logSceneReview(reflection, "rejected");
 }
 
 export async function dismissModerationReport(reportId: string) {

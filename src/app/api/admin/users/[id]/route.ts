@@ -12,17 +12,12 @@ import { deleteAiHelperSessionsForUser } from "@/lib/repositories/ai-helper-sess
 import { deleteStoryEmpathiesForUser } from "@/lib/repositories/story-empathies-repository";
 import {
   deleteFirestoreUser,
-  listFirestoreUsers,
+  findFirestoreUserByEffectiveId,
   updateFirestoreUserPassword,
 } from "@/lib/users/firestore-user";
 
 const FIREBASE_REQUIRED_MESSAGE =
   "Firebase 설정이 필요해요. .env.local의 NEXT_PUBLIC_FIREBASE_*와 FIREBASE_ADMIN_*를 확인해 주세요.";
-
-async function findFirebaseUserByEffectiveId(id: string) {
-  const profiles = await listFirestoreUsers();
-  return profiles.find((profile) => profile.id === id || profile.legacyDbId === id) ?? null;
-}
 
 export async function PATCH(
   request: Request,
@@ -45,7 +40,7 @@ export async function PATCH(
     return NextResponse.json({ error: "비밀번호는 6자 이상이어야 해요." }, { status: 400 });
   }
 
-  const profile = await findFirebaseUserByEffectiveId(id);
+  const profile = await findFirestoreUserByEffectiveId(id);
   if (!profile) {
     return NextResponse.json({ error: "회원을 찾을 수 없어요." }, { status: 404 });
   }
@@ -69,7 +64,7 @@ export async function DELETE(
   }
 
   const { id } = await params;
-  const profile = await findFirebaseUserByEffectiveId(id);
+  const profile = await findFirestoreUserByEffectiveId(id);
   if (!profile) {
     return NextResponse.json({ error: "회원을 찾을 수 없어요." }, { status: 404 });
   }

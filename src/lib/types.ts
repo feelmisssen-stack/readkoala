@@ -164,7 +164,8 @@ export interface ModerationReport {
   id: string;
   userId: string;
   source: ModerationReportSource;
-  status: "pending" | "dismissed";
+  /** dismissed: 글 신고 확인 완료, approved/rejected: 그림 승인/거절 */
+  status: "pending" | "dismissed" | "approved" | "rejected";
   reason?: "profanity" | "pii";
   preview: string;
   bookId?: string;
@@ -172,6 +173,11 @@ export interface ModerationReport {
   fieldLabel?: string;
   createdAt: string;
   reviewedAt?: string;
+  /** 그림 검토 기록에만 있음 */
+  kind?: "scene_image";
+  reflectionId?: string;
+  imageUrl?: string;
+  detail?: string;
 }
 
 export interface AiHelperMessage {

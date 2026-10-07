@@ -2,10 +2,15 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
+import { CheckCircle2 } from "lucide-react";
+
 interface SafetyItem {
   id: string;
   kind: "scene_image" | "text_report";
   kindLabel: string;
+  status: "pending" | "done";
+  resultLabel?: string;
+  reviewedAt?: string;
   userId: string;
   username: string;
   nickname: string;
@@ -72,13 +77,20 @@ export function AdminSafetyReviewTab() {
     return <p className="text-sm text-koala-muted">불러오는 중...</p>;
   }
 
+  const pendingCount = items.filter((item) => item.status === "pending").length;
+
   return (
     <div className="space-y-4">
       <div>
         <h2 className="font-display text-koala-heading">안전 검토</h2>
         <p className="mt-1 text-sm text-koala-muted">
-          부적절한 그림이나 내용이 감지되면 여기에 모여요. 승인하거나 거절할 수 있어요.
+          부적절한 그림이나 내용이 감지되면 여기에 모여요. 검토를 마친 항목도 완료 표시와 함께 남아 있어요.
         </p>
+        {items.length > 0 && (
+          <p className="mt-1 text-sm text-koala-muted">
+            검토 대기 {pendingCount}건 · 완료 {items.length - pendingCount}건
+          </p>
+        )}
       </div>
 
       {error && <p className="text-sm text-red-500">{error}</p>}
@@ -90,10 +102,21 @@ export function AdminSafetyReviewTab() {
       ) : (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {items.map((item) => (
-            <article key={item.id} className="koala-card flex h-full flex-col space-y-4 p-5">
+            <article
+              key={item.id}
+              className={`koala-card flex h-full flex-col space-y-4 p-5 ${
+                item.status === "done" ? "opacity-70" : ""
+              }`}
+            >
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
+                    {item.status === "done" ? (
+                      <span className="inline-flex items-center gap-1 rounded-pill bg-koala-primary/15 px-2.5 py-0.5 text-xs font-semibold text-koala-primary">
+                        <CheckCircle2 className="size-3.5" aria-hidden />
+                        완료
+                      </span>
+                    ) : null}
                     <span className="rounded-pill bg-koala-accent/15 px-2.5 py-0.5 text-xs font-semibold text-koala-accent">
                       {item.kindLabel}
                     </span>
@@ -119,6 +142,12 @@ export function AdminSafetyReviewTab() {
                 </div>
               </div>
 
+              {item.kind === "scene_image" && !item.imageUrl && item.status === "done" && (
+                <div className="rounded-koala bg-koala-secondary/15 p-4 text-center text-sm text-koala-muted">
+                  거절한 그림은 삭제되어 보이지 않아요.
+                </div>
+              )}
+
               {item.kind === "scene_image" && item.imageUrl && (
                 <div className="relative aspect-[4/3] w-full overflow-hidden rounded-koala bg-koala-secondary/20">
                   <Image
@@ -138,7 +167,16 @@ export function AdminSafetyReviewTab() {
               )}
 
               <div className="mt-auto flex flex-wrap gap-2">
-                {item.kind === "scene_image" ? (
+                {item.status === "done" ? (
+                  <p className="text-sm font-medium text-koala-primary">
+                    {item.resultLabel ?? "완료"}
+                    {item.reviewedAt && (
+                      <span className="ml-2 font-normal text-koala-muted">
+                        {new Date(item.reviewedAt).toLocaleString("ko-KR")}
+                      </span>
+                    )}
+                  </p>
+                ) : item.kind === "scene_image" ? (
                   <>
                     <button
                       type="button"

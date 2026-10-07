@@ -2,13 +2,39 @@ import { NextResponse } from "next/server";
 import { requireGoogleAdmin } from "@/lib/admin-auth";
 import { rejectInvalidContent, rejectInvalidNickname } from "@/lib/content-filter-api";
 import { isFirebaseAuthEnabled } from "@/lib/firebase/config";
-import { listBooksByUserId } from "@/lib/repositories/books-repository";
-import { listReflectionsByUserId } from "@/lib/repositories/reflections-repository";
+import { listAllBooks } from "@/lib/repositories/books-repository";
+import { listAllReflections } from "@/lib/repositories/reflections-repository";
+import { listAllSharedSentences } from "@/lib/repositories/shared-sentences-repository";
 import {
   createFirestoreUser,
   listFirestoreUsers,
   resolveEffectiveUserId,
 } from "@/lib/users/firestore-user";
+import { getUserWritingGrowthFromEntries } from "@/lib/writing-growth";
+
+function groupByUserId<T extends { userId: string }>(entries: T[]) {
+  const grouped = new Map<string, T[]>();
+  for (const entry of entries) {
+    const list = grouped.get(entry.userId);
+    if (list) list.push(entry);
+    else grouped.set(entry.userId, [entry]);
+  }
+  return grouped;
+}
+
+function latestDate(values: (string | undefined)[]) {
+  let latest: string | null = null;
+  let latestTime = -Infinity;
+  for (const value of values) {
+    if (!value) continue;
+    const time = new Date(value).getTime();
+    if (Number.isFinite(time) && time > latestTime) {
+      latest = value;
+      latestTime = time;
+    }
+  }
+  return latest;
+}
 
 const FIREBASE_REQUIRED_MESSAGE =
   "Firebase 설정이 필요해요. .env.local의 NEXT_PUBLIC_FIREBASE_*와 FIREBASE_ADMIN_*를 확인해 주세요.";
@@ -24,27 +50,44 @@ export async function GET() {
     return NextResponse.json({ error: FIREBASE_REQUIRED_MESSAGE }, { status: 503 });
   }
 
-  const profiles = await listFirestoreUsers();
-  const users = await Promise.all(
-    profiles.map(async (profile) => {
-      const effectiveId = resolveEffectiveUserId(profile, profile.id);
-      const [books, reflections] = await Promise.all([
-        listBooksByUserId(effectiveId),
-        listReflectionsByUserId(effectiveId),
-      ]);
-      return {
-        id: effectiveId,
-        firebaseUid: profile.id,
-        username: profile.username,
-        nickname: profile.nickname,
-        isAdmin: profile.isAdmin,
-        createdAt: profile.createdAt,
-        stats: profile.stats,
-        bookCount: books.length,
-        reflectionCount: reflections.length,
-      };
-    })
-  );
+  const [profiles, books, reflections, sharedSentences] = await Promise.all([
+    listFirestoreUsers(),
+    listAllBooks(),
+    listAllReflections(),
+    listAllSharedSentences(),
+  ]);
+
+  const booksByUser = groupByUserId(books);
+  const reflectionsByUser = groupByUserId(reflections);
+  const sentencesByUser = groupByUserId(sharedSentences);
+
+  const users = profiles.map((profile) => {
+    const effectiveId = resolveEffectiveUserId(profile, profile.id);
+    const userBooks = booksByUser.get(effectiveId) ?? [];
+    const userReflections = reflectionsByUser.get(effectiveId) ?? [];
+    const growth = getUserWritingGrowthFromEntries(
+      userReflections,
+      sentencesByUser.get(effectiveId) ?? [],
+      effectiveId
+    );
+    return {
+      id: effectiveId,
+      firebaseUid: profile.id,
+      username: profile.username,
+      nickname: profile.nickname,
+      isAdmin: profile.isAdmin,
+      createdAt: profile.createdAt,
+      lastSeenAt: profile.lastSeenAt ?? null,
+      lastActivityAt: latestDate([
+        ...userBooks.map((book) => book.createdAt),
+        ...userReflections.map((reflection) => reflection.updatedAt ?? reflection.createdAt),
+      ]),
+      bookCount: userBooks.length,
+      reflectionCount: userReflections.length,
+      leafCount: growth.leafCount,
+      stageLevel: growth.stageLevel,
+    };
+  });
 
   return NextResponse.json({ users });
 }

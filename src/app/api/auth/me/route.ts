@@ -23,12 +23,18 @@ export async function GET() {
   }
 
   const { applyReadOnlyToSession } = await import("@/lib/read-only-access");
-  const { getFirestoreUser } = await import("@/lib/users/firestore-user");
-  if (session.firebaseUid) {
-    const profile = await getFirestoreUser(session.firebaseUid);
-    if (profile) {
-      applyReadOnlyToSession(session, profile);
-      await session.save();
+  const { getFirestoreUser, touchFirestoreUserLastSeen } = await import(
+    "@/lib/users/firestore-user"
+  );
+  const firebaseUid = session.firebaseUid ?? user.firebaseUid;
+  const profile = await getFirestoreUser(firebaseUid);
+  if (profile) {
+    applyReadOnlyToSession(session, profile);
+    await session.save();
+    try {
+      await touchFirestoreUserLastSeen(firebaseUid, profile.lastSeenAt);
+    } catch (error) {
+      console.error("[auth/me] lastSeenAt update failed:", error);
     }
   }
 

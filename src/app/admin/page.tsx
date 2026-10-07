@@ -12,13 +12,17 @@ const AdminSafetyReviewTab = dynamic(
   () => import("@/components/admin/AdminSafetyReviewTab").then((m) => m.AdminSafetyReviewTab),
   { loading: () => <p className="text-sm text-koala-muted">탭 불러오는 중...</p> }
 );
+const AdminScenesTab = dynamic(
+  () => import("@/components/admin/AdminScenesTab").then((m) => m.AdminScenesTab),
+  { loading: () => <p className="text-sm text-koala-muted">탭 불러오는 중...</p> }
+);
 const AdminAiHelperTab = dynamic(
   () => import("@/components/admin/AdminAiHelperTab").then((m) => m.AdminAiHelperTab),
   { loading: () => <p className="text-sm text-koala-muted">탭 불러오는 중...</p> }
 );
 
 function parseTab(value: string | null): AdminTab {
-  if (value === "safety" || value === "ai-helper") return value;
+  if (value === "safety" || value === "scenes" || value === "ai-helper") return value;
   return "users";
 }
 
@@ -84,6 +88,7 @@ export default function AdminPage() {
     <AdminShell admin={admin} activeTab={activeTab} onTabChange={changeTab} onLogout={logout}>
       {activeTab === "users" && <AdminUsersTab />}
       {activeTab === "safety" && <AdminSafetyReviewTab />}
+      {activeTab === "scenes" && <AdminScenesTab />}
       {activeTab === "ai-helper" && <AdminAiHelperTab />}
     </AdminShell>
   );

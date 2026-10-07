@@ -37,16 +37,46 @@ export async function createModerationReport(input: ModerationReportInput) {
   await getAdminFirestore().collection(COLLECTION).doc(id).set(serializeForFirestore(payload));
 }
 
-export async function listPendingModerationReports(): Promise<ModerationReport[]> {
-  const snapshot = await getAdminFirestore()
-    .collection(COLLECTION)
-    .where("status", "==", "pending")
-    .get();
+export async function listModerationReports(): Promise<ModerationReport[]> {
+  const snapshot = await getAdminFirestore().collection(COLLECTION).get();
 
   return snapshot.docs.map((doc) => ({
     id: doc.id,
     ...(doc.data() as Omit<ModerationReport, "id">),
   }));
+}
+
+export interface SceneImageReviewInput {
+  userId: string;
+  reflectionId: string;
+  bookId?: string;
+  bookTitle?: string;
+  submittedAt: string;
+  status: "approved" | "rejected";
+  imageUrl?: string;
+  detail?: string;
+}
+
+export async function recordSceneImageReview(input: SceneImageReviewInput) {
+  const report: ModerationReport = {
+    id: uuid(),
+    kind: "scene_image",
+    userId: input.userId,
+    source: "reflection",
+    status: input.status,
+    preview: "",
+    reflectionId: input.reflectionId,
+    bookId: input.bookId,
+    bookTitle: input.bookTitle,
+    fieldLabel: "기억에 남는 장면",
+    imageUrl: input.imageUrl,
+    detail: input.detail,
+    createdAt: input.submittedAt,
+    reviewedAt: new Date().toISOString(),
+  };
+
+  const { id, ...payload } = report;
+  await getAdminFirestore().collection(COLLECTION).doc(id).set(serializeForFirestore(payload));
 }
 
 export async function dismissModerationReport(reportId: string): Promise<boolean> {

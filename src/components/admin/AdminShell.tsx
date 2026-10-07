@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 
-export type AdminTab = "users" | "safety" | "ai-helper";
+export type AdminTab = "users" | "safety" | "scenes" | "ai-helper";
 
 const TABS: { id: AdminTab; label: string }[] = [
   { id: "users", label: "회원 관리" },
   { id: "safety", label: "안전 검토" },
+  { id: "scenes", label: "그림 검토" },
   { id: "ai-helper", label: "감상문 도우미 기록" },
 ];
 
