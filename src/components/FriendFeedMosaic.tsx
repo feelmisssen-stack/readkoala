@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { BookOpen } from "lucide-react";
+import { BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/auth";
 import { LoginForm } from "@/components/LoginForm";
 import { iconLg } from "@/lib/icon-styles";
@@ -220,30 +220,104 @@ function FeedBookTile({
   );
 }
 
+/** 1 … 4 5 [6] 7 8 … 20 처럼 처음·끝·현재 주변만 보여 준다 */
+function buildPageNumbers(current: number, total: number): (number | "gap")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+
+  const pages = new Set([1, total, current - 1, current, current + 1]);
+  if (current <= 3) [2, 3, 4].forEach((p) => pages.add(p));
+  if (current >= total - 2) [total - 3, total - 2, total - 1].forEach((p) => pages.add(p));
+
+  const sorted = [...pages].filter((p) => p >= 1 && p <= total).sort((a, b) => a - b);
+  const result: (number | "gap")[] = [];
+  sorted.forEach((p, i) => {
+    if (i > 0 && p - sorted[i - 1] > 1) result.push("gap");
+    result.push(p);
+  });
+  return result;
+}
+
+function FeedPagination({
+  page,
+  totalPages,
+  disabled,
+  onChange,
+}: {
+  page: number;
+  totalPages: number;
+  disabled: boolean;
+  onChange: (page: number) => void;
+}) {
+  if (totalPages <= 1) return null;
+
+  const arrowClass =
+    "inline-flex size-9 items-center justify-center rounded-pill text-koala-muted hover:bg-koala-secondary/30 hover:text-koala-heading disabled:pointer-events-none disabled:opacity-30";
+
+  return (
+    <nav className="mt-2 flex flex-wrap items-center justify-center gap-1" aria-label="쪽 번호">
+      <button
+        type="button"
+        className={arrowClass}
+        disabled={disabled || page <= 1}
+        onClick={() => onChange(page - 1)}
+        aria-label="이전 쪽"
+      >
+        <ChevronLeft className="size-4" aria-hidden />
+      </button>
+      {buildPageNumbers(page, totalPages).map((p, i) =>
+        p === "gap" ? (
+          <span key={`gap-${i}`} className="px-1 text-sm text-koala-muted">
+            …
+          </span>
+        ) : (
+          <button
+            key={p}
+            type="button"
+            disabled={disabled}
+            onClick={() => onChange(p)}
+            aria-current={p === page ? "page" : undefined}
+            className={`inline-flex size-9 items-center justify-center rounded-pill text-sm transition ${
+              p === page
+                ? "bg-koala-primary font-semibold text-white"
+                : "text-koala-text hover:bg-koala-secondary/30"
+            }`}
+          >
+            {p}
+          </button>
+        )
+      )}
+      <button
+        type="button"
+        className={arrowClass}
+        disabled={disabled || page >= totalPages}
+        onClick={() => onChange(page + 1)}
+        aria-label="다음 쪽"
+      >
+        <ChevronRight className="size-4" aria-hidden />
+      </button>
+    </nav>
+  );
+}
+
 export function FriendFeedMosaic() {
   const router = useRouter();
   const { user, isLoading: authLoading, refresh } = useAuth();
   const [items, setItems] = useState<CarouselFeedItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const sectionRef = useRef<HTMLElement>(null);
 
-  const sortedItems = useMemo(
-    () =>
-      [...items].sort(
-        (a, b) =>
-          new Date(b.updatedAt ?? 0).getTime() - new Date(a.updatedAt ?? 0).getTime()
-      ),
-    [items]
-  );
-
-  const loadFeed = useCallback(() => {
-    setLoading(true);
-    return fetch("/api/feed/carousel")
+  const loadFeed = useCallback((nextPage: number) => {
+    return fetch(`/api/feed/carousel?page=${nextPage}`)
       .then((r) => r.json())
       .then((d) => {
         setItems(d.items || []);
+        setPage(d.page ?? nextPage);
+        setTotalPages(d.totalPages ?? 1);
       })
-      .catch(() => setItems([]))
-      .finally(() => setLoading(false));
+      .catch(() => setItems([]));
   }, []);
 
   useEffect(() => {
@@ -253,8 +327,20 @@ export function FriendFeedMosaic() {
       setLoading(false);
       return;
     }
-    loadFeed();
+    setLoading(true);
+    void loadFeed(1).finally(() => setLoading(false));
   }, [user, authLoading, loadFeed]);
+
+  const changePage = useCallback(
+    (nextPage: number) => {
+      setPageLoading(true);
+      void loadFeed(nextPage).finally(() => {
+        setPageLoading(false);
+        sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    },
+    [loadFeed]
+  );
 
   const handleLoginSuccess = useCallback(async () => {
     await refresh();
@@ -285,7 +371,7 @@ export function FriendFeedMosaic() {
     );
   }
 
-  if (sortedItems.length === 0) {
+  if (items.length === 0) {
     return (
       <div className="koala-card flex h-[320px] flex-col items-center justify-center p-8 text-center">
         <p className="text-koala-muted">아직 공유된 감상이 없어요.</p>
@@ -295,11 +381,16 @@ export function FriendFeedMosaic() {
   }
 
   return (
-    <section>
+    <section ref={sectionRef} className="scroll-mt-20">
       <div className="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2 px-3 sm:px-6">
         <div className="mx-auto max-w-6xl px-2 py-6 sm:px-4 sm:py-8">
-          <div className="grid grid-cols-3 gap-x-3 gap-y-8 sm:grid-cols-4 sm:gap-x-6 sm:gap-y-10">
-            {sortedItems.map((item, index) => (
+          <div
+            className={`grid grid-cols-3 gap-x-3 gap-y-8 transition-opacity sm:grid-cols-4 sm:gap-x-6 sm:gap-y-10 ${
+              pageLoading ? "opacity-40" : ""
+            }`}
+            aria-busy={pageLoading}
+          >
+            {items.map((item, index) => (
               <FeedBookTile
                 key={item.id}
                 item={item}
@@ -308,6 +399,12 @@ export function FriendFeedMosaic() {
               />
             ))}
           </div>
+          <FeedPagination
+            page={page}
+            totalPages={totalPages}
+            disabled={pageLoading}
+            onChange={changePage}
+          />
         </div>
       </div>
     </section>

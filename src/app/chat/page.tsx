@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { BookOpen, Plus, Users } from "lucide-react";
 import { iconSm } from "@/lib/icon-styles";
-import { warnIfInvalidContent, alertContentFilterApiError } from "@/lib/content-filter-client";
+import { alertContentFilterApiError } from "@/lib/content-filter-client";
 import type { Book } from "@/lib/types";
 
 interface ChatRoom {
@@ -47,7 +47,6 @@ export default function ChatPage() {
 
   async function createRoom() {
     if (!selectedBookId) return;
-    if (newRoomName.trim() && !warnIfInvalidContent(newRoomName).ok) return;
     const res = await fetch("/api/chat/rooms", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

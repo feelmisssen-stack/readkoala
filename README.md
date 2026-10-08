@@ -46,7 +46,7 @@
 
 학생은 읽은 책을 등록하고 **독서 진행률(독서 온도계)** 을 관리합니다.
 
-ISBN 입력, 바코드 스캔, 도서관 정보나루·Google Books·Open Library(·알라딘) 검색으로 책을 추가할 수 있습니다. 책장 상단에는 **코알라 성장 카드**(Lv, 10칸 그래프, 잎새 수, 단계 이름·설명)가 표시됩니다.
+ISBN 입력, 바코드 스캔, 카카오 책 검색(쪽수는 국립중앙도서관 ISBN 서지정보)·도서관 정보나루·Google Books·Open Library 검색으로 책을 추가할 수 있습니다. 책장 상단에는 **코알라 성장 카드**(Lv, 10칸 그래프, 잎새 수, 단계 이름·설명)가 표시됩니다.
 
 ### 3-3. 감상 기록하기
 
@@ -207,7 +207,7 @@ ISBN 입력, 바코드 스캔, 도서관 정보나루·Google Books·Open Librar
 | **백엔드** | Next.js Route Handlers, iron-session, bcrypt |
 | **인증·데이터** | Firebase Authentication, Firestore, Storage |
 | **AI** | Google Gemini (선택 — 감상 도우미·장면 검수) |
-| **외부 API** | 표준국어대사전, 도서관 정보나루, Google Books, Open Library, 알라딘(선택) |
+| **외부 API** | 표준국어대사전, 도서관 정보나루, Google Books, Open Library, 카카오 책 검색, 국립중앙도서관 ISBN 서지정보 |
 | **배포** | Vercel |
 | **소스 관리** | GitHub |
 

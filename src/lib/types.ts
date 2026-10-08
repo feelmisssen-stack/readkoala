@@ -166,7 +166,7 @@ export interface ModerationReport {
   source: ModerationReportSource;
   /** dismissed: 글 신고 확인 완료, approved/rejected: 그림 승인/거절 */
   status: "pending" | "dismissed" | "approved" | "rejected";
-  reason?: "profanity" | "pii";
+  reason?: "profanity" | "pii" | "watch";
   preview: string;
   bookId?: string;
   bookTitle?: string;

@@ -1,119 +1,104 @@
 import type { BookSearchResult } from "./types";
 
-const ALADIN_API_VERSION = "20131101";
-
-interface AladinItem {
-  title?: string;
-  author?: string;
-  publisher?: string;
-  cover?: string;
-  isbn13?: string;
-  isbn?: string;
-  itemPage?: number;
-  subInfo?: { itemPage?: number };
-}
-
 function parsePageCount(value: unknown): number | undefined {
   const n = typeof value === "number" ? value : parseInt(String(value), 10);
   return n > 0 ? n : undefined;
 }
 
-function getAladinPageCount(item: AladinItem): number | undefined {
-  return parsePageCount(item.subInfo?.itemPage ?? item.itemPage);
+interface KakaoBookDocument {
+  title?: string;
+  authors?: string[];
+  publisher?: string;
+  /** "10자리ISBN 13자리ISBN" 처럼 공백으로 구분되며 한쪽이 빈 경우도 있다 */
+  isbn?: string;
+  thumbnail?: string;
 }
 
-interface AladinResponse {
-  item?: AladinItem | AladinItem[];
+function getKakaoRestKey(): string | undefined {
+  return process.env.KAKAO_REST_API_KEY?.trim() || undefined;
 }
 
-function getAladinTtbKey(): string | undefined {
-  return process.env.ALADIN_TTB_KEY?.trim();
+function pickIsbn(raw?: string): string | undefined {
+  const parts = (raw || "").split(/\s+/).filter(Boolean);
+  return parts.find((part) => part.length === 13) || parts[0];
 }
 
-function parseAladinJson(text: string): AladinResponse {
-  const trimmed = text.trim();
-  if (trimmed.startsWith("{")) {
-    return JSON.parse(trimmed) as AladinResponse;
+/** 카카오 썸네일(120x174)은 작아서, 주소 안에 담긴 원본 표지 주소를 꺼내 쓴다 */
+function kakaoCoverUrl(thumbnail?: string): string | undefined {
+  if (!thumbnail) return undefined;
+  try {
+    const fname = new URL(thumbnail).searchParams.get("fname");
+    if (fname) return fname.replace(/^http:/, "https:");
+  } catch {
+    /* 썸네일 그대로 사용 */
   }
-  const match = trimmed.match(/^[^(]+\(([\s\S]*)\);?\s*$/);
-  if (match) {
-    return JSON.parse(match[1]) as AladinResponse;
-  }
-  return JSON.parse(trimmed) as AladinResponse;
+  return thumbnail;
 }
 
-function mapAladinItem(item: AladinItem): BookSearchResult | null {
-  if (!item.title) return null;
-  const isbn = (item.isbn13 || item.isbn || "").replace(/[-\s]/g, "") || undefined;
+function mapKakaoDocument(doc: KakaoBookDocument): BookSearchResult | null {
+  if (!doc.title) return null;
   return {
-    isbn,
-    title: item.title,
-    author: item.author,
-    publisher: item.publisher,
-    coverUrl: item.cover,
-    totalPages: getAladinPageCount(item),
+    isbn: pickIsbn(doc.isbn),
+    title: doc.title,
+    author: doc.authors?.filter(Boolean).join(", ") || undefined,
+    publisher: doc.publisher || undefined,
+    coverUrl: kakaoCoverUrl(doc.thumbnail),
   };
 }
 
-function getAladinItems(data: AladinResponse): AladinItem[] {
-  if (!data.item) return [];
-  return Array.isArray(data.item) ? data.item : [data.item];
-}
-
-async function searchAladinByIsbn(clean: string): Promise<BookSearchResult | null> {
-  const ttbKey = getAladinTtbKey();
-  if (!ttbKey) return null;
+async function searchKakao(query: string, target?: "isbn"): Promise<BookSearchResult[]> {
+  const key = getKakaoRestKey();
+  if (!key) return [];
 
   try {
-    const params = new URLSearchParams({
-      ttbkey: ttbKey,
-      itemIdType: clean.length === 13 ? "ISBN13" : "ISBN",
-      ItemId: clean,
-      output: "js",
-      Version: ALADIN_API_VERSION,
-      Cover: "Big",
+    const params = new URLSearchParams({ query, size: "10" });
+    if (target) params.set("target", target);
+    const res = await fetch(`https://dapi.kakao.com/v3/search/book?${params}`, {
+      headers: { Authorization: `KakaoAK ${key}` },
+      next: { revalidate: 3600 },
     });
-    const res = await fetch(
-      `http://www.aladin.co.kr/ttb/api/ItemLookUp.aspx?${params}`,
-      { next: { revalidate: 3600 } }
-    );
-    if (!res.ok) return null;
-
-    const item = getAladinItems(parseAladinJson(await res.text()))[0];
-    return item ? mapAladinItem(item) : null;
-  } catch {
-    return null;
-  }
-}
-
-async function searchAladinByQuery(query: string): Promise<BookSearchResult[]> {
-  const ttbKey = getAladinTtbKey();
-  if (!ttbKey) return [];
-
-  try {
-    const params = new URLSearchParams({
-      ttbkey: ttbKey,
-      Query: query,
-      QueryType: "Keyword",
-      MaxResults: "10",
-      start: "1",
-      SearchTarget: "Book",
-      output: "js",
-      Version: ALADIN_API_VERSION,
-      Cover: "Big",
-    });
-    const res = await fetch(
-      `http://www.aladin.co.kr/ttb/api/ItemSearch.aspx?${params}`,
-      { next: { revalidate: 3600 } }
-    );
     if (!res.ok) return [];
 
-    return getAladinItems(parseAladinJson(await res.text()))
-      .map(mapAladinItem)
+    const data = (await res.json()) as { documents?: KakaoBookDocument[] };
+    return (data.documents || [])
+      .map(mapKakaoDocument)
       .filter((book): book is BookSearchResult => book !== null);
   } catch {
     return [];
   }
+}
+
+/** 카카오는 쪽수를 주지 않아서 국립중앙도서관 ISBN 서지정보로 채운다 */
+async function lookupNlPageCount(isbn: string): Promise<number | undefined> {
+  const certKey = process.env.NL_SEOJI_API_KEY?.trim();
+  if (!certKey) return undefined;
+
+  try {
+    const params = new URLSearchParams({
+      cert_key: certKey,
+      result_style: "json",
+      page_no: "1",
+      page_size: "1",
+      isbn,
+    });
+    const res = await fetch(`https://www.nl.go.kr/seoji/SearchApi.do?${params}`, {
+      next: { revalidate: 86400 },
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!res.ok) return undefined;
+
+    const data = (await res.json()) as { docs?: Array<{ PAGE?: string }> };
+    const page = data.docs?.[0]?.PAGE?.match(/\d+/)?.[0];
+    return parsePageCount(page);
+  } catch {
+    return undefined;
+  }
+}
+
+async function withPageCount(book: BookSearchResult): Promise<BookSearchResult> {
+  if (book.totalPages || !book.isbn) return book;
+  const totalPages = await lookupNlPageCount(book.isbn);
+  return totalPages ? { ...book, totalPages } : book;
 }
 
 async function searchData4LibraryByIsbn(clean: string): Promise<BookSearchResult | null> {
@@ -207,8 +192,8 @@ async function searchData4LibraryByQuery(query: string): Promise<BookSearchResul
 export async function searchBooksByIsbn(isbn: string): Promise<BookSearchResult | null> {
   const clean = isbn.replace(/[-\s]/g, "");
 
-  const aladin = await searchAladinByIsbn(clean);
-  if (aladin) return aladin;
+  const [kakao] = await searchKakao(clean, "isbn");
+  if (kakao) return withPageCount({ ...kakao, isbn: kakao.isbn || clean });
 
   const d4l = await searchData4LibraryByIsbn(clean);
   if (d4l) return d4l;
@@ -260,8 +245,8 @@ export async function searchBooksByIsbn(isbn: string): Promise<BookSearchResult 
 }
 
 export async function searchBooksByQuery(query: string): Promise<BookSearchResult[]> {
-  const aladinResults = await searchAladinByQuery(query);
-  if (aladinResults.length > 0) return aladinResults;
+  const kakaoResults = await searchKakao(query);
+  if (kakaoResults.length > 0) return Promise.all(kakaoResults.map(withPageCount));
 
   const d4lResults = await searchData4LibraryByQuery(query);
   if (d4lResults.length > 0) return d4lResults;

@@ -13,6 +13,8 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "**.googleusercontent.com" },
       { protocol: "http", hostname: "data4library.kr" },
       { protocol: "https", hostname: "data4library.kr" },
+      { protocol: "https", hostname: "search1.kakaocdn.net" },
+      { protocol: "https", hostname: "t1.daumcdn.net" },
       { protocol: "https", hostname: "image.aladin.co.kr" },
       { protocol: "http", hostname: "image.aladin.co.kr" },
       { protocol: "https", hostname: "firebasestorage.googleapis.com" },

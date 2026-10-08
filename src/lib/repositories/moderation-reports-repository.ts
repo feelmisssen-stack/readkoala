@@ -16,9 +16,52 @@ export interface ModerationReportInput {
   fieldLabel?: string;
 }
 
+function isSameDraft(a: string, b: string) {
+  return a.startsWith(b) || b.startsWith(a);
+}
+
+/**
+ * 감상문은 쓰는 도중에도 자동 저장되므로, 같은 학생·같은 곳의 검토 대기 항목이 있고
+ * 내용이 이어 쓴 글이면 새로 만들지 않고 최신 내용으로 바꾼다.
+ * 확인 필요(watch) 항목은 저장된 글이 계속 다시 저장되므로, 선생님이 이미 확인한 글이면 다시 올리지 않는다.
+ */
+async function updatePendingDraftReport(input: ModerationReportInput, preview: string) {
+  const isWatch = input.reason === "watch";
+  let query = getAdminFirestore().collection(COLLECTION).where("userId", "==", input.userId);
+  if (!isWatch) query = query.where("status", "==", "pending");
+  const snapshot = await query.get();
+
+  const sameDraft = snapshot.docs.find((doc) => {
+    const data = doc.data() as Omit<ModerationReport, "id">;
+    return (
+      data.kind !== "scene_image" &&
+      (data.reason === "watch") === isWatch &&
+      data.source === input.source &&
+      (data.bookId ?? null) === (input.bookId ?? null) &&
+      (data.bookTitle ?? null) === (input.bookTitle ?? null) &&
+      isSameDraft(String(data.preview ?? ""), preview)
+    );
+  });
+  if (!sameDraft) return false;
+  if (sameDraft.data().status !== "pending") return true;
+
+  if (sameDraft.data().preview !== preview) {
+    await sameDraft.ref.update(
+      serializeForFirestore({
+        preview,
+        reason: input.reason,
+        createdAt: new Date().toISOString(),
+      })
+    );
+  }
+  return true;
+}
+
 export async function createModerationReport(input: ModerationReportInput) {
   const preview = input.preview.trim().slice(0, 500);
   if (!preview) return;
+
+  if (await updatePendingDraftReport(input, preview)) return;
 
   const report: ModerationReport = {
     id: uuid(),

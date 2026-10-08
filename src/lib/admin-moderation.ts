@@ -60,6 +60,7 @@ export function getSourceLabel(source: ModerationReportSource): string {
 function textReasonLabel(reason: ModerationReport["reason"]) {
   if (reason === "pii") return "개인정보 포함";
   if (reason === "profanity") return "부적절한 표현";
+  if (reason === "watch") return "확인이 필요한 표현 (저장은 됨)";
   return "내용 검토 필요";
 }
 
@@ -134,7 +135,12 @@ export async function listSafetyReviewItems(): Promise<AdminSafetyReviewItem[]> 
       ...common,
       id: `report-${report.id}`,
       kind: "text_report",
-      kindLabel: "부적절한 내용",
+      kindLabel:
+        report.reason === "pii"
+          ? "개인정보 의심"
+          : report.reason === "watch"
+            ? "확인 필요"
+            : "부적절한 내용",
       textPreview: report.preview,
       reason: textReasonLabel(report.reason),
       source: report.source,

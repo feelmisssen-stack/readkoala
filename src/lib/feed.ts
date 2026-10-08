@@ -167,11 +167,16 @@ function buildMomentsFromReflection(reflection: Reflection, bookTitle?: string):
   return moments;
 }
 
-export function buildCarouselFeed(db: Database, excludeUserId?: string): CarouselFeedItem[] {
+/** 이름(username)은 비워 두고 userId를 함께 담는다. 이름은 화면에 보낼 쪽만 따로 채운다 */
+export type CarouselFeedEntry = Omit<CarouselFeedItem, "username"> & { userId: string };
+
+export function buildCarouselFeed(
+  db: Pick<Database, "books" | "reflections">,
+  excludeUserId?: string
+): CarouselFeedEntry[] {
   const bookMap = new Map(db.books.map((b) => [b.id, b]));
-  const userMap = buildUserDisplayMap(db.users);
   const reflectedBookIds = new Set<string>();
-  const items: CarouselFeedItem[] = [];
+  const items: CarouselFeedEntry[] = [];
 
   const sortedReflections = [...db.reflections].sort(
     (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
@@ -188,7 +193,7 @@ export function buildCarouselFeed(db: Database, excludeUserId?: string): Carouse
     items.push({
       id: reflection.id,
       bookId: reflection.bookId,
-      username: userMap.get(reflection.userId) || "친구",
+      userId: reflection.userId,
       bookTitle: book?.title || "책",
       bookAuthor: book?.author,
       coverUrl: book?.coverUrl,
@@ -208,7 +213,7 @@ export function buildCarouselFeed(db: Database, excludeUserId?: string): Carouse
     items.push({
       id: `book-${book.id}`,
       bookId: book.id,
-      username: userMap.get(book.userId) || "친구",
+      userId: book.userId,
       bookTitle: book.title,
       bookAuthor: book.author,
       coverUrl: book.coverUrl,
@@ -220,20 +225,4 @@ export function buildCarouselFeed(db: Database, excludeUserId?: string): Carouse
   return items.sort(
     (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   );
-}
-
-export function buildPersonalMoments(db: Database, userId: string): CarouselMoment[] {
-  const bookMap = new Map(db.books.map((b) => [b.id, b]));
-  const reflections = db.reflections
-    .filter((r) => r.userId === userId)
-    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-
-  const moments: CarouselMoment[] = [];
-  for (const reflection of reflections) {
-    const bookTitle = bookMap.get(reflection.bookId)?.title;
-    for (const moment of buildMomentsFromReflection(reflection, bookTitle)) {
-      moments.push({ ...moment, bookTitle });
-    }
-  }
-  return moments;
 }

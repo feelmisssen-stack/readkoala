@@ -1,13 +1,8 @@
 import type { Database, User } from "@/lib/types";
 import { getAdminFirestore } from "@/lib/firebase/admin";
-import {
-  getBooksByIds,
-  listAllBooks,
-  listRecentBooks,
-} from "@/lib/repositories/books-repository";
+import { listAllBooks } from "@/lib/repositories/books-repository";
 import {
   listAllReflections,
-  listRecentReflections,
   listReflectionsByUserId,
 } from "@/lib/repositories/reflections-repository";
 import {
@@ -21,11 +16,15 @@ import {
   type FirestoreUserProfile,
 } from "@/lib/users/firestore-user";
 
-/** 홈 피드 모자이크에 표시할 최대 카드 수 */
-export const CAROUSEL_FEED_LIMIT = 72;
+/** 홈 피드 한 쪽에 보여 줄 책 수 */
+export const HOME_FEED_PAGE_SIZE = 12;
 
-/** exclude 필터 후에도 충분한 후보를 확보하기 위한 조회 상한 */
-const CAROUSEL_FETCH_LIMIT = CAROUSEL_FEED_LIMIT * 2;
+/** 쪽을 넘길 때마다 책·감상 전체를 다시 읽지 않도록 서버 메모리에 잠시 보관 */
+const HOME_FEED_CACHE_MS = 60 * 1000;
+let homeFeedCache: {
+  loadedAt: number;
+  data: Promise<Pick<Database, "books" | "reflections">>;
+} | null = null;
 
 function profileToUser(profile: FirestoreUserProfile & { id: string }): User {
   return {
@@ -39,7 +38,7 @@ function profileToUser(profile: FirestoreUserProfile & { id: string }): User {
   };
 }
 
-async function listUsersForIds(userIds: string[]): Promise<User[]> {
+export async function listUsersForIds(userIds: string[]): Promise<User[]> {
   const unique = [...new Set(userIds.filter(Boolean))];
   if (unique.length === 0) return [];
 
@@ -98,41 +97,19 @@ async function listUsersForIds(userIds: string[]): Promise<User[]> {
   return unique.map((id) => usersById.get(id)).filter((user): user is User => Boolean(user));
 }
 
-function collectFeedUserIds(
-  books: Database["books"],
-  reflections: Database["reflections"],
-  extraUserId?: string
-) {
-  const userIds = new Set<string>();
-  for (const book of books) userIds.add(book.userId);
-  for (const reflection of reflections) userIds.add(reflection.userId);
-  if (extraUserId) userIds.add(extraUserId);
-  return [...userIds];
-}
-
-/** 홈 캐러셀 전용 — 최근 책·감상만 조회하고 sharedSentences는 생략 */
-export async function loadCarouselFeedDatabase(extraUserId?: string): Promise<
-  Pick<Database, "books" | "reflections" | "users">
-> {
-  const [books, reflections] = await Promise.all([
-    listRecentBooks(CAROUSEL_FETCH_LIMIT),
-    listRecentReflections(CAROUSEL_FETCH_LIMIT),
-  ]);
-
-  const users = await listUsersForIds(collectFeedUserIds(books, reflections, extraUserId));
-
-  return { books, reflections, users };
-}
-
-/** 내 기록 오버레이용 — 해당 사용자 데이터만 조회 */
-export async function loadPersonalCarouselDatabase(userId: string): Promise<
-  Pick<Database, "books" | "reflections" | "users">
-> {
-  const reflections = await listReflectionsByUserId(userId);
-  const books = await getBooksByIds(reflections.map((reflection) => reflection.bookId));
-  const users = await listUsersForIds([userId]);
-
-  return { books, reflections, users };
+/** 홈 피드 전용 — 모든 책·감상 (sharedSentences·users 제외), 60초 캐시 */
+export function loadHomeFeedSource(): Promise<Pick<Database, "books" | "reflections">> {
+  const now = Date.now();
+  if (!homeFeedCache || now - homeFeedCache.loadedAt > HOME_FEED_CACHE_MS) {
+    const data = Promise.all([listAllBooks(), listAllReflections()]).then(
+      ([books, reflections]) => ({ books, reflections })
+    );
+    homeFeedCache = { loadedAt: now, data };
+    data.catch(() => {
+      if (homeFeedCache?.data === data) homeFeedCache = null;
+    });
+  }
+  return homeFeedCache.data;
 }
 
 export async function loadFeedDatabase(): Promise<

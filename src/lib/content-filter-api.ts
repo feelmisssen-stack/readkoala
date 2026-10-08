@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   collectReflectionTexts,
+  findWatchedText,
   validateContent,
   validateNickname,
   type ContentFilterResult,
@@ -10,7 +11,10 @@ import { logModerationReport, type ModerationReportInput } from "@/lib/moderatio
 
 export function contentFilterError(check: ContentFilterResult): NextResponse | null {
   if (check.ok) return null;
-  return NextResponse.json({ error: check.message }, { status: 400 });
+  return NextResponse.json(
+    { error: check.message, code: "content_filter", reason: check.reason },
+    { status: 400 }
+  );
 }
 
 function rejectWithOptionalReport(
@@ -20,7 +24,8 @@ function rejectWithOptionalReport(
   const check = validateContent(texts);
   if (!check.ok) {
     if (meta?.userId) {
-      const preview = meta.preview || texts.find((text) => text?.trim()) || "";
+      const offending = texts.find((text) => text?.trim() && !validateContent(text).ok);
+      const preview = offending || meta.preview || texts.find((text) => text?.trim()) || "";
       logModerationReport({
         userId: meta.userId,
         source: meta.source,
@@ -32,6 +37,21 @@ function rejectWithOptionalReport(
       });
     }
     return contentFilterError(check);
+  }
+
+  if (meta?.userId) {
+    const watched = findWatchedText(texts);
+    if (watched) {
+      logModerationReport({
+        userId: meta.userId,
+        source: meta.source,
+        bookId: meta.bookId,
+        bookTitle: meta.bookTitle,
+        fieldLabel: meta.fieldLabel,
+        preview: watched,
+        reason: "watch",
+      });
+    }
   }
   return null;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, use } from "react";
+import { useCallback, useEffect, useRef, useState, use, type MouseEvent } from "react";
 import { useRouter } from "next/navigation";
 import { AiHelperChat } from "@/components/AiHelperChat";
 import { BackLink } from "@/components/BackLink";
@@ -28,14 +28,93 @@ import {
   type ReflectionSection,
 } from "@/lib/reflection-templates";
 import { SECTION_ICONS } from "@/lib/section-icons";
-import { collectReflectionTexts } from "@/lib/content-filter";
-import { alertContentFilterApiError, warnIfInvalidContent } from "@/lib/content-filter-client";
+import { alertContentFilterApiError } from "@/lib/content-filter-client";
+import { collectReflectionTexts, validateContent } from "@/lib/content-filter";
 import type { BeforeReadingActivity, BeforeReadingPair, Book, Reflection } from "@/lib/types";
 
 const VALID_SECTIONS = new Set<string>(SECTION_ORDER);
 const AUTO_SAVE_DELAY_MS = 800;
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
+
+type ReflectionDraftState = {
+  beforeReadingActivities: BeforeReadingActivity[];
+  beforeReadingPairs: BeforeReadingPair[];
+  duringReadingActivities: BeforeReadingActivity[];
+  duringReadingPairs: BeforeReadingPair[];
+  association: string;
+  favoriteQuote: string;
+  reviewTitle: string;
+  reviewReason: string;
+  reviewContent: string;
+  reviewImpressiveScene: string;
+  reviewThoughts: string;
+};
+
+const SECTION_FIELDS: Partial<Record<ReflectionSection, Array<keyof ReflectionDraftState>>> = {
+  before_reading: ["beforeReadingActivities", "beforeReadingPairs"],
+  during_reading: ["duringReadingActivities", "duringReadingPairs"],
+  association: ["association"],
+  quote: ["favoriteQuote"],
+  review: ["reviewTitle", "reviewReason", "reviewContent", "reviewImpressiveScene", "reviewThoughts"],
+};
+
+function checkSection(state: ReflectionDraftState, section: ReflectionSection) {
+  const fields: Record<string, unknown> = {};
+  for (const key of SECTION_FIELDS[section] ?? []) fields[key] = state[key];
+  return validateContent(collectReflectionTexts(fields));
+}
+
+function findBlockedSections(state: ReflectionDraftState): ReflectionSection[] {
+  return SECTION_ORDER.filter((section) => !checkSection(state, section).ok);
+}
+
+/** 지정한 단계의 칸만 마지막으로 저장된 내용으로 되돌린 사본 */
+function withSavedSections(
+  state: ReflectionDraftState,
+  sections: ReflectionSection[],
+  saved: ReflectionDraftState | null
+): ReflectionDraftState {
+  if (!saved || sections.length === 0) return state;
+  const next = { ...state } as Record<keyof ReflectionDraftState, unknown>;
+  for (const section of sections) {
+    for (const key of SECTION_FIELDS[section] ?? []) next[key] = saved[key];
+  }
+  return next as ReflectionDraftState;
+}
+
+type BlockedDraft = { baseUpdatedAt: string | null; state: ReflectionDraftState };
+
+function writeBlockedDraft(key: string, draft: BlockedDraft) {
+  try {
+    localStorage.setItem(key, JSON.stringify(draft));
+  } catch {
+    // 저장 공간이 없으면 임시 보관 없이 진행
+  }
+}
+
+function removeBlockedDraft(key: string) {
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // 저장 공간 접근이 막힌 브라우저
+  }
+}
+
+/** 임시 글을 보관한 뒤로 서버 기록이 바뀌지 않았을 때만 돌려준다 (다른 기기에서 고쳤으면 버린다) */
+function readBlockedDraft(key: string, serverUpdatedAt?: string): BlockedDraft | null {
+  try {
+    const draft = JSON.parse(localStorage.getItem(key) || "null") as BlockedDraft | null;
+    if (!draft?.state) return null;
+    if (draft.baseUpdatedAt !== (serverUpdatedAt ?? null)) {
+      localStorage.removeItem(key);
+      return null;
+    }
+    return draft;
+  } catch {
+    return null;
+  }
+}
 
 export default function WriteSectionPage({
   params,
@@ -63,6 +142,10 @@ export default function WriteSectionPage({
     "approved" | "pending" | undefined
   >();
   const [error, setError] = useState("");
+  /** 같은 안내 창이 자동 저장마다 반복해서 뜨지 않도록 마지막으로 띄운 문구를 기억한다 */
+  const alertedMessageRef = useRef("");
+  const savedStateRef = useRef<ReflectionDraftState | null>(null);
+  const serverUpdatedAtRef = useRef<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
   const [loaded, setLoaded] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -88,6 +171,8 @@ export default function WriteSectionPage({
     reviewImpressiveScene,
     reviewThoughts,
   });
+
+  const draftKey = `reflection-draft:${bookId}`;
 
   formStateRef.current = {
     beforeReadingActivities,
@@ -117,6 +202,20 @@ export default function WriteSectionPage({
         setNeedsAuth(!loggedIn);
       });
 
+    function applyState(s: ReflectionDraftState) {
+      setBeforeReadingActivities(s.beforeReadingActivities);
+      setBeforeReadingPairs(s.beforeReadingPairs);
+      setDuringReadingActivities(s.duringReadingActivities);
+      setDuringReadingPairs(s.duringReadingPairs);
+      setAssociation(s.association);
+      setFavoriteQuote(s.favoriteQuote);
+      setReviewTitle(s.reviewTitle);
+      setReviewReason(s.reviewReason);
+      setReviewContent(s.reviewContent);
+      setReviewImpressiveScene(s.reviewImpressiveScene);
+      setReviewThoughts(s.reviewThoughts);
+    }
+
     Promise.all([
       fetch(`/api/books/${bookId}`).then((r) => r.json()),
       fetch(`/api/reflections?bookId=${bookId}`).then((r) => r.json()),
@@ -126,50 +225,48 @@ export default function WriteSectionPage({
         if (loadedBook) setBook(loadedBook);
 
         const r0 = reflectionData.reflections?.[0] as Reflection | undefined;
-        if (!r0) {
-          const beforeActivities = loadBeforeReadingActivities();
-          const duringActivities = loadDuringReadingActivities();
-          setBeforeReadingActivities(beforeActivities);
-          setBeforeReadingPairs(syncPairsWithActivities(loadBeforeReadingPairs(), beforeActivities));
-          setDuringReadingActivities(duringActivities);
-          setDuringReadingPairs(syncPairsWithActivities(loadDuringReadingPairs(), duringActivities));
-          return;
-        }
-        const beforeActivities = loadBeforeReadingActivities(r0.beforeReadingActivities, r0.beforeReading);
+        const beforeActivities = loadBeforeReadingActivities(r0?.beforeReadingActivities, r0?.beforeReading);
         const duringActivities = loadDuringReadingActivities(
-          r0.duringReadingActivities,
-          r0.duringReading
+          r0?.duringReadingActivities,
+          r0?.duringReading
         );
-        setBeforeReadingActivities(beforeActivities);
-        setBeforeReadingPairs(
-          syncPairsWithActivities(loadBeforeReadingPairs(r0.beforeReadingPairs, r0.beforeReading), beforeActivities)
-        );
-        setDuringReadingActivities(duringActivities);
-        setDuringReadingPairs(
-          syncPairsWithActivities(
-            loadDuringReadingPairs(r0.duringReadingPairs, r0.duringReading),
+        const serverState: ReflectionDraftState = {
+          beforeReadingActivities: beforeActivities,
+          beforeReadingPairs: syncPairsWithActivities(
+            loadBeforeReadingPairs(r0?.beforeReadingPairs, r0?.beforeReading),
+            beforeActivities
+          ),
+          duringReadingActivities: duringActivities,
+          duringReadingPairs: syncPairsWithActivities(
+            loadDuringReadingPairs(r0?.duringReadingPairs, r0?.duringReading),
             duringActivities
-          )
-        );
-        setAssociation(
-          stripBookTitleFromAssociation(loadedBook?.title || "", r0.association || "")
-        );
-        setFavoriteQuote(r0.favoriteQuote || "");
-        setReviewTitle(r0.reviewTitle || "");
-        setReviewReason(r0.reviewReason || "");
-        setReviewContent(r0.reviewContent || "");
-        setReviewImpressiveScene(r0.reviewImpressiveScene || "");
-        setReviewThoughts(r0.reviewThoughts || "");
-        setMemorableSceneImage(r0.memorableSceneImage || "");
-        setMemorableSceneStatus(r0.memorableSceneStatus);
+          ),
+          association: stripBookTitleFromAssociation(loadedBook?.title || "", r0?.association || ""),
+          favoriteQuote: r0?.favoriteQuote || "",
+          reviewTitle: r0?.reviewTitle || "",
+          reviewReason: r0?.reviewReason || "",
+          reviewContent: r0?.reviewContent || "",
+          reviewImpressiveScene: r0?.reviewImpressiveScene || "",
+          reviewThoughts: r0?.reviewThoughts || "",
+        };
+        savedStateRef.current = serverState;
+        serverUpdatedAtRef.current = r0?.updatedAt ?? null;
+        setMemorableSceneImage(r0?.memorableSceneImage || "");
+        setMemorableSceneStatus(r0?.memorableSceneStatus);
+
+        // 저장이 막혀 서버에 없는 글은 이 기기에 보관된 것으로 되살린다
+        const draft = readBlockedDraft(draftKey, r0?.updatedAt);
+        applyState(draft?.state ?? serverState);
       })
       .finally(() => setLoaded(true));
-  }, [bookId, section]);
+  }, [bookId, section, draftKey]);
 
   bookTitleRef.current = book?.title || "";
 
-  const buildBody = useCallback(() => {
-    const state = formStateRef.current;
+  const currentCheck = checkSection(formStateRef.current, typedSection);
+  const blockedMessage = currentCheck.ok ? "" : currentCheck.message;
+
+  const buildBody = useCallback((state: ReflectionDraftState) => {
     return {
       bookId,
       beforeReading: pairsToLegacyBeforeReading(state.beforeReadingPairs, state.beforeReadingActivities),
@@ -195,27 +292,43 @@ export default function WriteSectionPage({
     setSaveStatus("saving");
     setError("");
 
-    const body = buildBody();
-    if (!warnIfInvalidContent(...collectReflectionTexts(body)).ok) {
-      setSaveStatus("idle");
-      return false;
+    // 지금 화면이 아닌 단계에 막힌 글이 있으면 그 칸만 마지막 저장본으로 보내서 지금 화면은 저장되게 한다.
+    // 막힌 글 자체는 이 기기에 임시 보관한다.
+    const state = formStateRef.current;
+    const blocked = findBlockedSections(state);
+    const otherBlocked = blocked.filter((s) => s !== typedSection);
+    const sendState = withSavedSections(state, otherBlocked, savedStateRef.current);
+    if (blocked.length > 0) {
+      writeBlockedDraft(draftKey, { baseUpdatedAt: serverUpdatedAtRef.current, state });
     }
 
     try {
       const res = await fetch("/api/reflections", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify(buildBody(sendState)),
       });
       const data = await res.json();
       if (!res.ok) {
-        if (alertContentFilterApiError(res, data)) {
-          setSaveStatus("idle");
+        if (data.code === "content_filter" && typeof data.error === "string") {
+          if (alertedMessageRef.current !== data.error) {
+            alertContentFilterApiError(res, data);
+          }
+          alertedMessageRef.current = data.error;
+          setSaveStatus("error");
           return false;
         }
         setError(data.error || "저장에 실패했어요.");
         setSaveStatus("error");
         return false;
+      }
+      alertedMessageRef.current = "";
+      savedStateRef.current = sendState;
+      serverUpdatedAtRef.current = (data.reflection as Reflection | undefined)?.updatedAt ?? null;
+      if (blocked.length > 0) {
+        writeBlockedDraft(draftKey, { baseUpdatedAt: serverUpdatedAtRef.current, state });
+      } else {
+        removeBlockedDraft(draftKey);
       }
       setNeedsAuth(false);
       setIsLoggedIn(true);
@@ -228,7 +341,7 @@ export default function WriteSectionPage({
       setSaveStatus("error");
       return false;
     }
-  }, [buildBody]);
+  }, [buildBody, typedSection, draftKey]);
 
   const flushSave = useCallback(async () => {
     if (saveTimerRef.current) {
@@ -315,9 +428,23 @@ export default function WriteSectionPage({
     }
   }
 
+  /** 내용 검사로 막힌 글은 이 기기에 임시 보관되므로 이동해도 된다. 그 밖의 실패는 머무른다. */
+  async function saveBeforeLeaving(): Promise<boolean> {
+    if (!isLoggedIn) return true;
+    const saved = await flushSave();
+    return saved || findBlockedSections(formStateRef.current).length > 0;
+  }
+
   async function goToSection(target: ReflectionSection) {
-    if (isLoggedIn) await flushSave();
+    if (!(await saveBeforeLeaving())) return;
     router.push(`/books/${bookId}/write/${target}`);
+  }
+
+  async function handleBackClick(event: MouseEvent<HTMLAnchorElement>) {
+    if (!isLoggedIn) return;
+    event.preventDefault();
+    if (!(await saveBeforeLeaving())) return;
+    router.push(`/books/${bookId}`);
   }
 
   if (!VALID_SECTIONS.has(section)) {
@@ -342,7 +469,9 @@ export default function WriteSectionPage({
   return (
     <div className="space-y-6 pb-24">
       <div>
-        <BackLink href={`/books/${bookId}`}>감상 기록 전체 화면으로 돌아가기</BackLink>
+        <BackLink href={`/books/${bookId}`} onClick={handleBackClick}>
+          감상 기록 전체 화면으로 돌아가기
+        </BackLink>
         <div className="mt-2 flex flex-wrap items-baseline gap-2">
           <div className="flex items-center gap-2">
             {showSectionIcon && (
@@ -466,6 +595,19 @@ export default function WriteSectionPage({
               ))}
             </>
           )}
+        </div>
+      )}
+
+      {blockedMessage && (
+        <div
+          role="alert"
+          className="rounded-koala border border-red-200 bg-red-50 p-4 text-sm text-red-600"
+        >
+          <p className="font-medium">이 내용은 아직 저장되지 않고, 이 기기에 임시로 보관돼 있어요.</p>
+          <p className="mt-1">{blockedMessage}</p>
+          <p className="mt-1 text-red-500/80">
+            다른 화면에 다녀와도 글은 그대로 남아 있어요. 고치면 자동으로 저장돼요.
+          </p>
         </div>
       )}
 

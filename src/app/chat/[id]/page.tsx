@@ -4,7 +4,7 @@ import { useEffect, useState, use, useRef } from "react";
 import { Heart, Send } from "lucide-react";
 import { BackLink } from "@/components/BackLink";
 import { CHAT_MESSAGE_LIMIT_PER_USER, CHAT_SPEAKER_LIMIT } from "@/lib/chat";
-import { warnIfInvalidContent, alertContentFilterApiError } from "@/lib/content-filter-client";
+import { alertContentFilterApiError } from "@/lib/content-filter-client";
 import { iconSm } from "@/lib/icon-styles";
 
 interface Message {
@@ -122,8 +122,6 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
       showNotice(MESSAGE_LIMIT_MESSAGE);
       return;
     }
-
-    if (!warnIfInvalidContent(text).ok) return;
 
     const optimistic: Message = {
       id: `temp-${Date.now()}`,

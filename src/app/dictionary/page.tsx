@@ -384,7 +384,6 @@ export default function DictionaryPage() {
 
   async function shareSentence() {
     if (!selectedVocabId || !newSentence.trim()) return;
-    if (!warnIfInvalidContent(newSentence).ok) return;
 
     const vocab = vocabulary.find((entry) => entry.id === selectedVocabId);
     if (!vocab) {
