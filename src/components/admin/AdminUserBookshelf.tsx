@@ -7,6 +7,7 @@ import { BookCoverPlaceholder } from "@/components/BookCoverPlaceholder";
 import { KoalaGrowthCard } from "@/components/KoalaGrowthCard";
 import { ReadingRecordLeafStamp } from "@/components/ReadingRecordLeafStamp";
 import { getWritingGrowth, type WritingGrowth } from "@/lib/writing-growth";
+import type { KoalaAvatarView } from "@/lib/koala-avatar";
 import type { AdminReflectionSection } from "@/lib/reflection-admin-view";
 import type { Book } from "@/lib/types";
 
@@ -179,6 +180,7 @@ function AdminBookReflection({ book, onBack }: { book: ShelfBook; onBack: () => 
 export function AdminUserBookshelf({ userId, label, onBack }: AdminUserBookshelfProps) {
   const [books, setBooks] = useState<ShelfBook[]>([]);
   const [growth, setGrowth] = useState<WritingGrowth>(getWritingGrowth(0));
+  const [activeKoala, setActiveKoala] = useState<KoalaAvatarView | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [openBookId, setOpenBookId] = useState<string | null>(null);
@@ -193,6 +195,7 @@ export function AdminUserBookshelf({ userId, label, onBack }: AdminUserBookshelf
         if (!res.ok) throw new Error(data.error || "책장을 불러오지 못했어요.");
         setBooks(data.books ?? []);
         setGrowth(getWritingGrowth(data.writingGrowth?.totalBytes ?? 0));
+        setActiveKoala(data.koala ?? null);
       })
       .catch((err: unknown) => {
         setError(err instanceof Error ? err.message : "책장을 불러오지 못했어요.");
@@ -229,7 +232,7 @@ export function AdminUserBookshelf({ userId, label, onBack }: AdminUserBookshelf
 
       {!loading && !error && !openBook && (
         <div className="grid min-w-0 grid-cols-1 items-stretch gap-3 md:grid-cols-2 md:gap-4">
-          <KoalaGrowthCard growth={growth} />
+          <KoalaGrowthCard growth={growth} koala={{ active: activeKoala }} />
           {books.length === 0 ? (
             <div className="koala-card flex items-center justify-center p-8 text-sm text-koala-muted">
               아직 등록한 책이 없어요.

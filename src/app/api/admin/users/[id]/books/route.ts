@@ -4,6 +4,7 @@ import { isFirebaseAuthEnabled } from "@/lib/firebase/config";
 import { getReflectionRecordLevel } from "@/lib/gamification";
 import { buildAdminReflectionSections } from "@/lib/reflection-admin-view";
 import { listBooksByUserId } from "@/lib/repositories/books-repository";
+import { getActiveKoala } from "@/lib/repositories/koala-repository";
 import { listReflectionsByUserId } from "@/lib/repositories/reflections-repository";
 import { listSharedSentencesByUserId } from "@/lib/repositories/shared-sentences-repository";
 import {
@@ -35,10 +36,11 @@ export async function GET(
   }
 
   const effectiveId = resolveEffectiveUserId(profile, profile.id);
-  const [books, reflections, sharedSentences] = await Promise.all([
+  const [books, reflections, sharedSentences, koala] = await Promise.all([
     listBooksByUserId(effectiveId),
     listReflectionsByUserId(effectiveId),
     listSharedSentencesByUserId(effectiveId),
+    getActiveKoala(effectiveId),
   ]);
 
   const reflectionByBookId = new Map(reflections.map((reflection) => [reflection.bookId, reflection]));
@@ -62,5 +64,6 @@ export async function GET(
       };
     }),
     writingGrowth: getUserWritingGrowthFromEntries(reflections, sharedSentences, effectiveId),
+    koala,
   });
 }

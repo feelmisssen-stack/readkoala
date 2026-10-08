@@ -170,11 +170,28 @@ export function getUserWritingGrowth(db: Database, userId: string): WritingGrowt
   return getWritingGrowth(getUserWritingByteTotal(db, userId));
 }
 
+/**
+ * 화면 시험용: TEST_LEAF_OVERRIDES="사용자ID:1500,다른ID:900" 이면 그 사용자의 잎새를 그 값으로 본다.
+ * .env.local(내 컴퓨터)에서만 쓰고 실제 사이트(Vercel)에는 넣지 않는다.
+ */
+function getTestLeafOverride(userId: string): number | undefined {
+  const raw = typeof process !== "undefined" ? process.env.TEST_LEAF_OVERRIDES : undefined;
+  if (!raw) return undefined;
+  for (const pair of raw.split(",")) {
+    const [id, leaves] = pair.split(":").map((part) => part.trim());
+    if (id === userId && Number(leaves) >= 0) return Number(leaves);
+  }
+  return undefined;
+}
+
 export function getUserWritingGrowthFromEntries(
   reflections: Reflection[],
   sharedSentences: Database["sharedSentences"],
   userId: string
 ): WritingGrowth {
+  const override = getTestLeafOverride(userId);
+  if (override !== undefined) return getWritingGrowth(override * BYTES_PER_LEAF);
+
   let total = 0;
 
   for (const reflection of reflections.filter((entry) => entry.userId === userId)) {

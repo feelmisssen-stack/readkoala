@@ -232,6 +232,13 @@ export interface CarouselMoment {
   bookTitle?: string;
 }
 
+export interface CarouselFeedReader {
+  id: string;
+  username: string;
+  updatedAt: string;
+  moments: CarouselMoment[];
+}
+
 export interface CarouselFeedItem {
   id: string;
   bookId: string;
@@ -241,6 +248,8 @@ export interface CarouselFeedItem {
   coverUrl?: string;
   updatedAt: string;
   moments: CarouselMoment[];
+  /** 같은 책을 읽은 친구들(최대 3명). 표지 하나에서 돌아가며 보여 준다 */
+  readers?: CarouselFeedReader[];
 }
 
 export interface BookSearchResult {

@@ -7,7 +7,7 @@ import { BookOpen, ChevronLeft, ChevronRight } from "lucide-react";
 import { useAuth } from "@/contexts/auth";
 import { LoginForm } from "@/components/LoginForm";
 import { iconLg } from "@/lib/icon-styles";
-import type { CarouselFeedItem, CarouselMoment } from "@/lib/types";
+import type { CarouselFeedItem, CarouselFeedReader, CarouselMoment } from "@/lib/types";
 
 const BOOK_WIDTH = 177;
 const BOOK_HEIGHT = Math.round(BOOK_WIDTH * 1.45);
@@ -46,14 +46,14 @@ function momentIsEligible(moment: CarouselMoment): boolean {
   return !!moment.text?.trim();
 }
 
-function pickRandomMoment(item: CarouselFeedItem): CarouselMoment | null {
+function pickRandomMoment(moments: CarouselMoment[] | undefined): CarouselMoment | null {
   const buckets = new Map<(typeof ROTATING_MOMENT_KINDS)[number], CarouselMoment[]>();
 
   for (const kind of ROTATING_MOMENT_KINDS) {
     buckets.set(kind, []);
   }
 
-  for (const moment of item.moments ?? []) {
+  for (const moment of moments ?? []) {
     if (!ROTATING_MOMENT_KINDS.includes(moment.kind as (typeof ROTATING_MOMENT_KINDS)[number])) {
       continue;
     }
@@ -164,6 +164,12 @@ function BookVisual({
   );
 }
 
+function getReaders(item: CarouselFeedItem): CarouselFeedReader[] {
+  if (item.readers?.length) return item.readers;
+  return [{ id: item.id, username: item.username, updatedAt: item.updatedAt, moments: item.moments }];
+}
+
+/** 같은 책을 읽은 친구가 여럿이면 글이 바뀔 때마다 다음 친구의 감상으로 넘어간다 */
 function FeedBookTile({
   item,
   index,
@@ -171,19 +177,27 @@ function FeedBookTile({
 }: {
   item: CarouselFeedItem;
   index: number;
-  onNavigate: () => void;
+  onNavigate: (readerId: string) => void;
 }) {
-  const [moment, setMoment] = useState<CarouselMoment | null>(() => pickRandomMoment(item));
+  const readers = useMemo(() => getReaders(item), [item]);
+  const [readerIndex, setReaderIndex] = useState(0);
+  const readerIndexRef = useRef(0);
+  const [moment, setMoment] = useState<CarouselMoment | null>(() =>
+    pickRandomMoment(readers[0]?.moments)
+  );
   const stageRef = useRef<HTMLDivElement>(null);
+  const reader = readers[readerIndex] ?? readers[0];
   const colorSeed = moment
-    ? `${item.id}-${moment.text ?? moment.imageUrl ?? ""}`
-    : item.id;
+    ? `${reader.id}-${moment.text ?? moment.imageUrl ?? ""}`
+    : reader.id;
   const textColor = useMemo(() => pickTextColor(colorSeed), [colorSeed]);
   const delay = animationDelay(index, item.id);
 
   useEffect(() => {
-    setMoment(pickRandomMoment(item));
-  }, [item]);
+    readerIndexRef.current = 0;
+    setReaderIndex(0);
+    setMoment(pickRandomMoment(readers[0]?.moments));
+  }, [readers]);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -195,25 +209,31 @@ function FeedBookTile({
     function handleIteration(event: Event) {
       const animEvent = event as AnimationEvent;
       if (animEvent.animationName !== "floatingBookFade") return;
-      setMoment(pickRandomMoment(item));
+      const next = (readerIndexRef.current + 1) % readers.length;
+      readerIndexRef.current = next;
+      setReaderIndex(next);
+      setMoment(pickRandomMoment(readers[next]?.moments));
     }
 
     cover.addEventListener("animationiteration", handleIteration);
     return () => cover.removeEventListener("animationiteration", handleIteration);
-  }, [item]);
+  }, [readers]);
+
+  const nameLabel =
+    readers.length > 1 ? `${reader.username} 외 ${readers.length - 1}명` : reader.username;
 
   return (
     <button
       type="button"
-      onClick={onNavigate}
+      onClick={() => onNavigate(reader.id)}
       className="floating-book-grid-tile flex w-full items-start justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-koala-primary/50"
       style={{ ["--book-anim-delay" as string]: `${delay}s` }}
-      aria-label={`${item.username}의 ${item.bookTitle} 감상 보기`}
+      aria-label={`${reader.username}의 ${item.bookTitle} 감상 보기`}
     >
       <div ref={stageRef} className={BOOK_TILE_CLASS}>
         <BookVisual item={item} moment={moment} textColor={textColor} />
         <span className="pointer-events-none absolute bottom-[calc(0.375rem+1em)] left-1.5 z-10 max-w-[calc(100%-12px)] truncate text-[12px] font-medium text-white [text-shadow:0_1px_3px_rgba(0,0,0,0.85),0_0_6px_rgba(0,0,0,0.45)] sm:text-[13px]">
-          {item.username}
+          {nameLabel}
         </span>
       </div>
     </button>
@@ -395,7 +415,7 @@ export function FriendFeedMosaic() {
                 key={item.id}
                 item={item}
                 index={index}
-                onNavigate={() => router.push(`/story/${item.id}`)}
+                onNavigate={(readerId) => router.push(`/story/${readerId}`)}
               />
             ))}
           </div>

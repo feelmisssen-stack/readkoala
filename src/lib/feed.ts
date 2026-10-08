@@ -168,12 +168,9 @@ function buildMomentsFromReflection(reflection: Reflection, bookTitle?: string):
 }
 
 /** 이름(username)은 비워 두고 userId를 함께 담는다. 이름은 화면에 보낼 쪽만 따로 채운다 */
-export type CarouselFeedEntry = Omit<CarouselFeedItem, "username"> & { userId: string };
+export type CarouselFeedEntry = Omit<CarouselFeedItem, "username" | "readers"> & { userId: string };
 
-export function buildCarouselFeed(
-  db: Pick<Database, "books" | "reflections">,
-  excludeUserId?: string
-): CarouselFeedEntry[] {
+export function buildCarouselFeed(db: Pick<Database, "books" | "reflections">): CarouselFeedEntry[] {
   const bookMap = new Map(db.books.map((b) => [b.id, b]));
   const reflectedBookIds = new Set<string>();
   const items: CarouselFeedEntry[] = [];
@@ -183,8 +180,6 @@ export function buildCarouselFeed(
   );
 
   for (const reflection of sortedReflections) {
-    if (excludeUserId && reflection.userId === excludeUserId) continue;
-
     const book = bookMap.get(reflection.bookId);
     const moments = buildMomentsFromReflection(reflection, book?.title);
     if (!book && moments.length === 0) continue;
@@ -207,7 +202,6 @@ export function buildCarouselFeed(
   );
 
   for (const book of sortedBooks) {
-    if (excludeUserId && book.userId === excludeUserId) continue;
     if (reflectedBookIds.has(book.id)) continue;
 
     items.push({
@@ -223,6 +217,54 @@ export function buildCarouselFeed(
   }
 
   return items.sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+  );
+}
+
+export const READERS_PER_FEED_TILE = 3;
+
+export type CarouselFeedReaderEntry = Pick<CarouselFeedEntry, "id" | "userId" | "updatedAt" | "moments">;
+export type CarouselFeedGroupEntry = CarouselFeedEntry & { readers: CarouselFeedReaderEntry[] };
+
+/** "어린 왕자 - 개정판", "어린 왕자(양장)"처럼 부제·괄호만 다른 제목도 같은 책으로 본다 */
+function bookGroupKey(title: string): string {
+  return title
+    .split(" - ")[0]
+    .replace(/\([^)]*\)/g, "")
+    .replace(/[\s\p{P}\p{S}]/gu, "")
+    .toLowerCase();
+}
+
+/**
+ * 같은 책을 읽은 기록을 최근 순으로 3명씩 묶어 표지 하나로 만든다.
+ * 6명이 읽었으면 표지 2개, 2명이면 1개.
+ */
+export function groupCarouselFeed(
+  entries: CarouselFeedEntry[],
+  perTile = READERS_PER_FEED_TILE
+): CarouselFeedGroupEntry[] {
+  const byBook = new Map<string, CarouselFeedEntry[]>();
+  for (const entry of entries) {
+    const key = bookGroupKey(entry.bookTitle) || entry.bookId;
+    const list = byBook.get(key);
+    if (list) list.push(entry);
+    else byBook.set(key, [entry]);
+  }
+
+  const groups: CarouselFeedGroupEntry[] = [];
+  for (const list of byBook.values()) {
+    for (let i = 0; i < list.length; i += perTile) {
+      const chunk = list.slice(i, i + perTile);
+      const lead = chunk[0];
+      groups.push({
+        ...lead,
+        coverUrl: chunk.find((entry) => entry.coverUrl)?.coverUrl,
+        readers: chunk.map(({ id, userId, updatedAt, moments }) => ({ id, userId, updatedAt, moments })),
+      });
+    }
+  }
+
+  return groups.sort(
     (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   );
 }

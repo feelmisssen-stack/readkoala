@@ -5,7 +5,9 @@ import Link from "next/link";
 import { BookOpen, Plus } from "lucide-react";
 import { BookShelfCard } from "@/components/BookShelfCard";
 import { KoalaGrowthCard } from "@/components/KoalaGrowthCard";
+import { KoalaMakerDialog } from "@/components/KoalaMakerDialog";
 import { iconSm } from "@/lib/icon-styles";
+import type { KoalaStatus } from "@/lib/koala-avatar";
 import type { WritingGrowth } from "@/lib/writing-growth";
 import { getWritingGrowth } from "@/lib/writing-growth";
 import type { Book } from "@/lib/types";
@@ -17,6 +19,8 @@ export default function BooksPage() {
   const [writingGrowth, setWritingGrowth] = useState<WritingGrowth>(getWritingGrowth(0));
   const [loading, setLoading] = useState(true);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [koala, setKoala] = useState<KoalaStatus | null>(null);
+  const [makerOpen, setMakerOpen] = useState(false);
 
   function loadBooks() {
     return fetch("/api/books")
@@ -42,6 +46,10 @@ export default function BooksPage() {
 
   useEffect(() => {
     loadBooks().finally(() => setLoading(false));
+    fetch("/api/koala")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setKoala(d?.koala ?? null))
+      .catch(() => setKoala(null));
   }, []);
 
   const handleBookUpdate = useCallback((updated: BookOnShelf) => {
@@ -90,7 +98,11 @@ export default function BooksPage() {
       </div>
 
       <div className="grid min-w-0 grid-cols-1 items-stretch gap-3 md:grid-cols-2 md:gap-4 [@media(max-height:500px)_and_(orientation:landscape)]:grid-cols-1">
-        <KoalaGrowthCard growth={writingGrowth} />
+        <KoalaGrowthCard
+          growth={writingGrowth}
+          koala={koala ?? undefined}
+          onOpenMaker={() => setMakerOpen(true)}
+        />
 
         {books.length === 0 ? (
           <div className="koala-card flex flex-col items-center justify-center p-8 text-center">
@@ -113,6 +125,14 @@ export default function BooksPage() {
           ))
         )}
       </div>
+
+      {makerOpen && koala && (
+        <KoalaMakerDialog
+          status={koala}
+          onClose={() => setMakerOpen(false)}
+          onStatusChange={setKoala}
+        />
+      )}
     </div>
   );
 }

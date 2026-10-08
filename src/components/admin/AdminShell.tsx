@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 
-export type AdminTab = "users" | "safety" | "scenes" | "ai-helper";
+export type AdminTab = "users" | "safety" | "scenes" | "koalas" | "ai-helper";
 
 const TABS: { id: AdminTab; label: string }[] = [
   { id: "users", label: "회원 관리" },
   { id: "safety", label: "안전 검토" },
   { id: "scenes", label: "그림 검토" },
+  { id: "koalas", label: "코알라" },
   { id: "ai-helper", label: "감상문 도우미 기록" },
 ];
 
@@ -45,7 +46,7 @@ export function AdminShell({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-1 sm:grid-cols-4">
+      <div className="grid grid-cols-3 gap-1 sm:grid-cols-5">
         {TABS.map((tab) => (
           <button
             key={tab.id}
