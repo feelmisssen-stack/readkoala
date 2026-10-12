@@ -68,8 +68,12 @@ async function searchKakao(query: string, target?: "isbn"): Promise<BookSearchRe
   }
 }
 
+/** 검색 목록은 여러 권을 한꺼번에 조회해서 짧게, 책 1권 조회는 도서관 응답이 늦을 때가 있어 길게 기다린다 */
+const NL_TIMEOUT_LIST_MS = 3000;
+const NL_TIMEOUT_SINGLE_MS = 10000;
+
 /** 카카오는 쪽수를 주지 않아서 국립중앙도서관 ISBN 서지정보로 채운다 */
-async function lookupNlPageCount(isbn: string): Promise<number | undefined> {
+async function lookupNlPageCount(isbn: string, timeoutMs: number): Promise<number | undefined> {
   const certKey = process.env.NL_SEOJI_API_KEY?.trim();
   if (!certKey) return undefined;
 
@@ -83,7 +87,7 @@ async function lookupNlPageCount(isbn: string): Promise<number | undefined> {
     });
     const res = await fetch(`https://www.nl.go.kr/seoji/SearchApi.do?${params}`, {
       next: { revalidate: 86400 },
-      signal: AbortSignal.timeout(3000),
+      signal: AbortSignal.timeout(timeoutMs),
     });
     if (!res.ok) return undefined;
 
@@ -95,9 +99,12 @@ async function lookupNlPageCount(isbn: string): Promise<number | undefined> {
   }
 }
 
-async function withPageCount(book: BookSearchResult): Promise<BookSearchResult> {
+async function withPageCount(
+  book: BookSearchResult,
+  timeoutMs = NL_TIMEOUT_LIST_MS
+): Promise<BookSearchResult> {
   if (book.totalPages || !book.isbn) return book;
-  const totalPages = await lookupNlPageCount(book.isbn);
+  const totalPages = await lookupNlPageCount(book.isbn, timeoutMs);
   return totalPages ? { ...book, totalPages } : book;
 }
 
@@ -193,7 +200,7 @@ export async function searchBooksByIsbn(isbn: string): Promise<BookSearchResult 
   const clean = isbn.replace(/[-\s]/g, "");
 
   const [kakao] = await searchKakao(clean, "isbn");
-  if (kakao) return withPageCount({ ...kakao, isbn: kakao.isbn || clean });
+  if (kakao) return withPageCount({ ...kakao, isbn: kakao.isbn || clean }, NL_TIMEOUT_SINGLE_MS);
 
   const d4l = await searchData4LibraryByIsbn(clean);
   if (d4l) return d4l;
@@ -246,7 +253,7 @@ export async function searchBooksByIsbn(isbn: string): Promise<BookSearchResult 
 
 export async function searchBooksByQuery(query: string): Promise<BookSearchResult[]> {
   const kakaoResults = await searchKakao(query);
-  if (kakaoResults.length > 0) return Promise.all(kakaoResults.map(withPageCount));
+  if (kakaoResults.length > 0) return Promise.all(kakaoResults.map((book) => withPageCount(book)));
 
   const d4lResults = await searchData4LibraryByQuery(query);
   if (d4lResults.length > 0) return d4lResults;
