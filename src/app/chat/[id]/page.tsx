@@ -3,7 +3,7 @@
 import { useEffect, useState, use, useRef } from "react";
 import { Heart, Send } from "lucide-react";
 import { BackLink } from "@/components/BackLink";
-import { CHAT_MESSAGE_LIMIT_PER_USER, CHAT_SPEAKER_LIMIT } from "@/lib/chat";
+import { CHAT_MESSAGE_LIMIT_PER_USER, CHAT_SPEAKER_LIMIT, formatChatMessageTime } from "@/lib/chat";
 import { alertContentFilterApiError } from "@/lib/content-filter-client";
 import { iconSm } from "@/lib/icon-styles";
 
@@ -30,6 +30,8 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
   const [notice, setNotice] = useState<string | null>(null);
   const [roomName, setRoomName] = useState("");
   const [bookTitle, setBookTitle] = useState("");
+  const [creatorName, setCreatorName] = useState("");
+  const [roomCreatedAt, setRoomCreatedAt] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -57,6 +59,8 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
         if (typeof d.speakerCount === "number") setSpeakerCount(d.speakerCount);
         if (d.room?.name) setRoomName(d.room.name);
         if (d.room?.bookTitle) setBookTitle(d.room.bookTitle);
+        if (d.room?.creatorName) setCreatorName(d.room.creatorName);
+        if (d.room?.createdAt) setRoomCreatedAt(d.room.createdAt);
       });
   }
 
@@ -225,6 +229,14 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
               {roomName && (
                 <h1 className="text-base font-display text-koala-heading sm:text-lg">{roomName}</h1>
               )}
+              {roomName && creatorName && (
+                <span className="text-xs text-koala-primary">{creatorName}</span>
+              )}
+              {roomName && roomCreatedAt && (
+                <span className="text-[11px] text-koala-muted">
+                  {formatChatMessageTime(roomCreatedAt)}
+                </span>
+              )}
               {roomName && bookTitle && (
                 <span className="text-xs text-koala-muted/60" aria-hidden>
                   ·
@@ -248,13 +260,19 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
             {messages.map((m) =>
               isMyMessage(m) ? (
                 <div key={m.id} className="w-full">
+                  <p className="mb-1 px-1 text-right text-[11px] text-koala-muted">
+                    {formatChatMessageTime(m.createdAt)}
+                  </p>
                   <div className="ml-auto max-w-[85%] w-fit rounded-koala rounded-br-sm bg-koala-primary px-3 py-2 text-sm text-white whitespace-pre-wrap">
                     {m.content}
                   </div>
                 </div>
               ) : (
                 <div key={m.id} className="w-full">
-                  <p className="mb-1 px-1 text-xs font-medium text-koala-primary">{m.username}</p>
+                  <p className="mb-1 flex items-baseline gap-1.5 px-1">
+                    <span className="text-xs font-medium text-koala-primary">{m.username}</span>
+                    <span className="text-[11px] text-koala-muted">{formatChatMessageTime(m.createdAt)}</span>
+                  </p>
                   <div className="flex max-w-[85%] items-end gap-1.5">
                     <div className="max-w-full w-fit rounded-koala rounded-bl-sm bg-koala-bg px-3 py-2 text-sm text-koala-text whitespace-pre-wrap ring-1 ring-koala-secondary/50">
                       {m.content}

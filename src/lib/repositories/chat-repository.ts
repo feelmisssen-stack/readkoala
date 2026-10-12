@@ -210,6 +210,28 @@ export async function updateChatMembershipStatus(
   return true;
 }
 
+async function deleteRoomContents(roomId: string) {
+  const db = getAdminFirestore();
+  const [messages, hearts, memberships] = await Promise.all([
+    db.collection(MESSAGES).where("roomId", "==", roomId).get(),
+    db.collection(HEARTS).where("roomId", "==", roomId).get(),
+    db.collection(MEMBERSHIPS).where("roomId", "==", roomId).get(),
+  ]);
+  await deleteDocs(MESSAGES, messages.docs.map((doc) => doc.id));
+  await deleteDocs(HEARTS, hearts.docs.map((doc) => doc.id));
+  await deleteDocs(MEMBERSHIPS, memberships.docs.map((doc) => doc.id));
+}
+
+/** 이야기뜰과 그 안의 대화·하트·참여 기록을 함께 지운다 */
+export async function deleteChatRoom(roomId: string): Promise<boolean> {
+  const ref = getAdminFirestore().collection(ROOMS).doc(roomId);
+  const doc = await ref.get();
+  if (!doc.exists) return false;
+  await ref.delete();
+  await deleteRoomContents(roomId);
+  return true;
+}
+
 export async function deleteChatRoomsByBookId(bookId: string) {
   const db = getAdminFirestore();
   const rooms = await db.collection(ROOMS).where("bookId", "==", bookId).get();
@@ -219,14 +241,7 @@ export async function deleteChatRoomsByBookId(bookId: string) {
   await deleteDocs(ROOMS, roomIds);
 
   for (const roomId of roomIds) {
-    const [messages, hearts, memberships] = await Promise.all([
-      db.collection(MESSAGES).where("roomId", "==", roomId).get(),
-      db.collection(HEARTS).where("roomId", "==", roomId).get(),
-      db.collection(MEMBERSHIPS).where("roomId", "==", roomId).get(),
-    ]);
-    await deleteDocs(MESSAGES, messages.docs.map((doc) => doc.id));
-    await deleteDocs(HEARTS, hearts.docs.map((doc) => doc.id));
-    await deleteDocs(MEMBERSHIPS, memberships.docs.map((doc) => doc.id));
+    await deleteRoomContents(roomId);
   }
 }
 

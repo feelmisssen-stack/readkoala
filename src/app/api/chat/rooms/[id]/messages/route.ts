@@ -66,6 +66,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     room: {
       name: room.name,
       bookTitle: room.bookTitle,
+      creatorName: room.creatorId ? displayMap.get(room.creatorId) ?? null : null,
+      createdAt: room.createdAt,
     },
     currentUserId: session.userId,
     currentUsername: currentUser?.displayName || session.username || null,

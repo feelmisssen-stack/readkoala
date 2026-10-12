@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { v4 as uuid } from "uuid";
 import { getSession } from "@/lib/session";
+import { isAppAdminSession } from "@/lib/admin-auth";
 import { rejectInvalidContentForUser } from "@/lib/content-filter-api";
 import { getRoomParticipantNames } from "@/lib/chat";
 import { buildUserDisplayMap } from "@/lib/user-display";
@@ -33,12 +34,17 @@ export async function GET() {
       (entry) => entry.roomId === room.id && entry.userId === session.userId
     );
     const participants = getRoomParticipantNames(messages, room.id, displayMap);
-    return { ...room, membership, participants };
+    const creatorName = room.creatorId ? displayMap.get(room.creatorId) ?? null : null;
+    return { ...room, membership, participants, creatorName };
   });
 
   const pendingRooms = session.isAdmin ? await listPendingChatRooms() : [];
 
-  return NextResponse.json({ rooms: enrichedRooms, pendingRooms });
+  return NextResponse.json({
+    rooms: enrichedRooms,
+    pendingRooms,
+    canDelete: isAppAdminSession(session),
+  });
 }
 
 export async function POST(request: Request) {

@@ -1,6 +1,25 @@
 export const CHAT_MESSAGE_LIMIT_PER_USER = 5;
 export const CHAT_SPEAKER_LIMIT = 5;
 
+const chatTimeFormat = new Intl.DateTimeFormat("ko-KR", {
+  timeZone: "Asia/Seoul",
+  month: "numeric",
+  day: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
+  hourCycle: "h23",
+});
+
+/** 예: "10월 12일 11:19" */
+export function formatChatMessageTime(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const parts = Object.fromEntries(
+    chatTimeFormat.formatToParts(date).map((part) => [part.type, part.value])
+  );
+  return `${parts.month}월 ${parts.day}일 ${parts.hour}:${parts.minute}`;
+}
+
 export function getRoomParticipantNames(
   messages: { roomId: string; userId: string; username: string; createdAt: string }[],
   roomId: string,
