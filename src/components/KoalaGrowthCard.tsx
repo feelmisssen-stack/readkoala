@@ -37,10 +37,25 @@ function KoalaChangeLine({
     );
   }
 
+  const hasPastKoalas = (koala.pastKoalas?.length ?? 0) > 0;
   return (
-    <p className="mt-2 text-xs text-koala-muted">
-      다음 변신권까지 {koala.nextChangeInLeaves} 잎새
-    </p>
+    <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+      {hasPastKoalas && (
+        <button
+          type="button"
+          onClick={onOpenMaker}
+          className="inline-flex items-center gap-1 rounded-pill border border-koala-accent px-3 py-1 text-xs font-medium text-koala-accent transition hover:scale-[1.03]"
+        >
+          <Sparkles className="size-3.5" aria-hidden />
+          예전 코알라로 바꾸기
+        </button>
+      )}
+      <p className="text-xs text-koala-muted">
+        {koala.nextChangeWaitsForWeek
+          ? "다음 변신권은 다음 주 월요일에 받아요"
+          : `다음 변신권까지 ${koala.nextChangeInLeaves} 잎새`}
+      </p>
+    </div>
   );
 }
 

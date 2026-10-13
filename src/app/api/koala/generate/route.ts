@@ -56,5 +56,5 @@ export async function POST(request: Request) {
   }
 
   const updated = await syncKoalaProfile(userId, leafCount);
-  return NextResponse.json({ koala: await buildKoalaStatus(updated, leafCount) });
+  return NextResponse.json({ koala: await buildKoalaStatus(updated, leafCount, userId) });
 }

@@ -13,10 +13,11 @@ interface KoalaMakerDialogProps {
 
 export function KoalaMakerDialog({ status, onClose, onStatusChange }: KoalaMakerDialogProps) {
   const [prompt, setPrompt] = useState("");
-  const [busy, setBusy] = useState<"generate" | "apply" | null>(null);
+  const [busy, setBusy] = useState<"generate" | "apply" | "restore" | null>(null);
   const [error, setError] = useState("");
 
   const hasPreviews = status.previews.length > 0;
+  const pastKoalas = status.pastKoalas ?? [];
   const canGenerate = hasPreviews ? status.retriesLeft > 0 : status.stored > 0;
 
   useEffect(() => {
@@ -83,6 +84,27 @@ export function KoalaMakerDialog({ status, onClose, onStatusChange }: KoalaMaker
     }
   }
 
+  async function restore(avatarId: string) {
+    setBusy("restore");
+    setError("");
+    try {
+      const res = await fetch("/api/koala/restore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ avatarId }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.error || "코알라를 바꾸지 못했어요.");
+        return;
+      }
+      onStatusChange(data.koala);
+      onClose();
+    } finally {
+      setBusy(null);
+    }
+  }
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
@@ -108,7 +130,7 @@ export function KoalaMakerDialog({ status, onClose, onStatusChange }: KoalaMaker
         <p className="mt-1 text-sm text-koala-muted">
           {hasPreviews
             ? "마음에 드는 코알라를 골라 주세요. 창을 닫아도 나중에 다시 고를 수 있어요."
-            : `남은 변신권 ${status.stored}개 (최대 ${status.maxStored}개까지 모여요)`}
+            : `남은 변신권 ${status.stored}개 (한 주에 1개씩 받고, 최대 ${status.maxStored}개까지 모여요)`}
         </p>
 
         {hasPreviews && (
@@ -138,6 +160,40 @@ export function KoalaMakerDialog({ status, onClose, onStatusChange }: KoalaMaker
                 </button>
               </div>
             ))}
+          </div>
+        )}
+
+        {pastKoalas.length > 0 && (
+          <div className="mt-5">
+            <p className="koala-label text-sm">예전에 쓰던 코알라</p>
+            <p className="text-xs text-koala-muted">변신권 없이 언제든 다시 바꿀 수 있어요.</p>
+            <div className="mt-2 grid grid-cols-3 gap-2">
+              {pastKoalas.map((past) => (
+                <div key={past.id} className="flex flex-col items-center gap-1.5 rounded-koala bg-white p-2">
+                  <div className="relative aspect-square w-full">
+                    <Image
+                      src={past.imageUrl}
+                      alt={past.name}
+                      fill
+                      unoptimized
+                      className="object-contain"
+                      sizes="140px"
+                    />
+                  </div>
+                  <p className="line-clamp-2 text-center text-xs font-medium text-koala-heading">
+                    {past.name}
+                  </p>
+                  <button
+                    type="button"
+                    disabled={!!busy}
+                    onClick={() => restore(past.id)}
+                    className="koala-btn-secondary w-full px-2 py-1 text-xs disabled:opacity-50"
+                  >
+                    {busy === "restore" ? "바꾸는 중..." : "다시 쓸래요"}
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

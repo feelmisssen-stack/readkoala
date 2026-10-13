@@ -35,6 +35,8 @@ export interface KoalaAvatar {
 interface KoalaProfile {
   stored: number;
   accountedEarned: number;
+  lastCreditWeek?: string;
+  ruleVersion?: number;
   activeAvatarId?: string;
   activeName?: string;
   activeImageUrl?: string;
@@ -57,6 +59,8 @@ function readProfile(data: FirebaseFirestore.DocumentData | undefined): KoalaPro
   return {
     stored: Number(data?.stored) || 0,
     accountedEarned: Number(data?.accountedEarned) || 0,
+    lastCreditWeek: data?.lastCreditWeek,
+    ruleVersion: data?.ruleVersion,
     activeAvatarId: data?.activeAvatarId,
     activeName: data?.activeName,
     activeImageUrl: data?.activeImageUrl,
@@ -73,19 +77,15 @@ export async function syncKoalaProfile(userId: string, leafCount: number): Promi
   return getAdminFirestore().runTransaction(async (tx) => {
     const snap = await tx.get(profileRef(userId));
     const profile = readProfile(snap.data());
-    const settled = settleKoalaCredits(profile, leafCount);
-    if (settled.changed || !snap.exists) {
+    const { changed, ...credits } = settleKoalaCredits(profile, leafCount);
+    if (changed || !snap.exists) {
       tx.set(
         profileRef(userId),
-        {
-          stored: settled.stored,
-          accountedEarned: settled.accountedEarned,
-          updatedAt: new Date().toISOString(),
-        },
+        serializeForFirestore({ ...credits, updatedAt: new Date().toISOString() }),
         { merge: true }
       );
     }
-    return { ...profile, stored: settled.stored, accountedEarned: settled.accountedEarned };
+    return { ...profile, ...credits };
   });
 }
 
@@ -97,18 +97,38 @@ async function listAvatarsByIds(ids: string[]): Promise<KoalaAvatar[]> {
     .map((doc) => ({ id: doc.id, ...(doc.data() as Omit<KoalaAvatar, "id">) }));
 }
 
-export async function buildKoalaStatus(profile: KoalaProfile, leafCount: number): Promise<KoalaStatus> {
-  const previews = await listAvatarsByIds(profile.draft?.previewIds ?? []);
+async function listReplacedAvatars(userId: string): Promise<KoalaAvatar[]> {
+  const snapshot = await getAdminFirestore()
+    .collection(AVATARS)
+    .where("userId", "==", userId)
+    .where("status", "==", "replaced")
+    .get();
+  return snapshot.docs
+    .map((doc) => ({ id: doc.id, ...(doc.data() as Omit<KoalaAvatar, "id">) }))
+    .sort((a, b) => (b.appliedAt ?? b.createdAt).localeCompare(a.appliedAt ?? a.createdAt));
+}
+
+export async function buildKoalaStatus(
+  profile: KoalaProfile,
+  leafCount: number,
+  userId: string
+): Promise<KoalaStatus> {
+  const [previews, pastKoalas] = await Promise.all([
+    listAvatarsByIds(profile.draft?.previewIds ?? []),
+    listReplacedAvatars(userId),
+  ]);
   return {
     stored: profile.stored,
     maxStored: KOALA_CHANGE_MAX_STORED,
-    nextChangeInLeaves: leavesUntilNextKoalaChange(leafCount),
+    nextChangeInLeaves: leavesUntilNextKoalaChange(leafCount, profile.accountedEarned),
+    nextChangeWaitsForWeek: earnedKoalaChanges(leafCount) > profile.accountedEarned,
     unlocked: earnedKoalaChanges(leafCount) > 0 || profile.accountedEarned > 0,
     active:
       profile.activeAvatarId && profile.activeImageUrl
         ? { id: profile.activeAvatarId, name: profile.activeName || "", imageUrl: profile.activeImageUrl }
         : null,
     previews: previews.map(toView),
+    pastKoalas: pastKoalas.map(toView),
     retriesLeft: profile.draft?.retriesLeft ?? 0,
     promptMaxLength: KOALA_PROMPT_MAX_LENGTH,
   };
@@ -219,6 +239,37 @@ export async function applyKoalaPreview(userId: string, avatarId: string): Promi
 
   await Promise.all(discarded.map((avatar) => deleteSceneFromStorage(avatar.imageUrl).catch(() => {})));
   return ok;
+}
+
+/** 예전에 쓰던 코알라를 다시 내 코알라로 정한다. 변신권은 쓰지 않는다 */
+export async function restoreKoalaAvatar(userId: string, avatarId: string): Promise<boolean> {
+  return getAdminFirestore().runTransaction(async (tx) => {
+    const [profileSnap, avatarSnap] = await Promise.all([
+      tx.get(profileRef(userId)),
+      tx.get(avatarRef(avatarId)),
+    ]);
+    if (!avatarSnap.exists) return false;
+    const avatar = avatarSnap.data() as Omit<KoalaAvatar, "id">;
+    if (avatar.userId !== userId || avatar.status !== "replaced") return false;
+
+    const profile = readProfile(profileSnap.data());
+    const now = new Date().toISOString();
+    if (profile.activeAvatarId && profile.activeAvatarId !== avatarId) {
+      tx.set(avatarRef(profile.activeAvatarId), { status: "replaced" }, { merge: true });
+    }
+    tx.set(avatarRef(avatarId), { status: "active", appliedAt: now }, { merge: true });
+    tx.set(
+      profileRef(userId),
+      {
+        activeAvatarId: avatarId,
+        activeName: avatar.name,
+        activeImageUrl: avatar.imageUrl,
+        updatedAt: now,
+      },
+      { merge: true }
+    );
+    return true;
+  });
 }
 
 /** 관리자 화면용: 학생이 골라서 쓴(쓰는) 코알라만 */

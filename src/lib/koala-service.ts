@@ -10,5 +10,5 @@ export async function getUserLeafCount(userId: string): Promise<number> {
 export async function loadKoalaStatus(userId: string) {
   const leafCount = await getUserLeafCount(userId);
   const profile = await syncKoalaProfile(userId, leafCount);
-  return { profile, leafCount, status: await buildKoalaStatus(profile, leafCount) };
+  return { profile, leafCount, status: await buildKoalaStatus(profile, leafCount, userId) };
 }
