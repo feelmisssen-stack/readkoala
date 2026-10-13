@@ -11,6 +11,7 @@ interface SafetyItem {
   status: "pending" | "done";
   resultLabel?: string;
   reviewedAt?: string;
+  reviewedBy?: string;
   userId: string;
   username: string;
   nickname: string;
@@ -49,14 +50,14 @@ export function AdminSafetyReviewTab() {
     void loadItems();
   }, [loadItems]);
 
-  async function review(action: "approve" | "reject" | "dismiss", item: SafetyItem) {
+  async function review(action: "approve" | "reject", item: SafetyItem) {
     setActingId(item.id);
     setError("");
     try {
       const body =
         item.kind === "scene_image"
           ? { action, reflectionId: item.reflectionId }
-          : { action: "dismiss", reportId: item.reportId };
+          : { action, reportId: item.reportId };
       const res = await fetch("/api/admin/moderation/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -84,7 +85,11 @@ export function AdminSafetyReviewTab() {
       <div>
         <h2 className="font-display text-koala-heading">안전 검토</h2>
         <p className="mt-1 text-sm text-koala-muted">
-          부적절한 그림이나 내용이 감지되면 여기에 모여요. 검토를 마친 항목도 완료 표시와 함께 남아 있어요.
+          부적절한 그림이나 내용이 감지되면 여기에 모여요. 검토를 마친 항목도 처리 결과·시간·처리한
+          관리자와 함께 남아 있어요.
+        </p>
+        <p className="mt-1 text-xs text-koala-muted">
+          글은 승인(괜찮은 글)·거절(부적절한 글) 기록만 남고 학생 글은 바뀌지 않아요. 그림은 승인하면 보이고, 거절하면 지워져요.
         </p>
         {items.length > 0 && (
           <p className="mt-1 text-sm text-koala-muted">
@@ -175,8 +180,11 @@ export function AdminSafetyReviewTab() {
                         {new Date(item.reviewedAt).toLocaleString("ko-KR")}
                       </span>
                     )}
+                    {item.reviewedBy && (
+                      <span className="ml-2 font-normal text-koala-muted">· {item.reviewedBy}</span>
+                    )}
                   </p>
-                ) : item.kind === "scene_image" ? (
+                ) : (
                   <>
                     <button
                       type="button"
@@ -195,15 +203,6 @@ export function AdminSafetyReviewTab() {
                       거절하기
                     </button>
                   </>
-                ) : (
-                  <button
-                    type="button"
-                    disabled={actingId === item.id}
-                    onClick={() => review("dismiss", item)}
-                    className="koala-btn-primary text-sm disabled:opacity-50"
-                  >
-                    확인 완료
-                  </button>
                 )}
               </div>
             </article>

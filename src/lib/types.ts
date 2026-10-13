@@ -164,7 +164,7 @@ export interface ModerationReport {
   id: string;
   userId: string;
   source: ModerationReportSource;
-  /** dismissed: 글 신고 확인 완료, approved/rejected: 그림 승인/거절 */
+  /** approved/rejected: 글·그림 승인/거절, dismissed: 예전 글 "확인 완료" 기록 */
   status: "pending" | "dismissed" | "approved" | "rejected";
   reason?: "profanity" | "pii" | "watch";
   preview: string;
@@ -173,6 +173,8 @@ export interface ModerationReport {
   fieldLabel?: string;
   createdAt: string;
   reviewedAt?: string;
+  /** 처리한 관리자 이름(없으면 이메일) */
+  reviewedBy?: string;
   /** 그림 검토 기록에만 있음 */
   kind?: "scene_image";
   reflectionId?: string;

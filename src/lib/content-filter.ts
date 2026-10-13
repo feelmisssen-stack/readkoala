@@ -99,13 +99,26 @@ function hasResidentRegistrationNumber(text: string): boolean {
   );
 }
 
+const REGION = "(?:서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)";
+const CITY_WORD = "[가-힣]{1,5}(?:시|군|구)";
+const TOWN_WORD = "[가-힣0-9]{1,10}(?:동|읍|면|리|로|길)";
+
+/**
+ * 띄어 쓴 행정구역 낱말이 이어질 때만 주소로 본다. 예: "서울시 강남구 역삼동", "제주시 연동".
+ * "제주도에서 한참을 걸으시면", "제주도 올레길", "아폴로 11호"처럼 낱말 속 글자가 겹치는 문장은 막지 않는다.
+ */
+const ADDRESS_PATTERNS = [
+  new RegExp(
+    `(?<![가-힣])${REGION}(?:특별시|광역시|특별자치시|특별자치도|시|도)?\\s+(?:${CITY_WORD}\\s+){1,2}${TOWN_WORD}`
+  ),
+  new RegExp(`(?<![가-힣])${REGION}(?:특별시|광역시|특별자치시|시)\\s+${TOWN_WORD}`),
+  /\d{1,5}\s*번지/,
+  /\d{1,4}\s*동\s*\d{1,4}\s*호/,
+  /(?:주소|사는\s*곳)\s*(?:은|는|가|이|:)?\s*\S{1,12}(?:시|군|구|동|읍|면|리|로|길)(?![가-힣]{3})/,
+];
+
 function hasAddressPattern(text: string): boolean {
-  const patterns = [
-    /(?:서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주).{0,25}(?:시|군|구).{0,40}(?:동|읍|면|리|로|길)/,
-    /\d{1,5}(?:번지|호)/,
-    /(?:주소|사는 곳|집은).{0,10}(?:시|군|구|동|로|길)/,
-  ];
-  return patterns.some((pattern) => pattern.test(text));
+  return ADDRESS_PATTERNS.some((pattern) => pattern.test(text));
 }
 
 /**

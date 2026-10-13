@@ -5,9 +5,9 @@ import { buildUserDisplayMap } from "@/lib/user-display";
 import { loadFeedDatabase } from "@/lib/repositories/feed-data";
 import { getBookById } from "@/lib/repositories/books-repository";
 import {
-  dismissModerationReport as dismissModerationReportInStore,
   listModerationReports,
   recordSceneImageReview,
+  reviewModerationReport,
 } from "@/lib/repositories/moderation-reports-repository";
 import { getReflectionById, saveReflection } from "@/lib/repositories/reflections-repository";
 import {
@@ -27,6 +27,7 @@ export interface AdminSafetyReviewItem {
   /** 완료 항목의 처리 결과 (승인 / 거절 / 확인) */
   resultLabel?: string;
   reviewedAt?: string;
+  reviewedBy?: string;
   userId: string;
   username: string;
   nickname: string;
@@ -108,6 +109,7 @@ export async function listSafetyReviewItems(): Promise<AdminSafetyReviewItem[]> 
       status: done ? ("done" as const) : ("pending" as const),
       resultLabel: report.status === "pending" ? undefined : RESULT_LABELS[report.status],
       reviewedAt: report.reviewedAt,
+      reviewedBy: report.reviewedBy,
       userId: report.userId,
       username: user?.username || "알 수 없음",
       nickname: displayMap.get(report.userId) || user?.username || "친구",
@@ -167,6 +169,7 @@ function sceneReviewDetail(reflection: Reflection) {
 async function logSceneReview(
   reflection: Reflection,
   status: "approved" | "rejected",
+  reviewedBy?: string,
   imageUrl?: string
 ) {
   try {
@@ -180,6 +183,7 @@ async function logSceneReview(
       status,
       imageUrl,
       detail: sceneReviewDetail(reflection),
+      reviewedBy,
     });
   } catch (error) {
     console.error("[admin-moderation] scene review log failed:", error);
@@ -194,7 +198,7 @@ async function removeFileIfExists(filepath: string) {
   }
 }
 
-export async function approveMemorableScene(reflectionId: string) {
+export async function approveMemorableScene(reflectionId: string, reviewedBy?: string) {
   const reflection = await getReflectionById(reflectionId);
   if (!reflection?.memorableScenePendingImage) {
     throw new Error("NOT_FOUND");
@@ -234,10 +238,10 @@ export async function approveMemorableScene(reflectionId: string) {
     memorableScenePendingDetail: undefined,
     updatedAt: now,
   });
-  await logSceneReview(reflection, "approved", approvedUrl);
+  await logSceneReview(reflection, "approved", reviewedBy, approvedUrl);
 }
 
-export async function rejectMemorableScene(reflectionId: string) {
+export async function rejectMemorableScene(reflectionId: string, reviewedBy?: string) {
   const reflection = await getReflectionById(reflectionId);
   if (!reflection) throw new Error("NOT_FOUND");
 
@@ -255,11 +259,15 @@ export async function rejectMemorableScene(reflectionId: string) {
     memorableScenePendingDetail: undefined,
     updatedAt: now,
   });
-  await logSceneReview(reflection, "rejected");
+  await logSceneReview(reflection, "rejected", reviewedBy);
 }
 
-export async function dismissModerationReport(reportId: string) {
-  const updated = await dismissModerationReportInStore(reportId);
+export async function reviewTextReport(
+  reportId: string,
+  status: "approved" | "rejected",
+  reviewedBy?: string
+) {
+  const updated = await reviewModerationReport(reportId, status, reviewedBy);
   if (!updated) {
     throw new Error("NOT_FOUND");
   }
