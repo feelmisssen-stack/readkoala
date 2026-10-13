@@ -24,6 +24,11 @@ export function isAppAdminSession(session: { isAdmin?: boolean; googleAdminEmail
   return Boolean(session.isAdmin || session.googleAdminEmail);
 }
 
+/** 관리자가 앱 화면을 볼 때 닉네임 옆에 학생 번호를 괄호로 붙인다 */
+export async function getDisplayNameOptions() {
+  return { showStudentNumber: isAppAdminSession(await getSession()) };
+}
+
 export async function getGoogleAdmin() {
   const session = await getSession();
   return getGoogleAdminFromSession(session);

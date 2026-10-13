@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
+import { getDisplayNameOptions } from "@/lib/admin-auth";
 import { rejectInvalidContentForUser } from "@/lib/content-filter-api";
 import { buildUserDisplayMap } from "@/lib/user-display";
 import { resolveUserBySession } from "@/lib/users/resolve-user";
@@ -10,8 +11,12 @@ import {
 } from "@/lib/repositories/shared-sentences-repository";
 
 export async function GET() {
-  const [sentences, feedData] = await Promise.all([listAllSharedSentences(), loadFeedDatabase()]);
-  const displayMap = buildUserDisplayMap(feedData.users);
+  const [sentences, feedData, nameOptions] = await Promise.all([
+    listAllSharedSentences(),
+    loadFeedDatabase(),
+    getDisplayNameOptions(),
+  ]);
+  const displayMap = buildUserDisplayMap(feedData.users, nameOptions);
 
   const enriched = sentences.map((sentence) => ({
     ...sentence,

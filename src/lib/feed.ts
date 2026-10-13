@@ -1,5 +1,5 @@
 import type { CarouselFeedItem, CarouselMoment, Database, RandomFeedItem, Reflection } from "./types";
-import { buildUserDisplayMap } from "./user-display";
+import { buildUserDisplayMap, type DisplayNameOptions } from "./user-display";
 import { isMemorableScenePublic } from "./image-moderation";
 import {
   BEFORE_READING_QUESTIONS,
@@ -68,10 +68,10 @@ function addReadingMoments(
   }
 }
 
-export function buildRandomFeed(db: Database): RandomFeedItem[] {
+export function buildRandomFeed(db: Database, nameOptions?: DisplayNameOptions): RandomFeedItem[] {
   const items: RandomFeedItem[] = [];
   const bookMap = new Map(db.books.map((b) => [b.id, b]));
-  const userMap = buildUserDisplayMap(db.users);
+  const userMap = buildUserDisplayMap(db.users, nameOptions);
 
   for (const r of db.reflections) {
     const book = bookMap.get(r.bookId);

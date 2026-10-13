@@ -28,7 +28,9 @@ export async function GET() {
     loadFeedDatabase(),
   ]);
 
-  const displayMap = buildUserDisplayMap(feedData.users);
+  const displayMap = buildUserDisplayMap(feedData.users, {
+    showStudentNumber: isAppAdminSession(session),
+  });
   const enrichedRooms = rooms.map((room) => {
     const membership = memberships.find(
       (entry) => entry.roomId === room.id && entry.userId === session.userId

@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { v4 as uuid } from "uuid";
 import { getSession } from "@/lib/session";
+import { isAppAdminSession } from "@/lib/admin-auth";
 import { rejectInvalidContentForUser } from "@/lib/content-filter-api";
+import { buildUserDisplayMap } from "@/lib/user-display";
 import {
   CHAT_MESSAGE_LIMIT_PER_USER,
   CHAT_SPEAKER_LIMIT,
@@ -43,7 +45,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     resolveUserBySession({ userId: session.userId, firebaseUid: session.firebaseUid }),
   ]);
 
-  const displayMap = new Map(feedData.users.map((user) => [user.id, user.nickname?.trim() || user.username]));
+  const displayMap = buildUserDisplayMap(feedData.users, {
+    showStudentNumber: isAppAdminSession(session),
+  });
   const messageIds = roomMessages.map((message) => message.id);
   const heartCounts = getMessageHeartCounts(hearts, messageIds);
   const myHearts = new Set(

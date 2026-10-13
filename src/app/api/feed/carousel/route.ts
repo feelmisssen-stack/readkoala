@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getDisplayNameOptions } from "@/lib/admin-auth";
 import { buildCarouselFeed, groupCarouselFeed } from "@/lib/feed";
 import {
   HOME_FEED_PAGE_SIZE,
@@ -25,9 +26,11 @@ export async function GET(request: Request) {
   const page = Math.min(requestedPage, totalPages);
   const pageEntries = entries.slice((page - 1) * HOME_FEED_PAGE_SIZE, page * HOME_FEED_PAGE_SIZE);
 
-  const names = buildUserDisplayMap(
-    await listUsersForIds(pageEntries.flatMap((entry) => entry.readers.map((reader) => reader.userId)))
-  );
+  const [users, nameOptions] = await Promise.all([
+    listUsersForIds(pageEntries.flatMap((entry) => entry.readers.map((reader) => reader.userId))),
+    getDisplayNameOptions(),
+  ]);
+  const names = buildUserDisplayMap(users, nameOptions);
   const items: CarouselFeedItem[] = pageEntries.map(({ userId: ownerId, readers, ...entry }) => ({
     ...entry,
     username: names.get(ownerId) || "친구",

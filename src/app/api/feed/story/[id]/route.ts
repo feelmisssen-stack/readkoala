@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getDisplayNameOptions } from "@/lib/admin-auth";
 import { buildPublicStorySections } from "@/lib/reflection-public-view";
 import { getDisplayName } from "@/lib/user-display";
 import { getBookById } from "@/lib/repositories/books-repository";
@@ -35,7 +36,7 @@ export async function GET(
 
   const db = await loadFeedDatabase();
   const author = db.users.find((user) => user.id === book.userId);
-  const username = author ? getDisplayName(author) : "친구";
+  const username = author ? getDisplayName(author, await getDisplayNameOptions()) : "친구";
 
   return NextResponse.json({
     story: {
