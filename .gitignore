@@ -40,3 +40,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# 수업·제출용 문서 (GitHub에 올리지 않음)
+docs/
+scripts/generate-checklists.py
+*예시*.pdf
+*체크리스트*.pdf
