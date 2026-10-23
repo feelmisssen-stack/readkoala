@@ -10,7 +10,7 @@ import {
   canUserChatInRoom,
   countUserMessagesInRoom,
   getMessageHeartCounts,
-  getRoomSpeakerIds,
+  getRoomLimitedSpeakerIds,
 } from "@/lib/chat";
 import { loadFeedDatabase } from "@/lib/repositories/feed-data";
 import { resolveUserBySession } from "@/lib/users/resolve-user";
@@ -62,14 +62,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   }));
 
   const myMessageCount = countUserMessagesInRoom(roomMessages, id, session.userId);
-  const speakers = getRoomSpeakerIds(roomMessages, id);
-  const canChat = canUserChatInRoom(roomMessages, id, session.userId);
+  const speakers = getRoomLimitedSpeakerIds(roomMessages, id, room.creatorId);
+  const canChat = canUserChatInRoom(roomMessages, id, session.userId, room.creatorId);
 
   return NextResponse.json({
     messages,
     room: {
       name: room.name,
       bookTitle: room.bookTitle,
+      creatorId: room.creatorId,
       creatorName: room.creatorId ? displayMap.get(room.creatorId) ?? null : null,
       createdAt: room.createdAt,
     },
@@ -107,10 +108,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (blocked) return blocked;
 
   const roomMessages = await listChatMessagesByRoom(id);
-  if (!canUserChatInRoom(roomMessages, id, session.userId)) {
+  if (!canUserChatInRoom(roomMessages, id, session.userId, room.creatorId)) {
     return NextResponse.json(
       {
-        error: `이 이야기뜰에서는 이미 ${CHAT_SPEAKER_LIMIT}명이 대화 중이에요. 들어는 볼 수 있지만 글은 남길 수 없어요.`,
+        error: `이 이야기뜰에서는 방을 만든 친구를 빼고 이미 ${CHAT_SPEAKER_LIMIT}명이 대화 중이에요. 들어는 볼 수 있지만 글은 남길 수 없어요.`,
       },
       { status: 403 }
     );

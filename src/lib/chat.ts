@@ -50,12 +50,24 @@ export function getRoomSpeakerIds(
   return [...speakers];
 }
 
+/** 대화 인원 제한(5명)에 세는 사람 — 방장은 제외 */
+export function getRoomLimitedSpeakerIds(
+  messages: { roomId: string; userId: string }[],
+  roomId: string,
+  creatorId?: string | null
+): string[] {
+  return getRoomSpeakerIds(messages, roomId).filter((id) => id !== creatorId);
+}
+
 export function canUserChatInRoom(
   messages: { roomId: string; userId: string }[],
   roomId: string,
-  userId: string
+  userId: string,
+  creatorId?: string | null
 ): boolean {
-  const speakers = getRoomSpeakerIds(messages, roomId);
+  // 방장은 대화 인원 제한에 포함하지 않음 — 항상 말할 수 있음
+  if (creatorId && userId === creatorId) return true;
+  const speakers = getRoomLimitedSpeakerIds(messages, roomId, creatorId);
   if (speakers.includes(userId)) return true;
   return speakers.length < CHAT_SPEAKER_LIMIT;
 }

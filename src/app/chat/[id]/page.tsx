@@ -31,6 +31,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
   const [roomName, setRoomName] = useState("");
   const [bookTitle, setBookTitle] = useState("");
   const [creatorName, setCreatorName] = useState("");
+  const [creatorId, setCreatorId] = useState<string | null>(null);
   const [roomCreatedAt, setRoomCreatedAt] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -60,6 +61,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
         if (d.room?.name) setRoomName(d.room.name);
         if (d.room?.bookTitle) setBookTitle(d.room.bookTitle);
         if (d.room?.creatorName) setCreatorName(d.room.creatorName);
+        if (d.room?.creatorId) setCreatorId(d.room.creatorId);
         if (d.room?.createdAt) setRoomCreatedAt(d.room.createdAt);
       });
   }
@@ -87,17 +89,21 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
     return list.filter((m) => m.userId === currentUserId && !m.id.startsWith("temp-")).length;
   }
 
-  function countSpeakersFromList(list: Message[]) {
+  function countLimitedSpeakersFromList(list: Message[]) {
     const speakers = new Set<string>();
     for (const m of list) {
-      if (!m.id.startsWith("temp-")) speakers.add(m.userId);
+      if (m.id.startsWith("temp-")) continue;
+      if (creatorId && m.userId === creatorId) continue;
+      speakers.add(m.userId);
     }
     return speakers;
   }
 
   function canChatFromList(list: Message[]) {
     if (!currentUserId) return canChat;
-    const speakers = countSpeakersFromList(list);
+    // 방장은 대화 인원 제한에 포함하지 않음
+    if (creatorId && currentUserId === creatorId) return true;
+    const speakers = countLimitedSpeakersFromList(list);
     return speakers.has(currentUserId) || speakers.size < CHAT_SPEAKER_LIMIT;
   }
 
@@ -105,7 +111,7 @@ export default function ChatRoomPage({ params }: { params: Promise<{ id: string 
   const atMessageLimit = localMessageCount >= CHAT_MESSAGE_LIMIT_PER_USER;
   const canSendChat = canChat && canChatFromList(messages);
 
-  const SPEAKER_LIMIT_MESSAGE = `이 이야기뜰은 ${CHAT_SPEAKER_LIMIT}명까지 대화할 수 있어요. 들어는 볼 수 있지만 글은 남길 수 없어요.`;
+  const SPEAKER_LIMIT_MESSAGE = `이 이야기뜰은 방을 만든 친구를 빼고 ${CHAT_SPEAKER_LIMIT}명까지 대화할 수 있어요. 들어는 볼 수 있지만 글은 남길 수 없어요.`;
   const MESSAGE_LIMIT_MESSAGE = `이 이야기뜰에는 ${CHAT_MESSAGE_LIMIT_PER_USER}번까지만 글을 남길 수 있어요. 이야기 횟수가 초과되었어요.`;
 
   function showNotice(message: string) {
